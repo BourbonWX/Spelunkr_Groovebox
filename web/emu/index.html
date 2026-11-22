@@ -259,6 +259,8 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
 .sbar label.btn { display: inline-flex; align-items: center; }
 .sbar .lab { font: 22px var(--head); color: var(--yellow); }
 .sbar .hint, .sbar .drop { color: var(--soft); font-size: 19px; }
+.smplimits { margin: 6px 0 0; color: var(--soft); font-size: 17px; line-height: 1.35; border-top: 2px solid var(--rule); padding-top: 8px; }
+.smplimits b { font: 18px var(--head); font-weight: normal; color: var(--yellow); margin-right: 6px; }
 .sbar .fld { display: inline-flex; align-items: center; gap: 6px; font: 21px var(--head); color: var(--yellow); }
 .sbar input, .sbar select { font: 21px var(--mono); background: var(--night); color: #fff; border: 2px solid var(--rule2); padding: 3px 6px; }
 .sbar input { width: 7.5em; text-transform: uppercase; }
@@ -439,7 +441,7 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
           <button class="btn quiet" type="button" id="smpclear">CLEAR SLOT</button>
         </div>
         <div class="wavewrap"><canvas id="smpwave" height="160" aria-label="The waveform: drag the edges to trim, click to add a slice, drag a slice to move it, double-click it to remove it"></canvas>
-          <div class="empty" id="smpempty">Empty slot. Load a WAV, MP3, OGG or FLAC (up to 30 seconds).</div></div>
+          <div class="empty" id="smpempty">Empty slot. Load a WAV, MP3, OGG or FLAC: a longer one keeps its first 30 seconds.</div></div>
         <div class="sbar">
           <span class="lab">SLICES</span>
           <button class="btn quiet" type="button" id="smphits" title="A slice at each hit">AUTO</button>
@@ -456,6 +458,11 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
           <button class="btn" type="button" data-use="2" title="Slices 1 to 8 on the drum rows: kick, snare, clap, hat, open hat, tom, rim, cowbell">AS A DRUM KIT</button>
           <span class="hint" id="smpinfo"></span>
         </div>
+      <p class="smplimits" id="smplimits"><b>THE LIMITS</b> 8 slots · 30 seconds a sample (a longer file keeps its first 30 s) ·
+        kept in mono at 22 kHz, a little lo-fi, like an old sampler · up to 24 slices: CHOPS plays them from C3 up, a DRUM KIT
+        slices 1–8 · AS A SYNTH plays the sample once a note (no loop) · names 8 letters · any WAV, MP3, OGG or FLAC your
+        browser reads · they live in this browser (clearing its site data clears them): SAVE puts them in a file, and a song
+        code carries the ones the song plays.</p>
       </div>
     </div>
   </section>
@@ -1903,6 +1910,7 @@ const TIPS = {
   "#lock1": "LOCK the ECHO · FLANGE pad: where you let go, it stays, on the track you played it on (pick another track and it stays there). It's saved with the song and goes with a song code. Click again to let it snap back.",
   "#vapgo": "VAPORIZE: slowed, warbly and dusty in one tap. When it's on, CLEAN takes it all off.",
   "#smpfile": "",
+  "#smplimits": "What samples can and can't do here.",
   "label:has(#smpfile)": "LOAD A FILE: a WAV, MP3, OGG or FLAC into this slot. A longer one keeps its first 30 seconds, however big the file. You can also drop a file on the panel.",
   "#smpstop": "STOP: stop hearing it (Esc too, or the same button again).",
   "#smpname": "The sample's name (8 letters): the tracks show it.",

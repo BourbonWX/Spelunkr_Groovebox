@@ -81,6 +81,16 @@ Press **SAMPLES** at the top (or scroll down to the SAMPLES panel). There are 8 
 Your samples stay in this browser, and **SAVE** puts them in the project file. **SHARE** sends the ones your song
 plays along with its code.
 
+**The limits** (the panel says them too):
+
+- 8 slots, 30 seconds a sample: a longer file keeps its first 30 seconds.
+- Samples are kept in mono at 22 kHz: a little lo-fi, like an old sampler.
+- Up to 24 slices. **AS CHOPS** plays them from C3 up; **AS A DRUM KIT** uses slices 1 to 8.
+- **AS A SYNTH** plays the sample once a note: it doesn't loop, so a long held note stops when the sample does.
+- Names are up to 8 letters.
+- Any WAV, MP3, OGG or FLAC your browser can read.
+- They live in this browser: clearing its site data clears them. Keep a **SAVE** file of anything you'd miss.
+
 ## Make it vapor
 
 The **VAPOR** panel works on the whole song: **SLOWED** plays the record slower (lower and lazier), **WOW** warps the
