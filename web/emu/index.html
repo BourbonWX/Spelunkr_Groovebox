@@ -2009,44 +2009,60 @@ $("randsong").addEventListener("click", () => newSong(true));
 const TOURKEY = "spelunkr-groovebox-tour";
 const btnSel = (dev) => `.face .btn[data-dev="${dev}"]`;
 const TOUR = [                                           // (Ed: "cover every part of the song creation process from new
-  // song all the way to export"; each step points at what it talks about)
+  // song all the way to export"; Nov 22: "include everything as it currently stands"; each step points at what it talks
+  // about, `el` a selector or a function (a phone: what it shows))
   { t: "WELCOME", el: null, x: () => "This tour walks you through a whole song, from a blank page to a WAV you can use. "
-      + "Each step lights up what to use: try it, then press <kbd>NEXT</kbd>. The <kbd>?</kbd> at the top brings the tour back any time." },
+      + "Each step lights up what to use: try it, then press <kbd>NEXT</kbd>. "
+      + (phoneMQ.matches ? "" : "Hover over anything on the page to see what it does. ")
+      + "<kbd>?</kbd> at the top brings this tour back, <kbd>GUIDE</kbd> opens the written guide." },
   { t: "1 · START A SONG", el: "#newsong", x: () => "<kbd>NEW SONG</kbd> starts from nothing: no steps, the starting sounds. "
-      + "<kbd>RANDOM</kbd> rolls a whole song to play with (lo-fi, chillwave, electro or chiptune). Both ask first." },
+      + "<kbd>🎲 RANDOM</kbd> writes a whole song for you to play with: lo-fi, chillwave, electro or chiptune, with its own beat, chords, "
+      + "bass, tune and parts. Both ask first, and <kbd>UNDO</kbd> next to them takes back the last thing you did (click it again to put it back)." },
   { t: "2 · PLAY AND STOP", el: btnSel("PLAY"), x: () => `<kbd>PLAY</kbd>${phoneMQ.matches ? "" : " (or the space bar)"} starts and stops the music. `
       + "Leave it playing while you work: every change is heard on the next loop." },
-  { t: "3 · PICK A TRACK", el: "#grows", x: () => "Each row is a track: DRUMS, three synths and PERC. Click a row to work on it: "
-      + "the keys, the screen and the controls follow. Start with <kbd>DRUMS</kbd>." },
-  { t: "4 · PICK ITS SOUND", el: "#wheels", x: () => "<kbd>SOUNDS</kbd> ◀ ▶ steps through the sounds for that track: dusty lo-fi kits (CRATE, BEDROOM), "
+  { t: "3 · TEMPO, SWING, KEY", el: "#songbar", x: () => "The bar under the top buttons is the whole song's: <kbd>TEMPO</kbd> (◀ ▶, or tap "
+      + "<kbd>TAP</kbd> along with the beat you want), <kbd>SWING</kbd> (0% straight, 30–50% a lazy lo-fi bounce) and <kbd>KEY</kbd>: the home note "
+      + "and the scale. Tick <i>keys stay in key</i> and every note you play lands in the scale, so nothing sounds wrong." },
+  { t: "4 · PICK A TRACK", el: "#grows", x: () => "Each row is a track: DRUMS, PERC and three synths. Click a row to work on it: "
+      + "the keys, the screen and the controls follow. <kbd>M</kbd> mutes a track, <kbd>S</kbd> plays it alone. Start with <kbd>DRUMS</kbd>." },
+  { t: "5 · PICK ITS SOUND", el: "#wheels", x: () => "<kbd>SOUNDS</kbd> ◀ ▶ steps through the sounds for that track: dusty lo-fi kits (CRATE, BEDROOM), "
       + "80s drum machines (VAPOR 808, LINN, GATED), chiptune kits (NES, GAMEBOY, SNES); on the synths pianos, vibes, sax, chip sounds and more." },
-  { t: "5 · MAKE A BEAT", el: "#grows .grow:first-child .tools", x: () => "Click <kbd>BEAT</kbd> on the DRUMS row for a basic beat, <kbd>RANDOM</kbd> for a random one, "
-      + "<kbd>VARY</kbd> to change a few steps, <kbd>CLEAR</kbd> to start over (every row has them; <kbd>UNDO</kbd> at the top takes any of it back). "
-      + "Tap <kbd>STEPS</kbd> to see every step: <kbd>ROW</kbd> picks a step, <kbd>COLUMN</kbd> a drum, the third control turns it on or off. "
-      + "The tempo and the swing are in the bar under the top buttons." },
-  { t: "6 · PLAY THE KEYS", el: ".keybar", x: () => (phoneMQ.matches ? "Play on these keys. "
+  { t: "6 · MAKE A BEAT", el: () => document.querySelector(phoneMQ.matches ? "#grows" : "#grows .grow:first-child .tools"),
+    x: () => (phoneMQ.matches ? "Hold <kbd>STEPS</kbd> and press B for a beat, G for a random one, C to clear. "
+      : "Click <kbd>BEAT</kbd> on the DRUMS row for a basic beat, <kbd>RANDOM</kbd> for a random one, <kbd>VARY</kbd> to change a few steps, "
+      + "<kbd>CLEAR</kbd> to start over. Every row has them (BEAT on the drum rows). ")
+      + "Tap <kbd>STEPS</kbd> to see every step: <kbd>ROW</kbd> picks a step, <kbd>COLUMN</kbd> a drum, the third control turns it on or off." },
+  { t: "7 · PLAY THE KEYS", el: ".keybar", x: () => (phoneMQ.matches ? "Play on these keys. "
       : "Play on these keys, or on your computer keyboard: <kbd>Z</kbd> to <kbd>M</kbd> and <kbd>Q</kbd> to <kbd>O</kbd>. ")
       + "<kbd>OCT −</kbd> and <kbd>OCT +</kbd> move up and down. On a drum track each key is a drum. A MIDI keyboard works too." },
-  { t: "7 · RECORD A PART", el: btnSel("REC"), x: () => "Click a synth row (SYNTH 1) and pick its sound. Tap <kbd>RECORD</kbd>: it asks whether you want a metronome, then the music starts, "
-      + "and what you play on the keys goes into the loop. Tap <kbd>RECORD</kbd> again to stop recording (the music keeps going), <kbd>PLAY</kbd> to stop. "
-      + "Start over: <kbd>CLEAR</kbd> on its row. Set the song's <kbd>KEY</kbd> in the bar at the top and tick <i>keys stay in key</i>: nothing you play sounds wrong. Do the same for a bass on SYNTH 2." },
-  { t: "8 · SHAPE THE SOUND", el: "#knobs", x: () => "These four controls change the selected track's sound: its tone, its decay, WOW and AGE on the sampled ones. "
-      + "<kbd>SOUND</kbd> shows more of its settings; <kbd>POWER USER</kbd> shows everything (envelope, wobble, arpeggio, scale, effects)." },
-  { t: "9 · MORE PATTERNS", el: btnSel("GLO"), x: () => "A pattern is a loop of every track. Tap <kbd>MIX</kbd>: patterns A to F on the white keys "
+  { t: "8 · RECORD A PART", el: btnSel("REC"), x: () => "Click a synth row (SYNTH 1) and pick its sound. With the music stopped, tap <kbd>RECORD</kbd>: "
+      + "it asks whether you want a metronome (a bar of clicks counts you in, then they keep time). Then the music starts and what you play on "
+      + "the keys goes into the loop. Tap <kbd>RECORD</kbd> again to stop recording (the music keeps going), <kbd>PLAY</kbd> to stop. "
+      + "Tap RECORD while it's already playing and it just records, no metronome. Do the same for a bass on SYNTH 2." },
+  { t: "9 · SHAPE THE SOUND", el: "#knobs", x: () => "These four controls change the selected track's sound: its tone, its decay, WOW and AGE on the sampled ones. "
+      + "<kbd>SOUND</kbd> shows more of its settings; <kbd>POWER USER</kbd> at the top shows everything (envelope, wobble, arpeggio, scale) "
+      + "and the device's own names." },
+  { t: "10 · MORE PATTERNS", el: btnSel("GLO"), x: () => "A pattern is a loop of every track. Tap <kbd>MIX</kbd>: patterns A to F on the white keys "
       + (phoneMQ.matches ? "C to A" : "C to A (computer keys Z to N)") + ". Press D (X) for pattern B: it starts as a copy of A. "
       + "Change it (a fill, a chorus, a drop). The columns below show your patterns: click one to play it next." },
-  { t: "10 · ARRANGE THE SONG", el: btnSel("GLO"), x: () => "Tap <kbd>MIX</kbd> again: the SONG screen. Easiest way: tap <kbd>RECORD</kbd> there, "
+  { t: "11 · ARRANGE THE SONG", el: btnSel("GLO"), x: () => "Tap <kbd>MIX</kbd> again: the SONG screen. Easiest way: tap <kbd>RECORD</kbd> there, "
       + "press <kbd>PLAY</kbd>, and click the patterns below as the music goes (each one starts when the loop comes round); press <kbd>PLAY</kbd> to stop. "
       + "What you played becomes the song's parts, and the columns show them. <kbd>PLAY</kbd> on the SONG screen plays the song." },
-  { t: "11 · MIX IT", el: btnSel("HOME"), x: () => "On the home screen, tap <kbd>HOME</kbd> (its button says MIXER): each track's level, pan and reverb, "
-      + "on the four controls. <kbd>M</kbd> and <kbd>S</kbd> on the rows below mute a track or play it alone. <kbd>VOLUME</kbd> is everything." },
-  { t: "12 · MAKE IT VAPOR", el: ".vapor", x: () => "Slow the whole song down, warp the tape, add crackle: tap <kbd>VAPORIZE</kbd> or use the four controls. "
-      + "The FX PAD above bends a track while you hold it." },
-  { t: "13 · YOUR OWN SAMPLES", el: "#smpgo", x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file, trim it, slice it, "
-      + "and put it on a track as a synth, as chops on the keys, or as a drum kit." },
-  { t: "14 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>SAVE</kbd> downloads a project file (your samples too) "
-      + "and <kbd>OPEN</kbd> brings it back. <kbd>SHARE</kbd> gives a short code (SPGB_…) and a link, carrying the samples your song uses: whoever opens it, or types the code into <kbd>CODE</kbd>, hears your song and can carry on from it." },
-  { t: "15 · EXPORT", el: "#bounce", x: () => "<kbd>EXPORT</kbd> makes the WAV: the song once through (or the pattern looped), with a WAV for each track if you like. "
+  { t: "12 · MIX IT", el: btnSel("HOME"), x: () => "On the home screen, tap <kbd>HOME</kbd> (its button says MIXER): each track's level, pan and reverb, "
+      + "on the four controls. <kbd>VOLUME</kbd> on the right is everything." },
+  { t: "13 · FX PADS", el: ".pads", x: () => "Hold a pad and drag to bend the selected track: FILTER · GATE darkens, thins and chops it; "
+      + "ECHO · FLANGE throws echoes and jets. Let go and it snaps back, unless <kbd>LOCK</kbd> is on: then it stays where you leave it, "
+      + "on that track, and it's saved with the song." },
+  { t: "14 · FX KEYS", el: btnSel("FX"), x: () => "Tap <kbd>FX KEYS</kbd> and the keys glitch the whole mix while you hold them: stutter, tunnel, jumps, crush "
+      + "(the screen shows which key does what). Tap it again and the keys play notes." },
+  { t: "15 · MAKE IT VAPOR", el: ".vapor", x: () => "Slow the whole song down, warp the tape, add crackle and crunch: tap <kbd>VAPORIZE</kbd> or use the four controls. "
+      + "It's saved with the song." },
+  { t: "16 · YOUR OWN SAMPLES", el: "#smpgo", x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file (a long one keeps its first 30 seconds), "
+      + "trim it, slice it, hear it (<kbd>■ STOP</kbd> stops it), and put it on a track as a synth, as chops on the keys, or as a drum kit." },
+  { t: "17 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>SAVE</kbd> downloads a project file (your samples too) "
+      + "and <kbd>OPEN</kbd> brings it back. <kbd>SHARE</kbd> gives a short code (SPGB_…) and a link, carrying the samples your song uses: "
+      + "whoever opens the link, or types the code into <kbd>CODE</kbd>, hears your song and can carry on from it." },
+  { t: "18 · EXPORT", el: "#bounce", x: () => "<kbd>EXPORT</kbd> makes the WAV: the song once through (or the pattern looped), with a WAV for each track if you like. "
       + "<kbd>RECORD</kbd> at the top records you playing live instead. That's a whole song: have fun!" },
 ];
 let tourAt = -1, tourEl = null;
@@ -2067,20 +2083,27 @@ function tourShow(i) {
   $("tourback").hidden = i === 0;
   $("tournext").textContent = i === TOUR.length - 1 ? "DONE" : "NEXT";
   $("tourskip").hidden = i === TOUR.length - 1;
-  tourEl = st.el ? document.querySelector(st.el) : null;
+  tourEl = typeof st.el === "function" ? st.el() : st.el ? document.querySelector(st.el) : null;
   if (tourEl) {
     tourEl.classList.add("tour-hi");
     if (!tourEl.closest(".keybar")) tourEl.scrollIntoView({ block: "center", behavior: "auto" });
   }
   const card = $("tour");                              // over what it points at: the card goes to the top instead
   card.classList.remove("high");
+  card.style.top = "";
   if (tourEl) {
     const a = tourEl.getBoundingClientRect(), c = card.getBoundingClientRect();
     const over = (a, c) => a.left < c.right && a.right > c.left && a.top < c.bottom && a.bottom > c.top;
     if (over(a, c)) {
       card.classList.add("high");
       const c2 = card.getBoundingClientRect();
-      if (over(a, c2) && !tourEl.closest(".keybar")) window.scrollBy(0, a.top - (c2.bottom + 14));   // (a phone: below the card)
+      if (over(a, c2) && !tourEl.closest(".keybar")) {
+        if (a.top < innerHeight / 3 && window.scrollY < 4) {   // (a phone, the top of the page: the card just under it,
+          let below = a.bottom + 8;                             // the page scrolled up for it if it doesn't fit)
+          if (below + c2.height > innerHeight - 4) { window.scrollBy(0, a.top - 6); below = a.height + 14; }
+          card.style.top = Math.round(below) + "px";
+        } else window.scrollBy(0, a.top - (c2.bottom + 14));     // (else: scrolled to below the card)
+      }
     }
   }
   $("tournext").focus({ preventScroll: true });
