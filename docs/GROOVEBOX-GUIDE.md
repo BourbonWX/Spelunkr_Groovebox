@@ -90,7 +90,8 @@ with the song and heard in exports and shared links.
 tunnel, jumps, crush: the screen shows which key does what); tap it again and the keys play notes.
 
 The **FX PAD** bends the track you picked while you hold it: drag around, let go and it snaps back. Each pad has a
-**LOCK**: with it on, the pad stays where you let go (and follows the track you pick) until you turn LOCK off.
+**LOCK**: with it on, the pad stays where you let go, on the track you played it on, until you turn LOCK off. A
+locked pad is part of the song: it's still there next time, in a SAVE file and in a song code.
 
 ## Save, share, export
 

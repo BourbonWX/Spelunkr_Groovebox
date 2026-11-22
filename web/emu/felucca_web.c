@@ -28,6 +28,8 @@ static unsigned char web_solo;           /* the page's SOLO buttons (ui_layer.c 
 static unsigned char web_pad;            /* the page's FX PAD held (ui_input.c WEB_PAD) */
 #define WEB_SOLO web_solo
 #define WEB_PAD web_pad
+static unsigned char web_pad_k;          /* the track the page's pads are on (Ed, Nov 22: a locked pad stays on its track) */
+#define WEB_PAD_TRK web_pad_k
 #define WEB_FX_LOCK 1                    /* (ui_layer.c layer_tap: FX tapped locks its keys open) */
 /* the knobs' cards as the screen drew them this frame (ui_draw.c draw_column: WEB_CARD), kept per frame */
 static struct { char label[16], val[16], unit[8]; int ratio; } web_card[4], web_card_now[4];
@@ -1121,7 +1123,8 @@ EXPORT const char *web_guide(void)
         wj_str(full);
         wj(",\"frac\":%d}", on && web_card_now[k].ratio >= 0 ? web_card_now[k].ratio : -1);
     }
-    wj("],\"xy\":[%u,%u,%u,%u,%u,%u]", xy_live[0].x, xy_live[0].y, xy_live[0].on, xy_live[1].x, xy_live[1].y, xy_live[1].on);
+    wj("],\"xy\":[%u,%u,%u,%u,%u,%u],\"xyk\":%d", xy_live[0].x, xy_live[0].y, xy_live[0].on, xy_live[1].x, xy_live[1].y, xy_live[1].on,
+       web_pad ? (int)web_pad_k : -1);
     wj(",\"vapor\":[%u,%u,%u,%u]", vap_get(0), vap_get(1), vap_get(2), vap_get(3));
     web_buttons_json();
     wj("}");
@@ -1136,12 +1139,15 @@ EXPORT void web_solo_toggle(uint32_t k) { if (k < NTRK) { web_solo ^= (unsigned 
 EXPORT uint32_t web_cue(uint32_t p) { uint32_t rc = p < NBANK ? (uint32_t)bank_key(p) : 1u; ui.force = 1; return rc; }
 /* the FX PAD under the mouse: crosshair j at x y (0..127), on; on 0: let go (it springs back), and the pad closes
  * once both are let go */
-EXPORT void web_xy(uint32_t j, uint32_t x, uint32_t y, uint32_t on)
+/* the page's FX PAD j on track k (both pads are on one track: a new track takes them, the page sends the other's
+ * again); held or LOCKED (index.html), it stays on k whichever track is picked after */
+EXPORT void web_xy(uint32_t j, uint32_t x, uint32_t y, uint32_t on, uint32_t k)
 {
     if (j > 1u)
         return;
     web_pad = 1;
-    xy_open(song.sel % NTRK);
+    web_pad_k = (unsigned char)(k < NTRK ? k : song.sel % NTRK);
+    xy_open(web_pad_k);
     xy_live[j].x = (uint8_t)(on ? (x > 127u ? 127u : x) : 64u);
     xy_live[j].y = (uint8_t)(on ? (y > 127u ? 127u : y) : 64u);
     xy_live[j].on = (uint8_t)(on != 0);

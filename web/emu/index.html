@@ -848,12 +848,36 @@ addEventListener("blur", () => {
 });
 
 // ------------------------------------------------------------------ the FX PAD (felucca_web.c web_xy)
-// Each pad springs back when let go, unless its LOCK is on (Ed, Nov 22): then it stays where it was left, on the
-// selected track (it follows a track change), until LOCK goes off or the middle is touched.
-const padLock = [false, false], padAt = [null, null];
+// Each pad springs back when let go, unless its LOCK is on (Ed, Nov 22): then it stays where it was left, on the track
+// it was put on (Ed: "effects are applied to the tracks"): picking another track leaves it there. Both pads are on one
+// track: playing a pad with another track picked takes them both there. A locked pad is part of the song: kept in
+// this browser, in SAVE's file and in a song code (padsState / padsApply).
+const padLock = [false, false], padAt = [null, null], PADKEY = "spelunkr-groovebox-pads";
+let padK = null;                                          // (the track the pads are on; null: none on)
 function padSend(j) {
-  const a = padAt[j];
-  send(a ? { type: "xy", j, x: a.x, y: a.y, on: 1 } : { type: "xy", j, x: 64, y: 64, on: 0 });
+  const a = padAt[j], k = padK ?? (G ? G.sel : 0);
+  send(a ? { type: "xy", j, x: a.x, y: a.y, on: 1, k } : { type: "xy", j, x: 64, y: 64, on: 0, k });
+}
+function padsState() {                                   // the locked pads: { k, p: [[x, y] | null, ..] } or null
+  const p = [0, 1].map((j) => padLock[j] && padAt[j] && !$("pad" + j).classList.contains("on") ? [padAt[j].x, padAt[j].y] : null);
+  return p.some(Boolean) && padK !== null ? { k: padK, p } : null;
+}
+function padsSave() { try { const st = padsState(); if (st) localStorage.setItem(PADKEY, JSON.stringify(st)); else localStorage.removeItem(PADKEY); } catch {} }
+function padsApply(st) {                                 // (after a boot: the song's locked pads back on their track)
+  for (const j of [0, 1]) { padAt[j] = null; padLockSet(j, false, true); }
+  padK = null;
+  if (!st || !Array.isArray(st.p) || !(st.k >= 0 && st.k < 5)) { padsSave(); return; }
+  padK = st.k;
+  st.p.forEach((v, j) => {
+    if (j > 1 || !Array.isArray(v)) return;
+    const pad = $("pad" + j), dot = pad.querySelector(".dot");
+    padAt[j] = { x: Math.max(0, Math.min(127, v[0] | 0)), y: Math.max(0, Math.min(127, v[1] | 0)) };
+    padLockSet(j, true, true);
+    pad.classList.add("locked");
+    dot.style.left = padAt[j].x / 127 * 100 + "%"; dot.style.top = 100 - padAt[j].y / 127 * 100 + "%";
+    padSend(j);
+  });
+  padsSave();
 }
 function padRelease(j) {
   const pad = $("pad" + j), dot = pad.querySelector(".dot");
@@ -861,14 +885,18 @@ function padRelease(j) {
   pad.classList.remove("on", "locked");
   dot.style.left = dot.style.top = "50%";
   padSend(j);
+  if (!padAt[0] && !padAt[1]) padK = null;
+  padsSave();
 }
-function padLockSet(j, on) {
+function padLockSet(j, on, quiet) {
   padLock[j] = on;
   const b = $("lock" + j);
   b.setAttribute("aria-pressed", on);
   b.textContent = on ? "LOCKED" : "LOCK";
   $("pad" + j).classList.toggle("locked", on && !!padAt[j]);
+  if (quiet) return;
   if (!on && !$("pad" + j).classList.contains("on")) padRelease(j);
+  else padsSave();
 }
 for (const j of [0, 1]) {
   const pad = $("pad" + j), dot = pad.querySelector(".dot");
@@ -880,7 +908,12 @@ for (const j of [0, 1]) {
     padAt[j] = { x: Math.round(x * 127), y: Math.round((1 - y) * 127) };
     padSend(j);
   };
-  pad.addEventListener("pointerdown", (e) => { e.preventDefault(); pad.setPointerCapture(e.pointerId); held = e.pointerId; pad.classList.add("on"); at(e); });
+  pad.addEventListener("pointerdown", (e) => {
+    e.preventDefault(); pad.setPointerCapture(e.pointerId); held = e.pointerId; pad.classList.add("on");
+    const k = G ? G.sel : 0;
+    if (padK !== k) { padK = k; if (padAt[1 - j]) padSend(1 - j); }   // (the pads to the picked track, the other one too)
+    at(e);
+  });
   pad.addEventListener("pointermove", (e) => { if (held === e.pointerId) at(e); });
   const up = (e) => {
     if (held !== e.pointerId) return;
@@ -889,17 +922,12 @@ for (const j of [0, 1]) {
     if (padLock[j] && a && (Math.abs(a.x - 64) > 6 || Math.abs(a.y - 64) > 6)) {   // locked: it stays (the middle: off)
       pad.classList.remove("on");
       pad.classList.add("locked");
+      padsSave();
     } else padRelease(j);
   };
   pad.addEventListener("pointerup", up);
   pad.addEventListener("pointercancel", up);
   $("lock" + j).addEventListener("click", () => padLockSet(j, !padLock[j]));
-}
-let padSel = -1;                                          // a locked pad follows the selected track
-function padFollow(sel) {
-  if (sel === padSel) return;
-  padSel = sel;
-  for (const j of [0, 1]) if (padAt[j]) setTimeout(() => padSend(j), 60);
 }
 
 // ------------------------------------------------------------------ screen and lights
@@ -995,8 +1023,10 @@ function showGuide(g) {
   $("tpage").textContent = g.page;
   if (g.b && JSON.stringify(g.b) !== JSON.stringify(btnCtx)) { btnCtx = g.b; names(); }
   $("tpat").textContent = "PATTERN " + letter(g.cur) + (g.queue >= 0 ? " → " + letter(g.queue) : "");
-  $("padtrack").textContent = "on " + ROLE[g.sel];
-  padFollow(g.sel);
+  {                                                       // (the pads' track: theirs while one is on, else the picked one)
+    const on = g.xyk >= 0 && (padAt[0] || padAt[1]), t = "on " + ROLE[on ? g.xyk : g.sel] + (on && padsState() ? " · locked" : "");
+    if ($("padtrack").textContent !== t) $("padtrack").textContent = t;
+  }
   smpTrack(g);
   $("octlab").textContent = phoneMQ.matches ? `C${3 + g.oct}–C${4 + g.oct}` : `C${3 + g.oct}–D${5 + g.oct}`;
   g.knobs.forEach((k, i) => {                              // KNOB 1..4: what their cards on the screen say now
@@ -1191,6 +1221,12 @@ async function switchOn(withSong) {
       ac.audioWorklet.addModule("worklet.js")]);
     if (withSong) sharedSamplesIn(); else sharedSamples = null;
     node = await boot(loadFlash(), withSong ? sharedSong : null);
+    {                                                     // (the locked FX pads: the code's, else this browser's)
+      let st = null;
+      if (withSong) st = sharedPads; else try { st = JSON.parse(localStorage.getItem(PADKEY) || "null"); } catch {}
+      sharedPads = null;
+      setTimeout(() => padsApply(st), 300);
+    }
     await ac.resume();
     $("start").hidden = true;
     syncButtons(); syncKeys();
@@ -1687,7 +1723,7 @@ $("saveproj").addEventListener("click", async () => {
   for (const [off, u8] of Object.entries(m.sectors)) sectors[off] = b64(u8);
   saveFlash(m.sectors);
   const samples = smp.map((s, k) => s && { k, ...stored(s), pcm16: SPK.b64of(new Uint8Array(SPK.toInt16(s.pcm, 0).buffer)) }).filter(Boolean);
-  download(new Blob([JSON.stringify({ format: PROJ_FORMAT, version: 1, app: "spelunkr-groovebox", firmware: "@VERSION@", saved: new Date().toISOString(), sectors, samples })],
+  download(new Blob([JSON.stringify({ format: PROJ_FORMAT, version: 1, app: "spelunkr-groovebox", firmware: "@VERSION@", saved: new Date().toISOString(), sectors, samples, pads: padsState() })],
                     { type: "application/json" }), `spelunkr-${stamp()}.phantom`);
   studioSay("Saved: OPEN that file here later to carry on.");
 });
@@ -1714,6 +1750,7 @@ $("openproj").addEventListener("change", async (e) => {
       smpShow();
     }
     await restart(sectors);
+    setTimeout(() => padsApply(j.pads || null), 300);
     studioSay(`Opened ${f.name}${Array.isArray(j.samples) && j.samples.length ? ` with ${j.samples.length} sample${j.samples.length > 1 ? "s" : ""}` : ""}. Press Space to play.`);
   } catch (err) { studioSay("Couldn't open it: " + (err && err.message || err) + "."); }
 });
@@ -1725,7 +1762,7 @@ function hadSaves() { try { return !!localStorage.getItem(STORE); } catch { retu
 // back (SPGB_7K2QX9A); the page's address + #code opens it. No service set (SHARE_API empty): the long #song= link.
 const SHARE_API = "@SHARE_API@".startsWith("@") ? "" : "@SHARE_API@".replace(/\/+$/, "");
 const CODE_RE = /^SPGB_[2-9A-HJ-NP-Z]{7}$/;
-let sharedSamples = null;                               // (a code's samples: into their slots when the song is opened)
+let sharedSamples = null, sharedPads = null;          // (a code's samples and locked FX pads: in when the song is opened)                               // (a code's samples: into their slots when the song is opened)
 const gz = async (u8, how) => new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(how)).arrayBuffer());
 function codeOf(text) {                                  // a code from a code, a link or a #hash, any case
   const m = /SPGB_[A-Z0-9]{7}/i.exec(String(text || ""));
@@ -1739,13 +1776,13 @@ async function fetchCode(code) {
   if (!r.ok) throw new Error(`the song store said ${r.status}`);
   const j = JSON.parse(new TextDecoder().decode(await gz(new Uint8Array(await r.arrayBuffer()), new DecompressionStream("gzip"))));
   if (j.format !== "spgb-share" || typeof j.song !== "string") throw new Error("that code doesn't hold a groovebox song");
-  return { song: await unpackSong(j.song), samples: Array.isArray(j.samples) ? j.samples : [] };
+  return { song: await unpackSong(j.song), samples: Array.isArray(j.samples) ? j.samples : [], pads: j.pads || null };
 }
 async function readShared() {
-  sharedSamples = null;
+  sharedSamples = null; sharedPads = null;
   const code = codeOf(location.hash);
   if (code) {
-    try { const o = await fetchCode(code); sharedSamples = o.samples; return o.song; }
+    try { const o = await fetchCode(code); sharedSamples = o.samples; sharedPads = o.pads; return o.song; }
     catch (err) { (node ? studioSay : say)(`Couldn't open ${code}: ${err && err.message || err}.`, true); return null; }
   }
   const m = /^#song=([A-Za-z0-9_-]+)/.exec(location.hash);
@@ -1785,7 +1822,7 @@ function sharePackageSamples(mask) {
   return out;
 }
 async function shareUpload(packed, samples) {
-  const body = await gz(new TextEncoder().encode(JSON.stringify({ format: "spgb-share", v: 1, app: "spelunkr-groovebox", firmware: "@VERSION@", song: packed, samples })),
+  const body = await gz(new TextEncoder().encode(JSON.stringify({ format: "spgb-share", v: 1, app: "spelunkr-groovebox", firmware: "@VERSION@", song: packed, samples, pads: padsState() })),
                         new CompressionStream("gzip"));
   const r = await fetch(`${SHARE_API}/s`, { method: "POST", headers: { "Content-Type": "application/gzip" }, body });
   const j = await r.json().catch(() => ({}));
@@ -1831,8 +1868,8 @@ const TIPS = {
   "#octlab": "The notes the keys play now.",
   "#pad0": "FILTER · GATE: hold and drag on the track. Left darker, right thinner; up chops fast, down chops slow. Let go: it snaps back (with LOCK on, it stays).",
   "#pad1": "ECHO · FLANGE: hold and drag on the track. Left echo, right ping-pong; up a jet, down hollow. Let go: it snaps back (with LOCK on, it stays).",
-  "#lock0": "LOCK the FILTER · GATE pad: where you let go, it stays, on the selected track. Click again to let it snap back.",
-  "#lock1": "LOCK the ECHO · FLANGE pad: where you let go, it stays, on the selected track. Click again to let it snap back.",
+  "#lock0": "LOCK the FILTER · GATE pad: where you let go, it stays, on the track you played it on (pick another track and it stays there). It's saved with the song and goes with a song code. Click again to let it snap back.",
+  "#lock1": "LOCK the ECHO · FLANGE pad: where you let go, it stays, on the track you played it on (pick another track and it stays there). It's saved with the song and goes with a song code. Click again to let it snap back.",
   "#vapgo": "VAPORIZE: slowed, warbly and dusty in one tap. When it's on, CLEAN takes it all off.",
   "#smpfile": "",
   "label:has(#smpfile)": "LOAD A FILE: a WAV, MP3, OGG or FLAC into this slot. A longer one keeps its first 30 seconds, however big the file. You can also drop a file on the panel.",
@@ -1929,6 +1966,7 @@ function newSong(random) {
   d.onclose = () => {
     if (d.returnValue !== "go") return;
     node.port.postMessage({ type: "newsong", random });
+    padsApply(null);                                    // (a new song: the locked FX pads off)
     studioSay(random ? "A random song: press PLAY (Space) to hear it. RANDOM again rolls another." : "A new song: pick a track and its sound, then make a beat.");
   };
   d.showModal();
@@ -2042,7 +2080,9 @@ addEventListener("hashchange", async () => {
   if (rec) recDone();
   sharedSong = song;
   sharedSamplesIn();
+  const pads = sharedPads; sharedPads = null;
   await restart(loadFlash(), song);
+  setTimeout(() => padsApply(pads), 300);
   sharedDone(true);
 });
 $("share").addEventListener("click", async () => {

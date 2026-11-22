@@ -2043,7 +2043,10 @@ static void ui_input(void)
 #ifndef WEB_PAD
 #define WEB_PAD 0                                       /* (the Spelunkr page's FX PAD under the mouse: open on the FEED) */
 #endif
-    xy_open(WEB_PAD || (!ui.home && !ui.menu && cur_page()->graph == GR_XY) ? song.sel % NTRK : 0xFFu);   /* (Phantom Cosmonaut M5:
+#ifndef WEB_PAD_TRK
+#define WEB_PAD_TRK song.sel                            /* (the page's pads: on the track they were put on) */
+#endif
+    xy_open(WEB_PAD ? (uint32_t)WEB_PAD_TRK % NTRK : (!ui.home && !ui.menu && cur_page()->graph == GR_XY) ? song.sel % NTRK : 0xFFu);   /* (Phantom Cosmonaut M5:
                                                      * the FX PAD, reset whenever it opens or is left: fxpad.c) */
     if (xy_full) {
         xy_full = 0;

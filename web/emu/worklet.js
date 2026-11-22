@@ -198,7 +198,7 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "newsong") { ex.web_new_song(m.random ? 1 : 0);
       } else if (m.type === "plain") { if (ex.web_plain) ex.web_plain(m.on ? 1 : 0);
       } else if (m.type === "vapor") { ex.web_vapor(m.k, m.v);
-      } else if (m.type === "xy") { ex.web_xy(m.j, m.x, m.y, m.on ? 1 : 0);
+      } else if (m.type === "xy") { ex.web_xy(m.j, m.x, m.y, m.on ? 1 : 0, m.k ?? 255);
       } else if (m.type === "play") {                 // the shared song, once switched on: the song, else the pattern
         ex.web_bounce_go(ex.web_song_sections() ? 1 : 0, 0);
       } else if (m.type === "info") {                 // the studio's export dialog: what there is to bounce
