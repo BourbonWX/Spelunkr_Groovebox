@@ -5,6 +5,8 @@ account and nothing to install. Sampled drum kits and instruments, chip and FM s
 play them as a synth, as chops or as a drum kit), a VAPOR master (slowed, wow, vinyl, crush), song arrangement, share
 links, and WAV export with stems. The guide is [docs/GROOVEBOX-GUIDE.md](docs/GROOVEBOX-GUIDE.md).
 
+**Play it: <https://bourbonwx.github.io/Spelunkr_Groovebox/>** (built from `main` by GitHub Pages).
+
 It runs the firmware of a hardware groovebox compiled to WebAssembly: a fork of Phantom Tracker, itself a fork of
 [Dungeon Tracker](https://github.com/BourbonWX/Dungeon-Tracker) by Bourbon Weather, itself a fork of
 [Felucca](https://github.com/hugelton/Felucca) by Leo Kuroshita (Hügelton Instruments). GPL-3.0-only, like its
@@ -15,6 +17,9 @@ parents. The sampled instruments and kits come from the
 
     sh tools/build_emu_clang.sh      # the emulator (clang with the wasm32-wasi target)
     sh tools/make_emu_site.sh        # build/spelunkr-groovebox-web/ (static files, host anywhere) + a zip
+
+The Pages workflow (`.github/workflows/pages.yml`) shows the whole recipe on a fresh Ubuntu: the packages, the
+WASI sysroot, the generate step and the site.
 
 Tests: `NOCOST=1 sh tests/run_rondo.sh`, `node web/emu/emu_test.mjs`, `node web/emu/studio_test.mjs`,
 `node web/emu/spk_audition.mjs`, `node web/emu/spk_user_test.mjs`. More in [BUILDING.md](BUILDING.md).
