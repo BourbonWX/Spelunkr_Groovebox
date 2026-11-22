@@ -1,0 +1,27 @@
+# The Spelunkr Groovebox's share codes (README.md). Deploy: npx wrangler deploy
+name = "spgb-share"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+
+[vars]
+# the pages allowed to upload (reading a code works from anywhere)
+ALLOWED_ORIGINS = "https://bourbonwx.github.io,http://localhost:8769"
+
+# where the songs are kept: a KV namespace (free, no card). Make it once with
+#   npx wrangler kv namespace create SONGS_KV
+# and put the id it prints here.
+[[kv_namespaces]]
+binding = "SONGS_KV"
+id = "PUT-THE-KV-NAMESPACE-ID-HERE"
+
+# or an R2 bucket instead (more room; R2 asks for a card even on its free tier): comment out the KV above, then
+#   npx wrangler r2 bucket create spgb-songs
+# [[r2_buckets]]
+# binding = "SONGS"
+# bucket_name = "spgb-songs"
+
+# 10 shares a minute per visitor
+[[ratelimits]]
+name = "UPLOADS"
+namespace_id = "1001"
+simple = { limit = 10, period = 60 }

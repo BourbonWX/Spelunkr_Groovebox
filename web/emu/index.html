@@ -216,6 +216,9 @@ dialog input[type=number] { width: 4em; font: inherit; background: var(--night);
 dialog small { color: var(--soft); }
 dialog progress { width: 100%; }
 dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+#sharecode { font: 52px/1 var(--head); color: var(--yellow); letter-spacing: 2px; margin: 4px 0 10px; user-select: all; }
+#codein { width: 100%; font: 28px var(--head); letter-spacing: 1px; padding: 6px 10px; background: var(--night); color: #fff; border: 2px solid var(--rule2); text-transform: uppercase; }
+#sharelink, #codein { box-sizing: border-box; }
 #sharelink { width: 100%; font: 16px var(--mono); padding: 6px; background: var(--night); color: #fff; border: 2px solid var(--rule2); }
 
 /* phone, held upright: one octave, the buttons under the screen */
@@ -315,6 +318,7 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
     <button class="btn" id="recbtn" type="button" title="Record what you hear, live, to a WAV file">RECORD <span id="rectime"></span></button>
     <button class="btn" id="bounce" type="button" title="Render the song (or the pattern) to WAV, with stems if you like">EXPORT</button>
     <button class="btn" id="share" type="button" title="A link that plays this song in anyone's browser">SHARE</button>
+    <button class="btn" id="codebtn" type="button" title="Open a song someone shared with a code">CODE</button>
     <button class="btn" id="saveproj" type="button" title="Download everything saved here as a .phantom file">SAVE</button>
     <label class="btn" style="display:inline-flex;align-items:center" title="Open a .phantom project file"><input type="file" id="openproj" accept=".phantom,.json,application/json" hidden>OPEN</label>
     <button class="btn" id="smpgo" type="button" title="Load your own samples, slice them, put them on a track">SAMPLES</button>
@@ -474,10 +478,22 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
 <dialog id="sharedlg">
   <form method="dialog">
     <h2>SHARE THIS SONG</h2>
-    <p style="margin:0 0 8px">Anyone who opens this link hears your song in their own groovebox, and can carry on from it.</p>
+    <div id="sharecodebox" hidden><p style="margin:0">Your song's code: anyone can type it into <b>CODE</b> in their groovebox.</p>
+      <div id="sharecode"></div></div>
+    <p style="margin:0 0 8px" id="sharelead">Anyone who opens this link hears your song in their own groovebox, and can carry on from it.</p>
     <input id="sharelink" readonly>
     <small id="shareinfo"></small>
-    <div class="buttons"><button class="btn" value="close">CLOSE</button><button class="btn orange" value="copy" id="sharecopy">COPY LINK</button></div>
+    <div class="buttons"><button class="btn" value="close">CLOSE</button><button class="btn" value="copycode" id="sharecopycode" hidden>COPY CODE</button><button class="btn orange" value="copy" id="sharecopy">COPY LINK</button></div>
+  </form>
+</dialog>
+
+<dialog id="codedlg">
+  <form method="dialog">
+    <h2>OPEN A CODE</h2>
+    <p style="margin:0 0 8px">Got a song code (SPGB_…) or a share link? Paste it here.</p>
+    <input id="codein" autocomplete="off" spellcheck="false" placeholder="SPGB_">
+    <small id="codeinfo"></small>
+    <div class="buttons"><button class="btn" value="close">CLOSE</button><button class="btn orange" value="open" id="codego">OPEN</button></div>
   </form>
 </dialog>
 
@@ -1083,6 +1099,7 @@ async function switchOn(withSong) {
     [wasmBytes] = await Promise.all([
       wasmEarly.catch(() => (wasmEarly = getWasm())),
       ac.audioWorklet.addModule("worklet.js")]);
+    if (withSong) sharedSamplesIn(); else sharedSamples = null;
     node = await boot(loadFlash(), withSong ? sharedSong : null);
     await ac.resume();
     $("start").hidden = true;
@@ -1563,10 +1580,76 @@ $("openproj").addEventListener("change", async (e) => {
 // SHARE: the song as a link (#song=…)
 let sharedSong = null;
 function hadSaves() { try { return !!localStorage.getItem(STORE); } catch { return false; } }
+// share codes (share-worker/: a Cloudflare Worker): SHARE uploads the song and the samples it plays, a code comes
+// back (SPGB_7K2QX9A); the page's address + #code opens it. No service set (SHARE_API empty): the long #song= link.
+const SHARE_API = "@SHARE_API@".startsWith("@") ? "" : "@SHARE_API@".replace(/\/+$/, "");
+const CODE_RE = /^SPGB_[2-9A-HJ-NP-Z]{7}$/;
+let sharedSamples = null;                               // (a code's samples: into their slots when the song is opened)
+const gz = async (u8, how) => new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(how)).arrayBuffer());
+function codeOf(text) {                                  // a code from a code, a link or a #hash, any case
+  const m = /SPGB_[A-Z0-9]{7}/i.exec(String(text || ""));
+  const c = m ? m[0].toUpperCase() : "";
+  return CODE_RE.test(c) ? c : "";
+}
+async function fetchCode(code) {
+  if (!SHARE_API) throw new Error("song codes aren't set up on this copy of the groovebox");
+  const r = await fetch(`${SHARE_API}/s/${code}`);
+  if (r.status === 404) throw new Error(`no song with the code ${code} (check the letters: no 0, O, 1 or I in a code)`);
+  if (!r.ok) throw new Error(`the song store said ${r.status}`);
+  const j = JSON.parse(new TextDecoder().decode(await gz(new Uint8Array(await r.arrayBuffer()), new DecompressionStream("gzip"))));
+  if (j.format !== "spgb-share" || typeof j.song !== "string") throw new Error("that code doesn't hold a groovebox song");
+  return { song: await unpackSong(j.song), samples: Array.isArray(j.samples) ? j.samples : [] };
+}
 async function readShared() {
+  sharedSamples = null;
+  const code = codeOf(location.hash);
+  if (code) {
+    try { const o = await fetchCode(code); sharedSamples = o.samples; return o.song; }
+    catch (err) { (node ? studioSay : say)(`Couldn't open ${code}: ${err && err.message || err}.`, true); return null; }
+  }
   const m = /^#song=([A-Za-z0-9_-]+)/.exec(location.hash);
   if (!m) return null;
-  try { return await unpackSong(m[1]); } catch { say("This song link is damaged or cut short: ask for it again (copy the whole link)."); return null; }
+  try { return await unpackSong(m[1]); } catch { (node ? studioSay : say)("This song link is damaged or cut short: ask for it again (copy the whole link).", true); return null; }
+}
+// a code's samples take their slots (the song plays them by slot number); the device gets them when it boots
+function sharedSamplesIn() {
+  const list = sharedSamples || [];
+  sharedSamples = null;
+  for (const o of list) {
+    if (!(o.k >= 0 && o.k < SPK.NSLOT) || typeof o.pcm16 !== "string") continue;
+    try {
+      const u8 = SPK.u8of(o.pcm16);
+      smp[o.k] = unstored({ ...o, pcm16: new Int16Array(u8.buffer, 0, u8.length >> 1) });
+      idbPut(o.k, stored(smp[o.k]));
+    } catch {}
+  }
+  if (list.length) { smpPeaks = null; smpShow(); }
+  return list.length;
+}
+const sharedSlots = () => (sharedSamples || []).map((o) => o.k + 1);
+const slotWarn = () => {
+  const ks = sharedSlots(), mine = ks.filter((k) => smp[k - 1]);
+  return ks.length ? ` It brings ${ks.length} sample${ks.length > 1 ? "s" : ""} (slot${ks.length > 1 ? "s" : ""} ${ks.join(", ")})` +
+    (mine.length ? `, replacing yours in slot${mine.length > 1 ? "s" : ""} ${mine.join(", ")}.` : ".") : "";
+};
+// the share package: the song as the link has it, and the samples it plays, each cut to its trim
+function sharePackageSamples(mask) {
+  const out = [];
+  smp.forEach((s, k) => {
+    if (!s || !((mask >>> k) & 1)) return;
+    const [a, b] = s.trim, cut = { name: s.name, root: s.root, starts: s.starts.filter((x) => x > a && x < b).map((x) => x - a), pcm: s.pcm.subarray(a, b) };
+    const st = SPK.toStored(cut);
+    out.push({ k, name: st.name, root: st.root, starts: st.starts, trim: [0, b - a], pcm16: SPK.b64of(new Uint8Array(st.pcm16.buffer)) });
+  });
+  return out;
+}
+async function shareUpload(packed, samples) {
+  const body = await gz(new TextEncoder().encode(JSON.stringify({ format: "spgb-share", v: 1, app: "spelunkr-groovebox", firmware: "@VERSION@", song: packed, samples })),
+                        new CompressionStream("gzip"));
+  const r = await fetch(`${SHARE_API}/s`, { method: "POST", headers: { "Content-Type": "application/gzip" }, body });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !CODE_RE.test(j.code || "")) throw new Error(j.error || `the song store said ${r.status}`);
+  return { code: j.code, bytes: body.length };
 }
 // ------------------------------------------------------------------ the hover help (Ed: "the mouse hover pop up also
 // provide an explanation for every clickable option"): every title on the page shows in one box, at once and styled;
@@ -1576,7 +1659,12 @@ const TIPS = {
   "#randsong": "RANDOM: roll a whole song for you (lo-fi, chillwave, electro or chiptune): sounds, beat, chords, bass, tune and parts. It asks first.",
   "#recbtn": "RECORD: record what you hear, live, to a WAV file (everything you play and turn). Click again to stop and download it.",
   "#bounce": "EXPORT: make a WAV of the song or the pattern, faster than real time, with a WAV for each track if you like.",
-  "#share": "SHARE: a link that plays this song in anyone's browser (your own samples don't fit in a link).",
+  "#share": "SHARE: a short code and a link that play this song in anyone's groovebox, with the samples it uses.",
+  "#codebtn": "CODE: open a song someone shared, by its code (SPGB_…) or its link.",
+  "#codein": "The code (SPGB_ and 7 letters or numbers), or the whole share link.",
+  "#codego": "Open that song (it asks first if you have music open).",
+  "#codedlg button[value='close']": "Close.",
+  "#sharecopycode": "Copy the code, to paste in chat or say on stream.",
   "#saveproj": "SAVE: download everything as a project file (.phantom), your samples too. OPEN brings it back.",
   "label:has(#openproj)": "OPEN: load a project file (.phantom) you saved before. It replaces what's here.",
   "#smpgo": "SAMPLES: your own sounds. Load a file, trim it, slice it, put it on a track.",
@@ -1734,7 +1822,7 @@ const TOUR = [                                           // (Ed: "cover every pa
   { t: "13 · YOUR OWN SAMPLES", el: "#smpgo", x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file, trim it, slice it, "
       + "and put it on a track as a synth, as chops on the keys, or as a drum kit." },
   { t: "14 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>SAVE</kbd> downloads a project file (your samples too) "
-      + "and <kbd>OPEN</kbd> brings it back. <kbd>SHARE</kbd> makes a link: whoever opens it hears your song and can carry on from it." },
+      + "and <kbd>OPEN</kbd> brings it back. <kbd>SHARE</kbd> gives a short code (SPGB_…) and a link, carrying the samples your song uses: whoever opens it, or types the code into <kbd>CODE</kbd>, hears your song and can carry on from it." },
   { t: "15 · EXPORT", el: "#bounce", x: () => "<kbd>EXPORT</kbd> makes the WAV: the song once through (or the pattern looped), with a WAV for each track if you like. "
       + "<kbd>RECORD</kbd> at the top records you playing live instead. That's a whole song: have fun!" },
 ];
@@ -1790,15 +1878,16 @@ readShared().then((song) => {
   sharedSong = song;
   $("go").textContent = "HEAR THE SHARED SONG";
   $("gobare").hidden = false;
-  say(hadSaves() ? "It replaces the music you had open here; your saved projects and sounds stay." : "Someone shared a song with you.");
+  say((hadSaves() ? "It replaces the music you had open here; your saved projects and sounds stay." : "Someone shared a song with you.") + slotWarn());
 });
 addEventListener("hashchange", async () => {
   const song = await readShared();
   if (!song) return;
-  if (!node) { sharedSong = song; $("go").textContent = "HEAR THE SHARED SONG"; $("gobare").hidden = false; return; }
-  if (!confirm("Open the shared song? It replaces the music you have open; your saved projects and sounds stay.")) { sharedDone(false); return; }
+  if (!node) { sharedSong = song; $("go").textContent = "HEAR THE SHARED SONG"; $("gobare").hidden = false; say("Someone shared a song with you." + slotWarn()); return; }
+  if (!confirm("Open the shared song? It replaces the music you have open; your saved projects stay." + slotWarn())) { sharedSamples = null; sharedDone(false); return; }
   if (rec) recDone();
   sharedSong = song;
+  sharedSamplesIn();
   await restart(loadFlash(), song);
   sharedDone(true);
 });
@@ -1807,13 +1896,53 @@ $("share").addEventListener("click", async () => {
   const m = await ask("share");
   if (m.rc === 1) { studioSay("Stop playback first (Space), then SHARE: the song is shared as it stands when stopped."); return; }
   if (m.rc) { studioSay("Couldn't make the link."); return; }
-  const url = `${location.origin}${location.pathname}#song=${await packSong(m.song)}`;
-  $("sharelink").value = url;
-  $("shareinfo").textContent = `${url.length.toLocaleString()} characters. It holds the song: the tracks and their sounds, patterns A–F and the song's parts.` +
-    (smp.some(Boolean) ? " Your own samples don't fit in a link: a track playing one is silent for whoever opens it. SAVE makes a file that has them." : "");
+  const packed = await packSong(m.song), samples = sharePackageSamples(m.spk || 0);
+  const longUrl = `${location.origin}${location.pathname}#song=${packed}`;
+  let code = null, why = "";
+  if (SHARE_API) {
+    $("share").disabled = true;
+    studioSay(samples.length ? `Sharing the song and ${samples.length} sample${samples.length > 1 ? "s" : ""}…` : "Sharing…");
+    try { code = await shareUpload(packed, samples); studioSay(""); }
+    catch (err) { why = err instanceof TypeError ? "it couldn't be reached" : String(err && err.message || err); studioSay(""); }
+    finally { $("share").disabled = false; }
+  }
+  $("sharecodebox").hidden = $("sharecopycode").hidden = !code;
+  if (code) {
+    const url = `${location.origin}${location.pathname}#${code.code}`;
+    $("sharecode").textContent = code.code;
+    $("sharelink").value = url;
+    $("sharelead").textContent = "Or send the link: it opens the song straight away.";
+    $("shareinfo").textContent = samples.length ? `It carries the song and the ${samples.length} sample${samples.length > 1 ? "s" : ""} it plays (${code.bytes < 1048576 ? Math.max(1, Math.round(code.bytes / 1024)) + " KB" : (code.bytes / 1048576).toFixed(1) + " MB"}).`
+      : "It carries the song: the tracks and their sounds, patterns A–F and the song's parts.";
+  } else {
+    $("sharelink").value = longUrl;
+    $("sharelead").textContent = "Anyone who opens this link hears your song in their own groovebox, and can carry on from it.";
+    $("shareinfo").textContent = (why ? `The song store couldn't take it (${why}), so here's the long link. ` : "") +
+      `${longUrl.length.toLocaleString()} characters. It holds the song: the tracks and their sounds, patterns A–F and the song's parts.` +
+      (samples.length ? " Your own samples don't fit in a link: a track playing one is silent for whoever opens it. SAVE makes a file that has them." : "");
+  }
   $("sharedlg").showModal();
   $("sharelink").select();
 });
+$("sharecopycode").addEventListener("click", async (e) => {
+  e.preventDefault();
+  try { await navigator.clipboard.writeText($("sharecode").textContent); } catch {}
+  $("sharecopycode").textContent = "COPIED";
+  setTimeout(() => { $("sharecopycode").textContent = "COPY CODE"; }, 1500);
+});
+$("codebtn").addEventListener("click", () => {
+  $("codein").value = ""; $("codeinfo").textContent = SHARE_API ? "" : "Song codes aren't set up on this copy of the groovebox: share links still work.";
+  $("codedlg").showModal(); $("codein").focus();
+});
+$("codego").addEventListener("click", (e) => {
+  e.preventDefault();
+  const text = $("codein").value.trim(), code = codeOf(text), link = /#song=[A-Za-z0-9_-]+/.exec(text);
+  if (!code && !link) { $("codeinfo").textContent = "That isn't a song code: it looks like SPGB_ and 7 letters or numbers."; return; }
+  $("codedlg").close();
+  const hash = code ? "#" + code : link[0];
+  if (location.hash === hash) dispatchEvent(new HashChangeEvent("hashchange")); else location.hash = hash;
+});
+$("codein").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("codego").click(); } e.stopPropagation(); });
 $("sharecopy").addEventListener("click", async (e) => {
   e.preventDefault();
   try { await navigator.clipboard.writeText($("sharelink").value); } catch { $("sharelink").select(); document.execCommand?.("copy"); }

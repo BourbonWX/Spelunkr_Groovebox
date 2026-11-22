@@ -40,6 +40,8 @@ jobs:
       - name: Generate
         run: python -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()"
       - name: Site
+        env:
+          SHARE_API: ${{ vars.SHARE_API }}   # the share-codes Worker's address (share-worker/README.md); empty: long links
         run: sh tools/make_emu_site.sh
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

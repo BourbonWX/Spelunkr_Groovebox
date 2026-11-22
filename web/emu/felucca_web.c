@@ -559,6 +559,31 @@ EXPORT void web_spk_use(uint32_t k, uint32_t mode)
     ui.force = 1;
 }
 
+/* the user samples the song plays (the page's SHARE takes only these): bit k for slot k, from every track's sound and
+ * the synth tracks' B sides (a pattern keeps only steps and timing, so the sounds are all here). SAMPLE's SET past the
+ * built-in sets is slot k whole, then slot k's CHOP; the KIT's lane MODEL past the sampled sets is slot k's kit */
+static uint32_t spk_of_sound(uint32_t eng, const int16_t *p)
+{
+    uint32_t m = 0, l;
+    if (eng == ENGI_SAMPLE && p[P_E0] >= (int16_t)SMP_NSETS && p[P_E0] < (int16_t)(SMP_NSETS + 2u * SPK_NU))
+        m |= 1u << ((uint32_t)(p[P_E0] - (int16_t)SMP_NSETS) % SPK_NU);
+    if (eng == ENGI_CKIT)
+        for (l = 0; l < 4u; l++)
+            if (p[P_LN4 + l] >= (int16_t)(CKM_N + FK_NSET) && p[P_LN4 + l] < (int16_t)(CKM_N + FK_NSET + SPK_NU))
+                m |= 1u << (uint32_t)(p[P_LN4 + l] - (int16_t)(CKM_N + FK_NSET));
+    return m;
+}
+EXPORT uint32_t web_spk_in_use(void)
+{
+    uint32_t k, m = 0;
+    for (k = 0; k < NTRK; k++)
+        m |= spk_of_sound(trk[k].eng_req % NENGINES, trk[k].p);
+    for (k = 0; k < B_N; k++)
+        if (bsr[k].s.on == 1)                           /* (a B side on; 2: off, kept for later) */
+            m |= spk_of_sound(bsr[k].eng_req % NENGINES, bsr[k].s.p) | spk_of_sound(bsr[k].s.engine % NENGINES, bsr[k].s.p);
+    return m;
+}
+
 /* NEW SONG (the page's button; the device's SAVE > TOOLS > NEW + DEFAULT SOUNDS): every track cleared, the power-on
  * sounds; RANDOM SONG (MENU > SYSTEM > RANDOM SONG): a song rolled. The page has asked first, so no arming here; playing
  * stops first. Either can be undone: SAVE held */

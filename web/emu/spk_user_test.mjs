@@ -65,6 +65,14 @@ const rows = [36, 38, 39, 42].map((n) => hz(hear(ex, 1, n)));
 check(rows.every((f, k) => near(f, TONES[k])) && hz(hear(ex, 1, 46)) === 0,
   `as a kit: BD SD CP CH the four slices (${rows.map((f) => f.toFixed(0)).join(" ")} Hz), OH (slice 5) none`);
 
+check(ex.web_spk_in_use() === 1, `SHARE takes slot 0 only: the song plays it (mask ${ex.web_spk_in_use()})`);
+ex.web_track(2); for (let i = 0; i < 20; i++) ex.web_render(128);
+ex.web_spk_use(3, 1); for (let i = 0; i < 20; i++) ex.web_render(128);
+check(ex.web_spk_in_use() === (1 | 8), `a chop of slot 3 on another track: slots 0 and 3 (mask ${ex.web_spk_in_use()})`);
+ex.web_new_song(0); for (let i = 0; i < 200; i++) ex.web_render(128);
+check(ex.web_spk_in_use() === 0, "NEW SONG: no samples played");
+ex.web_track(1); for (let i = 0; i < 20; i++) ex.web_render(128);
+ex.web_spk_use(0, 2); for (let i = 0; i < 200; i++) ex.web_render(128);
 const mem = ex.memory.buffer.slice(0);                        // a bounce's copy of the device has the slot
 const { instance } = await WebAssembly.instantiate(wasm, WASI_STUB);
 new Uint8Array(instance.exports.memory.buffer).set(new Uint8Array(mem));

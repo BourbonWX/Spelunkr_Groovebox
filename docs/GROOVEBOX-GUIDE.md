@@ -69,8 +69,8 @@ Press **SAMPLES** at the top (or scroll down to the SAMPLES panel). There are 8 
    - **AS CHOPS**: a slice a key, from C3 up (up to 24 slices);
    - **AS A DRUM KIT**: slices 1 to 8 on the drum rows (kick, snare, clap, hat, open hat, tom, rim, cowbell).
 
-Your samples stay in this browser, and **SAVE** puts them in the project file. A **SHARE** link can't hold them: a
-track that plays one is silent for whoever opens the link, so send the project file instead.
+Your samples stay in this browser, and **SAVE** puts them in the project file. **SHARE** sends the ones your song
+plays along with its code.
 
 ## Make it vapor
 
@@ -84,7 +84,9 @@ The **FX PAD** bends the track you picked while you hold it: drag around, let go
 ## Save, share, export
 
 - Everything saves in this browser as you go.
-- **SHARE** makes a link: whoever opens it hears your song in their own groovebox and can carry on from it.
+- **SHARE** gives your song a short code, like `SPGB_7K2QX9A`, and a link. Whoever opens the link, or types the code
+  into **CODE**, hears your song in their own groovebox and can carry on from it. The samples your song plays go with
+  it (only those, cut to their trim), into the same sample slots on their side.
 - **EXPORT** renders the song (or the pattern) to a WAV, with a WAV a track if you like.
 - **RECORD** at the top records what you hear, live, to a WAV.
 - **SAVE** downloads everything as a project file, your samples too; **OPEN** loads one.

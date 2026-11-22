@@ -183,7 +183,7 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "share") {                // the studio's share link: the music's objects
         const rc = ex.web_save_now();
         this.sentWrites = ex.web_flash_writes_count();
-        this.port.postMessage({ type: "share", id: m.id, rc, song: rc ? null : getSong(ex) });
+        this.port.postMessage({ type: "share", id: m.id, rc, song: rc ? null : getSong(ex), spk: ex.web_spk_in_use ? ex.web_spk_in_use() : 0 });
       } else if (m.type === "track") { ex.web_track(m.k);                      // the Spelunkr page's controls
       } else if (m.type === "mute") { ex.web_mute(m.k);
       } else if (m.type === "solo") { ex.web_solo_toggle(m.k);
