@@ -2,7 +2,7 @@
  * Dungeon Tracker 1.0: MENU > GAME > RANDOM SONG (firmware/src/boot_song.c) through ui_test.c's harness: the real UI,
  * engines, mix. (1.0's first builds rolled such a song at every power-on; now the power-on keeps the default song.)
  *   build/host/boot_song_test [OUT_DIR]    (tests/run_rondo.sh; OUT_DIR: WAVs of six rolls, 16 bars of the verse each)
- * 1. 300 rolls: THE PARTY within its points, a ROGUE in it, the tracks in class order; every track a sound of its
+ * 1. 300 rolls (Spelunkr: A..F, 2 or 4 bars, an arrangement of 6..16 sections): THE PARTY within its points, a ROGUE in it, the tracks in class order; every track a sound of its
  *    class's own list (a ROGUE a kit: FMKIT's or a SAMPLE kit) and a 16-step part with notes in their registers; the
  *    tempo 70..150 (Spelunkr's styles).
  * 2. they differ: at least 280 of the 300 songs are distinct.
@@ -67,8 +67,24 @@ int main(int argc, char **argv)
             bad += c[k] != k;                             /* (Phantom Cosmonaut: the roles fixed, T1..T4) */
         }
         bad += !nr;
-        bad += bank.used != 0x0Fu || bank.cur != 1u || chain_config.count != 7u || chain_config.row[0].slot[0] != 0u ||
-               chain_config.row[2].slot[3] != 2u || chain_config.row[5].slot[1] != 3u;
+        {   /* Spelunkr (item 3): six patterns (A..F: intro verse chorus break build, the extra), 2 or 4 bars all; a song of
+             * 6..16 sections from the intro, each a pattern or "-" per track, at least one chorus, 1..16 repeats */
+            uint32_t r, chorus = 0;
+            bad += bank.used != 0x3Fu || bank.cur != 1u || chain_config.count < 6u || chain_config.count > CHAIN_ROWS ||
+                   chain_config.row[0].slot[1] != 0u || (rsg.len != 32u && rsg.len != 64u);
+            for (r = 0; r < chain_config.count; r++) {
+                const chain_row_t *row = &chain_config.row[r];
+                uint32_t on = 0;
+                bad += row->repeat < 1u || row->repeat > 16u;
+                for (k = 0; k < NTRK; k++) {
+                    bad += row->slot[k] != CHAIN_SILENT && chain_pat(row->slot[k]) >= 6u;
+                    on += row->slot[k] != CHAIN_SILENT;
+                    chorus += chain_pat(row->slot[k]) == RS_CHORUS;
+                }
+                bad += on < 2u;                            /* (a drop leaves out up to three: chords and bass stay) */
+            }
+            bad += !chorus;
+        }
         for (k = 0; k < NTRK; k++) {
             uint32_t e = trk[k].eng_req % NENGINES, cat = preset_cat(e, trk[k].preset);
             engs |= 1u << e;
@@ -77,10 +93,10 @@ int main(int argc, char **argv)
                 bad += cat != CAT_DRUM || !ENG_KIT(e);   /* (GEN KIT) */
                 kits[e != ENGI_CKIT]++;
             }
-            for (p = 0; p < 4u; p++) {
+            for (p = 0; p < 6u; p++) {                    /* (F a LIFT: a tone up, its own key: not counted for the key) */
                 const step_t *st0 = bank_pat[p].step[k];
-                bad += bank_pat[p].timing[k][0] != 32;    /* (P_SLEN) */
-                for (i = 0; i < 32u; i++) {
+                bad += bank_pat[p].timing[k][0] != rsg.len;   /* (P_SLEN) */
+                for (i = 0; i < rsg.len; i++) {
                     const step_t *st = &st0[i];
                     uint32_t j;
                     if (st->time != ST_NOTE)
@@ -94,7 +110,7 @@ int main(int argc, char **argv)
                         uint32_t n = st->note[j];
                         bad += c[k] == CLS_CLERIC ? n < 48u || n > 104u : CLS_ROLE[c[k]] == ROLE_BASS ? n < 16u || n > 64u :
                                n < 60u || n > 100u;
-                        pcs |= (uint16_t)(1u << (n % 12u));
+                        if (p != RS_EXTRA || rsg.fx != FX_LIFT) pcs |= (uint16_t)(1u << (n % 12u));
                     }
                 }
             }
@@ -215,7 +231,7 @@ int main(int argc, char **argv)
         rolled = song_hash();
         okb("  OCT+: a song rolled: patterns A..D, SONG's sections, on B (\"RANDOM SONG\", the name cleared), the MENU up",
             rolled != before && ui.menu && msg_is("RANDOM SONG") && !proj_name[0] && trk[0].p[P_SLEN] == 32 &&
-            bank.used == 0x0Fu && bank.cur == 1u && chain_config.count == 7u);
+            bank.used == 0x3Fu && bank.cur == 1u && chain_config.count >= 6u);
         press(B_OCTUP); frames(50);
         again = song_hash();
         okb("  OCT+ again: another roll at once (nothing changed since the last)", again != rolled && msg_is("RANDOM SONG"));
@@ -236,7 +252,7 @@ int main(int argc, char **argv)
         okb("  with patterns of the user's in the bank: the first OCT+ says REPLACES PATTERNS A-F, nothing rolled",
             song_hash() == before && msg_is("REPLACES PATTERNS A-F"));
         press(B_OCTUP); frames(50);
-        okb("  .. the second (within 4 s) rolls", song_hash() != before && msg_is("RANDOM SONG") && bank.used == 0x0Fu);
+        okb("  .. the second (within 4 s) rolls", song_hash() != before && msg_is("RANDOM SONG") && bank.used == 0x3Fu);
         hold(B_HOME); frames(100);
     }
 

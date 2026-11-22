@@ -163,8 +163,12 @@ static void rs_hit(track_t *t, step_t *s, uint32_t hit, uint32_t acc)
     s->n = (uint8_t)n;
     s->vel = (uint8_t)(acc ? 110 : 92);
 }
-/* the four sections, PATTERN BANK A..D: what each class plays in them */
-enum { RS_INTRO, RS_VERSE, RS_CHORUS, RS_BREAK, RS_N };
+/* the four sections, PATTERN BANK A..D: what each class plays in them; Spelunkr (Ed, Nov 22 2026: item 3, the song's
+ * shape): E a BUILD (the drums rising into the chorus) and F the style's extra (a LIFT: the last chorus a tone up; an
+ * OUTRO; or VERSE 2), the sections 2 or 4 bars (the chords every half bar or every bar), the arrangement from a few
+ * templates with tracks left out of some passes (the lead coming in late, the drums dropping out) */
+enum { RS_INTRO, RS_VERSE, RS_CHORUS, RS_BREAK, RS_BUILD, RS_EXTRA, RS_N };
+enum { FX_LIFT, FX_OUTRO, FX_VERSE2 };
 /* Spelunkr (Ed, Nov 22 2026: "they all sound like the same pattern just with different instruments"): each style its
  * own grammar (the drums' feel, the bass's job, the chords' voicing and rhythm, the lead's), and the beats generated
  * from it (weighted kick positions, euclidean percussion, rolls, ghost notes) rather than picked from a few */
@@ -174,6 +178,7 @@ enum { ST_CHIP, ST_CHILL, ST_ELECTRO, ST_LOFI, ST_N };
 #endif
 enum { BM_GROOVE, BM_KICK, BM_OCTAVE, BM_WALK, BM_808 };     /* the bass's job */
 enum { CR_HELD, CR_STAB, CR_OFF, CR_ARP, CR_PUSH };          /* the chords' rhythm */
+typedef struct { uint8_t r[16]; int8_t c[16]; } rs_motif_t;  /* a bar of lead: 1 a note, 2 held, 0 rest; its degrees */
 static struct {
     const int8_t *sc;
     int32_t tonic;
@@ -181,12 +186,50 @@ static struct {
     uint8_t kicks, perc, extra, groove[2], rhythm[2], stab[NTRK], sixteen;
     uint8_t sh, ppan, hpan;                               /* 0.10: PERC 2's density, its pan; the hats' pan */
     uint8_t sty, half, snare, hat, oh, voice, crhy, bmode, lead_up;
-    uint16_t kick[2][2];                                  /* [verse, chorus][bar 1, bar 2]: bit i a kick on step i */
+    uint16_t kick[2][2];                                  /* [verse, chorus][odd bar, even bar]: bit i a kick on step i */
     uint16_t ghost, roll[2], p1[2], p2;                   /* ghost snares; hat rolls [verse, chorus]; PERC's lanes */
+    uint8_t hr, len, fx, v2;                              /* steps a chord (8 / 16), a section (4 chords), F's kind */
+    rs_motif_t mot[2];                                    /* the hooks: [verse, chorus] */
 } rsg;
 static int32_t rs_chord(uint32_t sec, uint32_t i)        /* the chord (a degree) under step i of section sec */
 {
-    return sec == RS_BREAK ? rsg.prog[1][((i % 32u) / 16u) * 2u] : rsg.prog[sec == RS_CHORUS][((i % 32u) / 8u) % 4u];
+    uint32_t n = (i % rsg.len) / rsg.hr % 4u;
+    if (sec == RS_BREAK) return rsg.prog[1][(n / 2u) * 2u];   /* (two, twice as long) */
+    if (sec == RS_BUILD) return rsg.prog[0][2u + n / 2u];      /* (the verse's last two, leaning into the chorus) */
+    return rsg.prog[sec == RS_CHORUS][n];
+}
+/* item 4, a hook: a bar's rhythm (the style's) and a contour (small steps, a repeat, one leap; the chorus's tighter
+ * and more repetitive), sung as is, then answered */
+static void rs_motif_make(rs_motif_t *m, uint32_t row, uint32_t chorus)
+{
+    static const uint8_t LEAD_RHYTHM[8][16] = {           /* 1 a note, 2 held on (a tie); 0 rest */
+        {1, 0, 0, 0, 1, 2, 0, 0, 1, 0, 0, 1, 1, 2, 2, 0},   /* 0..3: sparse, a singer's (lo-fi, chillwave) */
+        {1, 2, 2, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0},
+        {1, 0, 0, 1, 0, 0, 1, 2, 2, 0, 0, 0, 1, 2, 2, 2},
+        {0, 0, 1, 0, 1, 0, 0, 0, 1, 2, 2, 0, 0, 0, 1, 0},
+        {1, 1, 1, 0, 1, 1, 0, 1, 1, 2, 1, 1, 1, 1, 2, 0},   /* 4, 5: busy 16ths, a game's (chip) */
+        {1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 2, 2, 2},
+        {1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0},   /* 6, 7: a short riff, repeated (electro) */
+        {1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0},
+    };
+    int32_t d = 0, leap = 1;
+    uint32_t i;
+    memcpy(m->r, LEAD_RHYTHM[row % 8u], 16);
+    if (bs_chance(35)) {                                  /* (now and then a note moved a 16th: its own rhythm) */
+        uint32_t a = bs_in(15);
+        if (m->r[a] == 1u && !m->r[a + 1u]) { m->r[a] = 0; m->r[a + 1u] = 1; }
+    }
+    for (i = 0; i < 16u; i++) {
+        if (m->r[i] != 1u) { m->c[i] = (int8_t)d; continue; }
+        if (i) {
+            uint32_t r = bs_in(100);
+            if (chorus && r < 30) ;                       /* (a repeated note: hooks repeat) */
+            else if (leap && r > 82) { d += bs_chance(70) ? 3 + (int32_t)bs_in(2) : -3; leap = 0; }
+            else d += r % 2u ? 1 : -1;
+            d = clamp(d, -3, 6);
+        }
+        m->c[i] = (int8_t)d;
+    }
 }
 /* k hits spread over 16 steps (a euclidean rhythm), turned by rot */
 static uint16_t rs_euclid(uint32_t k, uint32_t rot)
@@ -265,29 +308,17 @@ static void rs_part(track_t *t, uint32_t c, uint32_t nth, uint32_t sec)
     static const uint8_t BASS_GROOVE[4][8] = {            /* 1 the root, 2 its octave, 3 the fifth; 0 rest (a chord's 8) */
         {1, 0, 0, 1, 0, 0, 1, 0}, {1, 0, 0, 0, 1, 0, 2, 0}, {1, 0, 0, 0, 0, 0, 3, 0}, {1, 0, 1, 0, 0, 2, 0, 0},
     };
-    static const uint8_t LEAD_RHYTHM[8][16] = {           /* 1 a note, 2 held on (a tie); 0 rest */
-        {1, 0, 0, 0, 1, 2, 0, 0, 1, 0, 0, 1, 1, 2, 2, 0},   /* 0..3: sparse, a singer's (lo-fi, chillwave) */
-        {1, 2, 2, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0},
-        {1, 0, 0, 1, 0, 0, 1, 2, 2, 0, 0, 0, 1, 2, 2, 2},
-        {0, 0, 1, 0, 1, 0, 0, 0, 1, 2, 2, 0, 0, 0, 1, 0},
-        {1, 1, 1, 0, 1, 1, 0, 1, 1, 2, 1, 1, 1, 1, 2, 0},   /* 4, 5: busy 16ths, a game's (chip) */
-        {1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 2, 2, 2},
-        {1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0},   /* 6, 7: a short riff, repeated (electro) */
-        {1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0},
-    };
-    static const uint16_t KICK[4] = {0x0101, 0x0121, 0x0105, 0x2101};   /* (a second ROGUE's: bit i step i of 16) */
-    static const uint16_t PERC[4] = {0x4848, 0x2492, 0x0A0A, 0x8888};
+    static const uint16_t PERC[4] = {0x4848, 0x2492, 0x0A0A, 0x8888};   /* (a second ROGUE's: bit i step i of 16) */
+    const uint32_t L = rsg.len, last = L - 16u;           /* the section's steps (32 / 64), its last bar's first */
     uint32_t i;
     track_defaults_steps(t);
-    t->p[P_SLEN] = 32;
+    t->p[P_SLEN] = (int16_t)L;
     switch (c) {
     case CLS_ROGUE:
-        for (i = 0; i < 32u; i++) {
+        for (i = 0; i < L; i++) {
             uint32_t b = i % 16u, bar = i / 16u, hit = 0, vel = 0, ratch = 0;
-            uint32_t ch = sec == RS_CHORUS, kick = (rsg.kick[ch][bar] >> b) & 1u, snare = rsg.half ? b == 8u : b == 4u || b == 12u;
+            uint32_t ch = sec == RS_CHORUS, kick = (rsg.kick[ch][bar & 1u] >> b) & 1u, snare = rsg.half ? b == 8u : b == 4u || b == 12u;
             if (nth) {                                    /* (a second ROGUE: percussion around the beat) */
-                uint32_t kk = (KICK[rsg.kicks] >> b) & 1u;
-                (void)kk;
                 if ((sec == RS_VERSE || sec == RS_CHORUS) && ((PERC[rsg.perc] >> b) & 1u))
                     hit = b % 4u == 3u ? 32u : (i & 4u) ? 64u : rsg.extra;
                 rs_hit(t, &t->step[i], hit, b % 4u == 0u);
@@ -299,10 +330,18 @@ static void rs_part(track_t *t, uint32_t c, uint32_t nth, uint32_t sec)
                 if (i < 8u && rsg.sty != ST_CHIP) hit &= ~8u;
             } else if (sec == RS_BREAK) {                 /* a kick to start, a fill to end (the style's) */
                 if (i == 0u) hit = 1u;
-                if (rsg.sty == ST_ELECTRO && i >= 24u && !(i & 1u)) { hit = 2u | 4u; vel = 60u + (i - 24u) * 8u; }
-                else if (rsg.sty == ST_CHIP && i >= 28u) { hit = 2u; ratch = i == 31u ? 4u : 2u; }
-                else if (i == 28u || i == 30u) hit = 2u;
-                else if (i == 31u) hit = 32u;
+                if (rsg.sty == ST_ELECTRO && i >= L - 8u && !(i & 1u)) { hit = 2u | 4u; vel = 60u + (i - (L - 8u)) * 8u; }
+                else if (rsg.sty == ST_CHIP && i >= L - 4u) { hit = 2u; ratch = i == L - 1u ? 4u : 2u; }
+                else if (i == L - 4u || i == L - 2u) hit = 2u;
+                else if (i == L - 1u) hit = 32u;
+            } else if (sec == RS_BUILD) {                 /* item 5: the kick on the beats, the snare in 8ths then
+                                                           * 16ths, louder and louder, the last 16th left empty */
+                uint32_t q = i * 4u / L;                  /* (the quarter of the section) */
+                if (!(b & 3u) && q < 3u) hit |= 1u;
+                if (q >= 1u && (q == 3u || !(b & 1u)) && (q >= 2u || !(b & 3u))) hit |= 2u;
+                if (hit) vel = 56u + i * 70u / L;
+                if (i == L - 1u) hit = 0;
+                if (i == L - 2u && rsg.sty != ST_CHILL) hit |= 16u;
             } else {
                 if (kick) hit |= 1u;
                 if (snare) hit |= rsg.snare;
@@ -314,30 +353,36 @@ static void rs_part(track_t *t, uint32_t c, uint32_t nth, uint32_t sec)
                 default: if (b % 4u != 3u) hit |= 8u; if (b & 1u && !vel) vel = 74u; break;
                 }
                 if (ch && rsg.sixteen && !(hit & 8u)) { hit |= 8u; if (!vel) vel = 64u; }
-                if ((rsg.roll[ch] >> b) & 1u && bar == 1u) { hit |= 8u; ratch = 2u + bs_in(3); }
-                if (rsg.oh && b == (rsg.oh == 1u ? 14u : 10u) && (bar == 1u || rsg.oh == 2u)) hit = (hit & ~8u) | 16u;
-                if (ch && i == 31u) hit |= 32u;           /* (a tom into the next) */
+                if ((rsg.roll[ch] >> b) & 1u && (bar & 1u)) { hit |= 8u; ratch = 2u + bs_in(3); }
+                if (rsg.oh && b == (rsg.oh == 1u ? 14u : 10u) && ((bar & 1u) || rsg.oh == 2u)) hit = (hit & ~8u) | 16u;
+                if (i >= last && b >= 12u && (ch || rsg.v2 || L == 64u) && bs_chance(55)) {   /* (a fill into the next) */
+                    hit = (hit & 1u) | (b == 15u ? 32u : 2u);
+                    vel = 70u + (b - 12u) * 14u;
+                }
+                if (ch && i == L - 1u) hit |= 32u;        /* (a tom into the next) */
             }
             rs_hit(t, &t->step[i], hit, b % 4u == 0u && !vel);
-            if (hit && vel && !(hit & 1u)) t->step[i].vel = (uint8_t)vel;
+            if (hit && vel && !(hit & 1u && b % 4u == 0u && sec != RS_BUILD)) t->step[i].vel = (uint8_t)vel;
             if (ratch) t->step[i].flags |= (uint8_t)((ratch - 1u) << SF_RATCH_SH);
-            if (hit == 8u && (b & 2u) && sec != RS_BREAK)   /* 0.10: a hat alone off the beat: panned, kept */
+            if (hit == 8u && (b & 2u) && sec != RS_BREAK && bar < 2u)   /* 0.10: a hat alone off the beat: panned, kept */
                 motion_set_lock(t, i, P_PAN, (int16_t)(b & 4u ? (int32_t)rsg.hpan : -(int32_t)rsg.hpan));
         }
         break;
     case CLS_CLERIC:
         if (sec == RS_INTRO && nth)
             break;
-        for (i = 0; i < 32u; i++) {
-            uint32_t len = sec == RS_BREAK ? 16u : 8u, push = rsg.crhy == CR_PUSH && sec != RS_BREAK && sec != RS_INTRO;
-            uint32_t at = (i + push) % len, nv = rsg.voice ? 4u : 3u, rhy = sec == RS_BREAK || sec == RS_INTRO ? CR_HELD : rsg.crhy;
+        for (i = 0; i < L; i++) {
+            uint32_t len = sec == RS_BREAK || sec == RS_BUILD ? 2u * rsg.hr : rsg.hr;
+            uint32_t push = rsg.crhy == CR_PUSH && (sec == RS_VERSE || sec == RS_CHORUS);
+            uint32_t at = (i + push) % len, nv = rsg.voice ? 4u : 3u;
+            uint32_t rhy = sec == RS_BREAK || sec == RS_INTRO || sec == RS_BUILD ? CR_HELD : rsg.crhy;
             int32_t d = rs_chord(sec, i + push);
             uint8_t chd[4];
             uint32_t k;
             for (k = 0; k < nv; k++) {                    /* (into 36..96 by octaves, so a tone stays in the key) */
                 int32_t n = bs_deg(rsg.sc, rsg.tonic + 12 + (nth ? 12 : 0), d + 2 * (int32_t)k + (rsg.voice == 2u ? 2 : 0));
                 while (n > 96) n -= 12;
-                while (n < 36) n += 12;
+                while (n < 48) n += 12;
                 chd[k] = (uint8_t)n;
             }
             if (nth) {                                    /* the arpeggio: 8ths up the chord */
@@ -345,26 +390,33 @@ static void rs_part(track_t *t, uint32_t c, uint32_t nth, uint32_t sec)
                     bs_note(&t->step[i], &chd[(at / 2u) % 3u], 1, at ? 84 : 96, 0);
                 continue;
             }
-            if (rhy == CR_ARP && sec != RS_BREAK) {       /* chip: the chord as a fast arpeggio, up and over */
+            if (rhy == CR_ARP) {                          /* chip: the chord as a fast arpeggio, up and over */
                 static const uint8_t UP[8] = {0, 1, 2, 3, 2, 1, 0, 1};
                 uint8_t n1 = chd[UP[at % 8u] % nv];
                 if (UP[at % 8u] >= nv) n1 = (uint8_t)(chd[0] + 12);
                 bs_note(&t->step[i], &n1, 1, at % 4u ? 80 : 100, 0);
-            } else if (rhy == CR_STAB ? (at == 0u || at == 3u || at == 6u) : rhy == CR_OFF ? (at == 2u || at == 6u) : at == 0u) {
+            } else if (rhy == CR_STAB ? (at % 8u == 0u || at % 8u == 3u || at % 8u == 6u) : rhy == CR_OFF ? (at % 4u == 2u) : at == 0u) {
                 bs_note(&t->step[i], chd, nv, rhy == CR_OFF ? 84 : 92, 0);
             } else if ((rhy == CR_HELD || rhy == CR_PUSH) && at < len - 1u) {
                 bs_tie(&t->step[i]);
             }
+            if (sec == RS_BUILD && !(i % 4u))             /* item 5: the build swells (LEVEL, step by step) */
+                motion_set_lock(t, i, P_LEVEL, (int16_t)(64 + i * 52u / L));
         }
         break;
     case CLS_FIGHTER:
-        for (i = 0; i < 32u; i++) {
-            uint32_t len = sec == RS_BREAK ? 16u : 8u, at = i % len, b = i % 16u, g, ch = sec == RS_CHORUS;
+        for (i = 0; i < L; i++) {
+            uint32_t len = sec == RS_BREAK || sec == RS_BUILD ? 2u * rsg.hr : rsg.hr, at = i % len, b = i % 16u, g, ch = sec == RS_CHORUS;
             int32_t root = bs_deg(rsg.sc, rsg.tonic - 12, rs_chord(sec, i));
             uint8_t n;
             while (root > 50) root -= 12;                 /* (the bass's register: E1..D3) */
             while (root < 28) root += 12;
             if (nth && root >= 36) root -= 12;
+            if (sec == RS_BUILD) {                        /* the build: the root in 8ths, then 16ths */
+                n = (uint8_t)root;
+                if (!(b & 1u) || i >= L / 2u) bs_note(&t->step[i], &n, 1, 80 + i * 40u / L, 0);
+                continue;
+            }
             if (nth || sec == RS_BREAK || sec == RS_INTRO) {   /* the roots held (the intro: two beats each) */
                 n = (uint8_t)root;
                 if (!at) bs_note(&t->step[i], &n, 1, 100, 1);
@@ -374,7 +426,7 @@ static void rs_part(track_t *t, uint32_t c, uint32_t nth, uint32_t sec)
             switch (rsg.bmode) {
             case BM_KICK:                                 /* on the kicks, short; the fifth now and then */
             case BM_808: {                                /* .. or held to the next one, gliding to a new root */
-                uint32_t on = (rsg.kick[ch][i / 16u] >> b) & 1u || at == 0u;
+                uint32_t on = (rsg.kick[ch][(i / 16u) & 1u] >> b) & 1u || at == 0u;
                 if (on) {
                     n = (uint8_t)(b > 8u && bs_chance(20) ? root + 7 : root);
                     bs_note(&t->step[i], &n, 1, 104, b % 4u == 0u);
@@ -394,16 +446,19 @@ static void rs_part(track_t *t, uint32_t c, uint32_t nth, uint32_t sec)
                 break;
             case BM_WALK:                                 /* quarters: root, a chord tone, the fifth, a step into the next */
                 if (!(b & 3u)) {
-                    int32_t nd = rs_chord(sec, i + 8u), nx = bs_deg(rsg.sc, rsg.tonic - 12, nd + (bs_chance(50) ? -1 : 1));
+                    int32_t nd = rs_chord(sec, i + len - at), nx = bs_deg(rsg.sc, rsg.tonic - 12, nd + (bs_chance(50) ? -1 : 1));
                     while (nx > root + 6) nx -= 12;               /* (a scale step next to the next chord's root) */
                     while (nx < root - 6) nx += 12;
-                    n = (uint8_t)(at == 0u ? root : bs_chance(60) ? nx : root + 7);   /* (a step into it, or the fifth) */
+                    n = (uint8_t)(at == 0u ? root : at + 4u >= len ? nx : bs_chance(50) ? root + 7 :
+                                  bs_deg(rsg.sc, rsg.tonic - 12, rs_chord(sec, i) + 2) % 12 + (root / 12) * 12);
+                    if (n < root) n = (uint8_t)(n + 12);
+                    if (n > 64) n = (uint8_t)(n - 12);
                     bs_note(&t->step[i], &n, 1, at == 0u ? 100 : 86, 0);
                     if (b + 1u < 16u) bs_tie(&t->step[i + 1u]), i++;
                 }
                 break;
             default:
-                g = BASS_GROOVE[rsg.groove[ch]][at];
+                g = BASS_GROOVE[rsg.groove[ch]][at % 8u];
                 n = (uint8_t)(g == 2u ? root + 12 : g == 3u ? root + 7 : root);
                 if (g) bs_note(&t->step[i], &n, 1, 100, at == 0u);
                 break;
@@ -413,11 +468,13 @@ static void rs_part(track_t *t, uint32_t c, uint32_t nth, uint32_t sec)
     case CLS_PERC: {                                      /* PERC 1 (lane 1) a euclidean syncopation, PERC 2 (lane 2) a
                                                            * shaker line ping-ponging; the break a PERC 1 fill swept across */
         int32_t side = -1;
-        for (i = 0; i < 32u; i++) {
+        for (i = 0; i < L; i++) {
             uint32_t b = i % 16u, hit = 0, ch = sec == RS_CHORUS;
             if (sec == RS_BREAK) {
-                if (i >= 24u && !(i & 1u))
+                if (i >= L - 8u && !(i & 1u))
                     hit = 1u;
+            } else if (sec == RS_BUILD) {                 /* the shaker in 16ths over the build's second half */
+                if (i >= L / 2u) hit = 2u;
             } else {
                 if (sec != RS_INTRO && ((rsg.p1[ch] >> b) & 1u))
                     hit |= 1u;
@@ -427,50 +484,68 @@ static void rs_part(track_t *t, uint32_t c, uint32_t nth, uint32_t sec)
                 }
             }
             rs_hit(t, &t->step[i], hit, b % 4u == 2u);
-            if (hit == 2u && (b & 1u)) {                  /* (the shaker's off 16ths: left, right, each kept) */
+            if (sec == RS_BUILD && hit) t->step[i].vel = (uint8_t)(50 + (i - L / 2u) * 140u / L);
+            if (hit == 2u && (b & 1u) && sec != RS_BUILD && i < 32u) {   /* (the shaker's off 16ths: left, right) */
                 t->step[i].vel = 72;
                 motion_set_lock(t, i, P_PAN, (int16_t)(side * (int32_t)rsg.ppan));
                 side = -side;
             } else if (hit == 1u && sec == RS_BREAK) {    /* (the fill: left to right) */
-                motion_set_lock(t, i, P_PAN, (int16_t)(-48 + (int32_t)(i - 24u) * 16));
+                motion_set_lock(t, i, P_PAN, (int16_t)(-48 + (int32_t)(i - (L - 8u)) * 16));
             }
         }
         break;
     }
-    default: {                                            /* the lead: a phrase, sung twice, its end varied */
-        int32_t prev = 7 + (sec == RS_CHORUS ? 3 : 0) + (nth ? 2 : 0), hi = rsg.lead_up ? 12 : 0;
-        if (sec == RS_INTRO || (nth && sec != RS_CHORUS))
+    default: {                                            /* item 4, the lead: its hook (rs_motif_make) sung over each bar,
+                                                           * moved to the bar's chord, and the phrase's last bar answering */
+        const rs_motif_t *m = &rsg.mot[sec == RS_CHORUS];
+        uint32_t bars = L / 16u, bar;
+        int32_t anchor = 7 + (sec == RS_CHORUS ? 2 : 0) + (rsg.v2 ? 2 : 0), hi = rsg.lead_up ? 12 : 0;
+        if (sec == RS_INTRO || sec == RS_BUILD || (nth && sec != RS_CHORUS))
             break;
-        for (i = 0; i < 32u; i++) {
-            step_t *s = &t->step[i];
-            uint32_t b = i % 16u, r = sec == RS_BREAK ? (b == 0u ? 1u : b < 12u ? 2u : 0u) :
-                                       LEAD_RHYTHM[rsg.rhythm[sec == RS_CHORUS]][b];
-            if (nth && b < 8u) r = 0;                     /* (the answer: the bar's second half) */
-            if (i >= 16u && i < 24u && sec != RS_BREAK && !nth) {   /* (bars twice: the start again, the end new) */
-                *s = t->step[i - 16u];
-                continue;
+        if (sec == RS_BREAK) {                            /* the break: the hook's first note, held long */
+            uint8_t n = (uint8_t)bs_deg(rsg.sc, rsg.tonic + 12 + hi, anchor + rs_chord(sec, 0) % 7 + m->c[0]);
+            while (n > 98) n -= 12;
+            bs_note(&t->step[0], &n, 1, 96, 0);
+            for (i = 1; i < 12u; i++) bs_tie(&t->step[i]);
+            break;
+        }
+        for (bar = 0; bar < bars; bar++) {
+            uint32_t answer = bar == bars - 1u, b;
+            int32_t ch0 = rs_chord(sec, bar * 16u), j, best = anchor;
+            if (sec != RS_CHORUS || bar == 0u) {           /* (the chorus keeps its anchor: a hook repeats) */
+                for (j = ch0 - 7; j <= ch0 + 14; j += 2)   /* (the chord tone nearest the last anchor) */
+                    if (j >= 5 && j <= 12 && bs_abs(j - anchor) < bs_abs(best - anchor) + (best == anchor ? 0 : 1))
+                        best = j;
+                anchor = best;
             }
-            if (r == 1u) {
-                int32_t chord = rs_chord(sec, i), d, j, best = chord + 7;
-                uint8_t n;
-                if (b % 4u == 0u) {                       /* on the beat: a chord tone near the last note */
-                    for (j = chord; j <= chord + 14; j += 2)
-                        if (bs_abs(j - prev) < bs_abs(best - prev))
-                            best = j;
-                    d = best;
-                } else {
-                    d = prev + (int32_t)bs_in(5) - 2;
+            for (b = 0; b < 16u; b++) {
+                step_t *s = &t->step[bar * 16u + b];
+                uint32_t r = m->r[b];
+                int32_t d = anchor + m->c[b], chd = rs_chord(sec, bar * 16u + b), k;
+                if (nth && b < 8u) r = 0;                 /* (a second lead: the bar's second half) */
+                if (answer && b >= 8u) {                  /* the answer: the bar's end comes home, held */
+                    if (r == 1u && b >= 12u) { r = b == 12u ? 1u : 2u; }
+                    if (b == 12u) { r = 1u; d = ch0 % 7 + 7 + (sec == RS_CHORUS ? 0 : 2); while (d > 14) d -= 7; }
+                    if (b > 12u) r = 2u;
                 }
-                d = clamp(d, 5, 17);
-                {
-                    int32_t m = bs_deg(rsg.sc, rsg.tonic + 12 + hi, d);
-                    while (m > 98) m -= 12;                       /* (chip's lead an octave up: kept under D7) */
-                    n = (uint8_t)m;
+                if (r == 1u && b % 4u == 0u) {            /* on the beat: onto a chord tone (the nearest) */
+                    for (k = 0; k < 7; k++) {
+                        int32_t rel = ((d - chd) % 7 + 7) % 7;
+                        if (rel == 0 || rel == 2 || rel == 4) break;
+                        d += k & 1 ? -(k + 1) : k + 1;
+                    }
                 }
-                bs_note(s, &n, 1, b % 4u == 0u ? 104 : 88, 0);
-                prev = d;
-            } else if (r == 2u && b) {
-                bs_tie(s);
+                d = clamp(d, 4, 18);
+                if (r == 1u) {
+                    int32_t n = bs_deg(rsg.sc, rsg.tonic + 12 + hi, d);
+                    uint8_t u;
+                    while (n > 98) n -= 12;               /* (chip's lead an octave up: kept under D7) */
+                    while (n < 60) n += 12;
+                    u = (uint8_t)n;
+                    bs_note(s, &u, 1, b % 4u == 0u ? 104 : 88, 0);
+                } else if (r == 2u && b && t->step[bar * 16u + b - 1u].time != ST_REST) {
+                    bs_tie(s);
+                }
             }
         }
         break;
@@ -558,8 +633,17 @@ static void random_song_make(uint32_t seed)
         {{0, 3, 0, 6}, {0, 6, 3, 0}, {0, 3, 6, 4}, {0, 1, 3, 0}},   /* dorian */
         {{0, 4, 5, 3}, {0, 5, 3, 4}, {0, 3, 0, 4}, {5, 3, 0, 4}},   /* major */
     };
-    static const uint8_t ARR[][2] = {{RS_INTRO, 2}, {RS_VERSE, 2}, {RS_CHORUS, 2}, {RS_VERSE, 2}, {RS_CHORUS, 2},
-                                     {RS_BREAK, 1}, {RS_CHORUS, 2}};   /* SONG: A B C B C D C */
+    /* the arrangements (item 3): {pattern, 4-bar blocks, the tracks left out (bit k: T1 drums, chords, bass, lead,
+     * PERC)}; then F put in: VERSE 2 for the second verse on, LIFT for the last chorus, OUTRO at the end */
+    enum { I_ = RS_INTRO, V_ = RS_VERSE, C_ = RS_CHORUS, D_ = RS_BREAK, B_ = RS_BUILD };
+    static const uint8_t ARRS[5][12][3] = {
+        {{I_, 1, 0}, {V_, 1, 8}, {V_, 1, 0}, {C_, 2, 0}, {V_, 1, 0}, {B_, 1, 0}, {C_, 2, 0}, {D_, 1, 0}, {C_, 2, 0}},
+        {{I_, 1, 0}, {V_, 2, 0}, {B_, 1, 0}, {C_, 2, 0}, {D_, 1, 0}, {C_, 2, 0}},
+        {{I_, 1, 8}, {V_, 1, 17}, {V_, 1, 0}, {C_, 1, 0}, {C_, 1, 8}, {V_, 1, 0}, {B_, 1, 0}, {C_, 2, 0}, {D_, 1, 0},
+         {B_, 1, 0}, {C_, 2, 0}},
+        {{I_, 2, 0}, {V_, 1, 25}, {V_, 1, 8}, {V_, 2, 0}, {C_, 2, 0}, {D_, 2, 0}, {C_, 2, 0}},
+        {{I_, 1, 0}, {B_, 1, 0}, {C_, 2, 0}, {V_, 2, 0}, {B_, 1, 0}, {C_, 1, 1}, {C_, 2, 0}, {D_, 1, 0}, {C_, 2, 0}},
+    };
     static const struct {                                 /* the styles: a tempo range (lo + 2 x 0..n-1), a swing range
                                                            * (lo + 0..sw-1), DRUMS' kits, PERC's (CK_PRESETS' numbers) */
         uint8_t bpm, n, swing, sw, kit[4], pkit[4];
@@ -622,6 +706,16 @@ static void random_song_make(uint32_t seed)
             rsg.rhythm[1] = RHY[sty][bs_in(4)];
         if (rsg.rhythm[1] == rsg.rhythm[0]) rsg.rhythm[1] = (uint8_t)(sty == ST_CHIP ? 5u : sty == ST_ELECTRO ? 7u : (rsg.rhythm[0] + 1u) % 4u);
         rs_drums_make();
+        {                                                 /* item 3: the chords' pace (the section 2 or 4 bars), F's kind */
+            static const uint8_t SLOW[ST_N] = {30, 75, 50, 60}, FXW[ST_N][3] = {{60, 15, 25}, {15, 45, 40}, {35, 30, 35}, {10, 40, 50}};
+            uint32_t x = bs_in(100);
+            rsg.hr = (uint8_t)(bs_chance(SLOW[sty]) ? 16u : 8u);
+            rsg.len = (uint8_t)(rsg.hr * 4u);
+            rsg.fx = (uint8_t)(x < FXW[sty][0] ? FX_LIFT : x < FXW[sty][0] + FXW[sty][1] ? FX_OUTRO : FX_VERSE2);
+            rsg.v2 = 0;
+        }
+        rs_motif_make(&rsg.mot[0], rsg.rhythm[0], 0);    /* item 4: the hooks, the verse's and the chorus's */
+        rs_motif_make(&rsg.mot[1], rsg.rhythm[1], 1);
     }
 #if SPK_NU                                                /* Spelunkr's web build: VAPOR on the master (felucca_web.c
                                                            * vap_get: G_DRLVL = SLOWED << 8 | WOW, G_DRREV = VINYL << 8 |
@@ -675,16 +769,26 @@ static void random_song_make(uint32_t seed)
         }
     }
 #if RONDO_LAYOUT
-    for (sec = 0; sec < RS_N; sec++) {                    /* the four patterns, A..D */
+    for (sec = 0; sec < RS_N; sec++) {                    /* the six patterns, A..F */
+        uint32_t kind = sec;
+        int32_t tonic = rsg.tonic;
+        if (sec == RS_EXTRA) {                            /* F: the style's extra */
+            kind = rsg.fx == FX_LIFT ? RS_CHORUS : rsg.fx == FX_OUTRO ? RS_INTRO : RS_VERSE;
+            if (rsg.fx == FX_LIFT) rsg.tonic += 2;        /* (the last chorus a tone up) */
+            rsg.v2 = (uint8_t)(rsg.fx == FX_VERSE2);
+        }
         f = motion_guard();
         memset(&motion, 0, sizeof motion);                 /* (each pattern its own locks: the pans) */
         motion_unguard(f);
         memset(seen, 0, sizeof seen);
         for (k = 0; k < NTRK; k++) {
             motion_clear(&trk[k]);
-            rs_part(&trk[k], cls[k], seen[cls[k]]++, sec);
+            rs_part(&trk[k], cls[k], seen[cls[k]]++, kind);
         }
+        rsg.tonic = tonic;
+        rsg.v2 = 0;
         motion_set_enabled(&trk[0], 1);
+        motion_set_enabled(&trk[1], 1);                   /* (the build's swell: LEVEL locks) */
         motion_set_enabled(&trk[PERC_TRK], 1);
         f = motion_guard();
         bank_take(sec);
@@ -697,9 +801,48 @@ static void random_song_make(uint32_t seed)
     bank_give(RS_VERSE);
     motion_unguard(f);
     chain_defaults(&chain_config);
-    chain_config.count = (uint8_t)NELEM(ARR);
-    for (k = 0; k < NELEM(ARR); k++)
-        chain_config.row[k] = chain_row_of(ARR[k][0], ARR[k][1]);
+    {                                                     /* the arrangement: a template, F put in, the drops */
+        const uint8_t (*arr)[3] = ARRS[bs_in(5)];
+        uint32_t n = 0, r, verses = 0, lastc = 0, per = 64u / rsg.len;
+        for (r = 0; r < 12u && arr[r][1]; r++, n++) {
+            chain_row_t *row = &chain_config.row[n];
+            uint32_t p = arr[r][0], blocks = arr[r][1], drop = arr[r][2];
+            if (p == RS_VERSE && verses++ && rsg.fx == FX_VERSE2) p = RS_EXTRA;
+            if ((p == RS_VERSE || p == RS_CHORUS) && r && arr[r + 1u][1]) {   /* (a little of its own: lengths, drops) */
+                if (blocks == 2u && bs_chance(30)) blocks = 1;
+                else if (blocks == 1u && p == RS_CHORUS && bs_chance(25)) blocks = 2;
+                if (p == RS_VERSE && !drop && bs_chance(20)) drop = 16u;   /* (a verse without PERC) */
+            }
+            if (p == RS_CHORUS) lastc = n;
+            for (k = 0; k < NTRK; k++)
+                row->slot[k] = (uint8_t)((drop >> k) & 1u ? CHAIN_SILENT : chain_val(p));
+            row->repeat = (uint8_t)(blocks * per);
+        }
+        if (rsg.fx == FX_VERSE2 && verses < 2u && n < CHAIN_ROWS) {   /* (one verse row only: its second half F) */
+            for (r = 0; r < n && chain_pat(chain_config.row[r].slot[1]) != RS_VERSE; r++)
+                ;
+            if (r < n) {
+                uint32_t h = chain_config.row[r].repeat;
+                memmove(&chain_config.row[r + 1u], &chain_config.row[r], (n - r) * sizeof chain_config.row[0]);
+                n++;
+                if (lastc >= r) lastc++;
+                if (h < 2u) h = 2u;
+                chain_config.row[r].repeat = (uint8_t)(h / 2u);
+                chain_config.row[r + 1u].repeat = (uint8_t)(h - h / 2u);
+                for (k = 0; k < NTRK; k++)
+                    if (chain_config.row[r + 1u].slot[k] != CHAIN_SILENT) chain_config.row[r + 1u].slot[k] = (uint8_t)chain_val(RS_EXTRA);
+            }
+        }
+        if (rsg.fx == FX_LIFT)                            /* (the last chorus: F, a tone up) */
+            for (k = 0; k < NTRK; k++)
+                if (chain_config.row[lastc].slot[k] != CHAIN_SILENT) chain_config.row[lastc].slot[k] = (uint8_t)chain_val(RS_EXTRA);
+        if (rsg.fx == FX_OUTRO && n < CHAIN_ROWS) {       /* (the outro after it all) */
+            for (k = 0; k < NTRK; k++)
+                chain_config.row[n].slot[k] = (uint8_t)chain_val(RS_EXTRA);
+            chain_config.row[n++].repeat = (uint8_t)per;
+        }
+        chain_config.count = (uint8_t)n;
+    }
 #else
     memset(seen, 0, sizeof seen);
     for (k = 0; k < NTRK; k++)
