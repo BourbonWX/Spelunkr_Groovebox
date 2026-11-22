@@ -386,6 +386,9 @@ static void layer_show(void)
 
 /* a tap: the button's page; the hint until its layer has been opened once (unless the tap said something, or
  * opened NAME: EDIT on USER / PROJECT renames; never over a dialog or the menu) */
+#ifndef WEB_FX_LOCK
+#define WEB_FX_LOCK 0
+#endif
 static void layer_tap(uint32_t l)
 {
     uint8_t m = ui.msg_t;
@@ -396,6 +399,15 @@ static void layer_tap(uint32_t l)
     lys.nv.seq = song.seq_mode;
     memcpy(lys.nv.fam, ui.fam_last, sizeof lys.nv.fam);
     lys.nv.rec = song.rec;
+#if WEB_FX_LOCK
+    if (l == LAYER_FX) {                                /* the Spelunkr page (its FX PAD is on the page): a tap locks
+                                                         * the FX keys open at once, as a double tap would; FX again
+                                                         * lets them go (layer_lock_input) */
+        ui.ly = (uint8_t)l;                             /* (let go already: the layer is FX's again) */
+        layer_lock(l, fm1_ms);
+        return;
+    }
+#endif
     if (l == LAYER_REC) {                               /* REC: arms / disarms (no page); said nothing: no double tap */
         uint32_t idle = !song.playing && !seq_counting() && transport_req != 1u;
         acted = !rec_tap();

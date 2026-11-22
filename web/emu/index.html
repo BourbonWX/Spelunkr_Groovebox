@@ -521,7 +521,7 @@ const STORE = "spelunkr-groovebox-flash", POWER = "spelunkr-groovebox-power";
 // panel.c's buttons (bit) and encoders (role); the plain names, the device's names (POWER USER)
 const B = { FX: 0, SCL: 1, ENV: 2, LFO: 3, EDIT: 4, GLO: 5, HOME: 6, SAVE: 7, ARP: 8, SEQ: 9, PLAY: 10, REC: 11, "OCT-": 12, "OCT+": 13 };
 const PLAY_GREEN = 14;
-const FACE = [["HOME", "HOME"], ["EDIT", "SOUND"], ["SEQ", "STEPS"], ["GLO", "MIX"], ["FX", "EFFECTS"], ["SCL", "SCALE"],
+const FACE = [["HOME", "HOME"], ["EDIT", "SOUND"], ["SEQ", "STEPS"], ["GLO", "MIX"], ["FX", "FX KEYS"], ["SCL", "SCALE"],
               ["ENV", "ENVELOPE"], ["LFO", "WOBBLE"], ["ARP", "ARP"], ["SAVE", "SAVE"], ["PLAY", "PLAY"], ["REC", "RECORD"],
               ["OCT-", "OCTAVE −"], ["OCT+", "OCTAVE +"]];
 const WHEEL_TIP = {
@@ -569,14 +569,14 @@ for (const [dev, plain] of FACE) {
 // each face button: what a tap does on this page (the firmware's web_guide "b": [act, hold]), and its own name small;
 // POWER USER: its own name big, the job small
 let btnCtx = null;
-const DEEP = new Set(["FX", "SCL", "ENV", "LFO", "ARP"]);
+const DEEP = new Set(["SCL", "ENV", "LFO", "ARP"]);   // (FX: on the beginner's face too, its tap the FX keys: Ed, Nov 22)
 // each face button in plain words (the hover); what it does on this screen (the device's) comes first
 const FACE_TIP = {
   HOME: "the home screen: the track's four main controls. Tap again for the mixer (levels, pan, reverb), again for the tempo. Hold it for the settings menu.",
   EDIT: "the sound's settings. Hold it: the white keys pick another engine, OCTAVE + scrambles the sound, OCTAVE − puts it back.",
   SEQ: "the pattern's steps, one row a step (a tracker): ROW picks a step, COLUMN what to change. Tap again for the knob moves. Hold it for tools: a beat, random, clear, length, swing.",
   GLO: "patterns A–F (the white keys C to A pick or copy one). Tap again: the song, its parts in order. Hold it: every track's level.",
-  FX: "the FX PAD on the screen. Hold it to glitch the whole mix: stutter, tunnel, jumps, crush.",
+  FX: "the FX keys. Tap it and the keys glitch the whole mix while you hold them: stutter, tunnel, jumps, crush (the screen shows which key does what). Tap FX again and the keys play notes. Holding FX does the same for as long as you hold it.",
   SCL: "the scale: every note kept in a key, and chords on the white keys.",
   ENV: "the envelope: how each note starts, holds and fades.",
   LFO: "the wobble: slow movement on the sound. A tap freezes what you hear while you edit the steps (tap again: your edits come in).",
@@ -586,7 +586,7 @@ const FACE_TIP = {
   REC: "record: tap it, press PLAY and play the keys; what you play goes into the pattern. Tap again to stop recording.",
   "OCT-": "the keys an octave lower (the [ key too). On some screens it does that screen's job instead: the button says which.",
   "OCT+": "the keys an octave higher (the ] key too). On some screens it does that screen's job instead: the button says which.",
-};   // in-depth: shown with POWER USER (the FX PAD is on the page)
+};   // in-depth (SCL ENV LFO ARP): shown with POWER USER
 function names() {
   faceEls.forEach((f) => { f.el.hidden = !power && DEEP.has(f.el.dataset.dev); });
   faceEls.forEach((f, i) => {

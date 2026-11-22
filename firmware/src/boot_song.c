@@ -717,17 +717,9 @@ static void random_song_make(uint32_t seed)
         rs_motif_make(&rsg.mot[0], rsg.rhythm[0], 0);    /* item 4: the hooks, the verse's and the chorus's */
         rs_motif_make(&rsg.mot[1], rsg.rhythm[1], 1);
     }
-#if SPK_NU                                                /* Spelunkr's web build: VAPOR on the master (felucca_web.c
-                                                           * vap_get: G_DRLVL = SLOWED << 8 | WOW, G_DRREV = VINYL << 8 |
-                                                           * CRUSH): chillwave often slowed and warped, lo-fi often dusty */
-    {
-        uint32_t sl = 0, wo = 0, vi = 0, cr = 0;
-        if (sty == ST_CHILL && bs_chance(55)) { sl = 18 + bs_in(30); wo = 15 + bs_in(30); vi = bs_in(2) ? 20 + bs_in(25) : 0u; }
-        if (sty == ST_LOFI && bs_chance(60)) { vi = 25 + bs_in(30); wo = bs_in(2) ? 8 + bs_in(15) : 0u; }
-        if (sty == ST_CHIP && bs_chance(15)) cr = 20 + bs_in(30);
-        song.g[G_DRLVL] = (int16_t)(sl << 8 | wo);
-        song.g[G_DRREV] = (int16_t)(vi << 8 | cr);
-    }
+#if SPK_NU                                                /* Spelunkr's web build: VAPOR off (Ed: "leave the effects off the
+                                                           * random songs"; felucca_web.c vap_get: G_DRLVL, G_DRREV) */
+    song.g[G_DRLVL] = song.g[G_DRREV] = 0;
 #endif
 
     for (k = 0; k < NTRK; k++)                            /* Phantom Cosmonaut M0: the tracks' fixed roles (core.h) */

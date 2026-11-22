@@ -28,6 +28,7 @@ static unsigned char web_solo;           /* the page's SOLO buttons (ui_layer.c 
 static unsigned char web_pad;            /* the page's FX PAD held (ui_input.c WEB_PAD) */
 #define WEB_SOLO web_solo
 #define WEB_PAD web_pad
+#define WEB_FX_LOCK 1                    /* (ui_layer.c layer_tap: FX tapped locks its keys open) */
 /* the knobs' cards as the screen drew them this frame (ui_draw.c draw_column: WEB_CARD), kept per frame */
 static struct { char label[16], val[16], unit[8]; int ratio; } web_card[4], web_card_now[4];
 static unsigned web_cards_seen, web_cards_shown;
@@ -1170,6 +1171,10 @@ static void web_btn(uint32_t b, char *act, char *sub)
         return;
     }
     if (b == B_REC) { str_cpy(act, song.rec ? "REC OFF" : "RECORD", 24); return; }
+    if (b == B_FX) {                                     /* (ui_layer.c WEB_FX_LOCK: a tap locks the FX keys) */
+        str_cpy(act, ui.lock == LAYER_FX ? "FX KEYS OFF" : "FX KEYS", 24);
+        return;
+    }
     if (b == B_EDIT) {                                   /* (ui_input.c page_tap's order) */
         if (detail_on()) { str_cpy(act, "RESET STEP", 24); return; }
         if (song.seq_mode && page && pg->graph == GR_ROLL) { str_cpy(act, lock_held() ? "CLEAR LOCKS" : "CLEAR STEP", 24); return; }
