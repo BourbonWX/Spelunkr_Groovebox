@@ -669,8 +669,13 @@ static int rec_tap(void)                                /* 1: the arming changed
                                                          * stopped, at the cursor (CHORD ENTRY ADD: adding) */
         return 1;
     }
+#ifdef WEB_REC_ASK
+    WEB_REC_ASK = (uint8_t)((song.rec & bit) && !song.playing && !seq_counting());   /* the Spelunkr page: it asks first
+                                                         * (a metronome?) and starts it (felucca_web.c web_rec_go) */
+#else
     if ((song.rec & bit) && !song.playing && !seq_counting())
         transport_req = 1;
+#endif
     if ((song.rec & bit) && grid_on())
         ui_message("LANE KEYS RECORD");               /* (the white keys stay the steps) */
     else if ((song.rec & bit) && !ui.home && cur_page()->graph == GR_ROLL)

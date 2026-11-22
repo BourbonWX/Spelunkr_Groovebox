@@ -31,6 +31,12 @@ static unsigned char web_pad;            /* the page's FX PAD held (ui_input.c W
 static unsigned char web_pad_k;          /* the track the page's pads are on (Ed, Nov 22: a locked pad stays on its track) */
 #define WEB_PAD_TRK web_pad_k
 #define WEB_FX_LOCK 1                    /* (ui_layer.c layer_tap: FX tapped locks its keys open) */
+static unsigned char web_rec_ask;        /* REC tapped while stopped: the page asks about the metronome (web_rec_go) */
+#define WEB_REC_ASK web_rec_ask
+static unsigned char web_click_held, web_click_mode, web_cin_bars, web_rec_ran;   /* (ui.c rp_apply: over the settings) */
+#define WEB_CLICK_HELD web_click_held
+#define WEB_CLICK_MODE web_click_mode
+#define WEB_CIN_BARS web_cin_bars
 /* the knobs' cards as the screen drew them this frame (ui_draw.c draw_column: WEB_CARD), kept per frame */
 static struct { char label[16], val[16], unit[8]; int ratio; } web_card[4], web_card_now[4];
 static unsigned web_cards_seen, web_cards_shown;
@@ -417,6 +423,15 @@ static void web_ms(void)
         lcd_fill(0, 0, 240, 240, T_BG);
         web_last_frame = fm1_ms - 15u;
     }
+    if (web_rec_ask && (song.playing || seq_counting() || !song.rec))
+        web_rec_ask = 0;                                  /* (started or disarmed some other way: no question) */
+    if (web_click_held) {                                 /* web_rec_go's metronome: the settings' again once the take is
+                                                           * over (stopped, or REC let go) */
+        if (song.playing || seq_counting())
+            web_rec_ran = 1;
+        if ((web_rec_ran && !song.playing && !seq_counting()) || (web_rec_ran && !song.rec) || (!web_rec_ran && !song.rec))
+            web_click_held = 0;
+    }
     if (fm1_ms - web_last_frame >= 15u) {                /* main.c: a frame, then ui_input until 15 ms are over */
         web_last_frame = fm1_ms;
         web_frame();
@@ -619,6 +634,28 @@ EXPORT uint32_t web_undo(void)
         undo_swap();
     ui.force = 1;
     return 1;
+}
+/* REC tapped while stopped (Ed, Nov 22: "a prompt ... if they want a metronome"): the page asked; c 1 with the
+ * metronome (a bar counted in, then the clicks while it records), 0 without, 2 cancel (disarmed). The metronome as it
+ * was comes back when the take is over (web_ms). REC armed while it already plays: no question, no metronome */
+EXPORT void web_rec_go(uint32_t c)
+{
+    if (!web_rec_ask)
+        return;
+    web_rec_ask = 0;
+    if (c == 2u) {
+        song.rec = 0;
+        ui.force = 1;
+        return;
+    }
+    web_click_held = 1;
+    web_rec_ran = 0;
+    web_click_mode = (uint8_t)(c == 1u ? CLICK_ON : CLICK_OFF);
+    web_cin_bars = (uint8_t)(c == 1u ? 1u : 0u);
+    click_mode = web_click_mode;                          /* (now: the transport starts before the next frame's rp_apply) */
+    cin_bars = web_cin_bars;
+    transport_req = 1;
+    ui.force = 1;
 }
 /* the tempo (40..240) and the swing (0..100), from the page's header */
 EXPORT void web_tempo(uint32_t bpm) { song.g[G_BPM] = (int16_t)clamp((int32_t)bpm, GP[G_BPM].min, GP[G_BPM].max); ui.force = 1; }
@@ -1085,6 +1122,7 @@ EXPORT const char *web_guide(void)
     wj("{\"bpm\":%d,\"play\":%d,\"rec\":%d,\"sel\":%u,\"cur\":%u,\"queue\":%d,\"used\":%u,\"oct\":%d,", song.g[G_BPM],
        song.playing ? 1 : 0, song.rec != 0, (unsigned)song.sel, (unsigned)bank.cur, bank.queue < NBANK ? (int)bank.queue : -1,
        (unsigned)bank.used, song.octave);
+    wj("\"recask\":%d,\"cin\":%d,\"click\":[%u,%u],", web_rec_ask, seq_counting() ? 1 : 0, (unsigned)click_mode, (unsigned)cin_bars);
     wj("\"swing\":%d,\"key\":[%d,%d,%d],", song.g[G_SWING], trk[1].p[P_ROOT], trk[1].p[P_SCALE], trk[1].p[P_QUANT]);
     wj("\"song\":{\"running\":%d,\"row\":%u,\"rows\":[", chain.running ? 1 : 0, (unsigned)chain.row);
     for (r = 0; chain_valid(&chain_config) && r < chain_config.count && r < CHAIN_ROWS; r++) {

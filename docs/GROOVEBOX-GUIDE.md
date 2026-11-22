@@ -39,8 +39,9 @@ saves in this browser, and a link shares it.
    LINN and GATED (80s drum machines), NES, GAMEBOY and SNES (chiptune), and more. Click **BEAT** on the row for a
    beat, **RANDOM** for a random one, **VARY** to change it a little. Tap **STEPS** to see and change every step;
    **HOME** brings you back. Set the **TEMPO** and **SWING** in the song bar.
-3. **A part**: click **SYNTH 1**, pick its sound, and tap **RECORD**: the music starts, and what you play on the keys
-   goes into the loop. Tap **RECORD** again to stop recording, **PLAY** to stop the music. To start over, **CLEAR**
+3. **A part**: click **SYNTH 1**, pick its sound, and tap **RECORD**. It asks whether you want a metronome (a bar of
+   clicks counts you in, then the clicks keep time); then the music starts, and what you play on the keys goes into
+   the loop. (Arm RECORD while the music already plays and there's no metronome.) Tap **RECORD** again to stop recording, **PLAY** to stop the music. To start over, **CLEAR**
    on its row. Set the **KEY** and tick **keys stay in key** first, and nothing you play sounds wrong. Do the same for
    a bass on **SYNTH 2**.
 4. **Shape it**: the four controls change the track's sound. **SOUND** shows more of its settings.

@@ -132,6 +132,13 @@ static void rp_apply(void)                             /* the settings into clic
     click_mode = (uint8_t)rp_get(RP_CLICK);
     click_lvl = (uint8_t)rp_get(RP_LEVEL);
     cin_bars = (uint8_t)rp_get(RP_COUNTIN);
+#ifdef WEB_CLICK_HELD
+    if (WEB_CLICK_HELD) {                               /* the Spelunkr page's metronome question (felucca_web.c web_rec_go):
+                                                         * its answer over the settings for this take */
+        click_mode = WEB_CLICK_MODE;
+        cin_bars = WEB_CIN_BARS;
+    }
+#endif
 }
 static void rp_put(uint32_t f, uint32_t v)
 {

@@ -523,6 +523,15 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   </form>
 </dialog>
 
+<dialog id="recdlg">
+  <form method="dialog">
+    <h2>RECORD WITH A METRONOME?</h2>
+    <p style="margin:0 0 8px">With the metronome, a bar of clicks counts you in, then the clicks keep time while you record.
+      (Start recording while the music already plays and there's no metronome.)</p>
+    <div class="buttons"><button class="btn" value="cancel">CANCEL</button><button class="btn" value="without" id="recwithout">WITHOUT</button><button class="btn orange" value="with" id="recwith" autofocus>WITH METRONOME</button></div>
+  </form>
+</dialog>
+
 <dialog id="codedlg">
   <form method="dialog">
     <h2>OPEN A CODE</h2>
@@ -606,7 +615,7 @@ const FACE_TIP = {
   ARP: "the arpeggiator: hold a chord and it plays the notes one after another.",
   SAVE: "save and load sounds and songs on the device itself. Hold it to undo a load, a NEW SONG or a RANDOM.",
   PLAY: "play and stop (the space bar too).",
-  REC: "record: tap it, press PLAY and play the keys; what you play goes into the pattern. Tap again to stop recording.",
+  REC: "record: tap it (stopped: it asks whether you want a metronome, then the music starts) and play the keys; what you play goes into the pattern. Tap again to stop recording.",
   "OCT-": "the keys an octave lower (the [ key too). On some screens it does that screen's job instead: the button says which.",
   "OCT+": "the keys an octave higher (the ] key too). On some screens it does that screen's job instead: the button says which.",
 };   // in-depth (SCL ENV LFO ARP): shown with POWER USER
@@ -1011,11 +1020,30 @@ $("taptempo").addEventListener("pointerdown", (e) => {   // TAP: the tempo of th
 for (const id of ["keyroot", "keyscale", "keysnap"]) $(id).addEventListener("change", sendKey);
 $("undobtn").addEventListener("click", () => { send({ type: "undo" }); studioSay("Undone (the screen says what). UNDO again puts it back."); });
 
+// REC tapped while stopped (Ed, Nov 22): the device waits (felucca_web.c web_rec_ask); the page asks about the metronome
+let recAsking = false;
+function recAsk(g) {
+  if (!g.recask || recAsking) return;
+  recAsking = true;
+  const d = $("recdlg");
+  d.returnValue = "";
+  d.onclose = () => {
+    recAsking = false;
+    const c = d.returnValue === "with" ? 1 : d.returnValue === "without" ? 0 : 2;
+    send({ type: "recgo", c });
+    studioSay(c === 1 ? "Counting you in: one bar of clicks, then it records. RECORD again stops recording, PLAY stops the music." :
+              c === 0 ? "Recording: play the keys. RECORD again stops recording, PLAY stops the music." : "Recording cancelled.");
+  };
+  d.showModal();
+  $("recwith").focus();
+}
+
 function showGuide(g) {
   G = g;
   const pos = (k) => g.tracks[k].pos, order = [...g.tracks.keys()].sort((a, b) => pos(a) - pos(b));
   const sel = g.tracks[g.sel], letter = (p) => "ABCDEF"[p] ?? "-";
   songBar(g);
+  recAsk(g);
   $("tnum").textContent = "TRACK " + String(pos(g.sel) + 1).padStart(2, "0");
   $("twho").textContent = ROLE[g.sel] + (sel.b ? " +B" : "");
   $("twhat").textContent = sel.sound ? `${sel.sound} · ${sel.engine}` : sel.engine;
@@ -1853,6 +1881,9 @@ const TIPS = {
   "#codein": "The code (SPGB_ and 7 letters or numbers), or the whole share link.",
   "#codego": "Open that song (it asks first if you have music open).",
   "#codedlg button[value='close']": "Close.",
+  "#recwith": "Record with a metronome: one bar of clicks first, then clicks on every beat while you record.",
+  "#recwithout": "Record without clicks: the music starts and records right away.",
+  "#recdlg button[value='cancel']": "Don't record (RECORD off again).",
   "#sharecopycode": "Copy the code, to paste in chat or say on stream.",
   "#saveproj": "SAVE: download everything as a project file (.phantom), your samples too. OPEN brings it back.",
   "label:has(#openproj)": "OPEN: load a project file (.phantom) you saved before. It replaces what's here.",
@@ -1996,7 +2027,7 @@ const TOUR = [                                           // (Ed: "cover every pa
   { t: "6 · PLAY THE KEYS", el: ".keybar", x: () => (phoneMQ.matches ? "Play on these keys. "
       : "Play on these keys, or on your computer keyboard: <kbd>Z</kbd> to <kbd>M</kbd> and <kbd>Q</kbd> to <kbd>O</kbd>. ")
       + "<kbd>OCT −</kbd> and <kbd>OCT +</kbd> move up and down. On a drum track each key is a drum. A MIDI keyboard works too." },
-  { t: "7 · RECORD A PART", el: btnSel("REC"), x: () => "Click a synth row (SYNTH 1) and pick its sound. Tap <kbd>RECORD</kbd>: the music starts, "
+  { t: "7 · RECORD A PART", el: btnSel("REC"), x: () => "Click a synth row (SYNTH 1) and pick its sound. Tap <kbd>RECORD</kbd>: it asks whether you want a metronome, then the music starts, "
       + "and what you play on the keys goes into the loop. Tap <kbd>RECORD</kbd> again to stop recording (the music keeps going), <kbd>PLAY</kbd> to stop. "
       + "Start over: <kbd>CLEAR</kbd> on its row. Set the song's <kbd>KEY</kbd> in the bar at the top and tick <i>keys stay in key</i>: nothing you play sounds wrong. Do the same for a bass on SYNTH 2." },
   { t: "8 · SHAPE THE SOUND", el: "#knobs", x: () => "These four controls change the selected track's sound: its tone, its decay, WOW and AGE on the sampled ones. "
