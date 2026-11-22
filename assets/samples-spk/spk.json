@@ -1,0 +1,732 @@
+{
+ "kits": [
+  {
+   "name": "CRATE",
+   "rows": [
+    "kits/CRATE/0-BD.wav",
+    "kits/CRATE/1-SD.wav",
+    "kits/CRATE/2-CP.wav",
+    "kits/CRATE/3-CH.wav",
+    "kits/CRATE/4-OH.wav",
+    "kits/CRATE/5-TM.wav",
+    "kits/CRATE/6-RS.wav",
+    "kits/CRATE/7-CB.wav"
+   ]
+  },
+  {
+   "name": "BEDROOM",
+   "rows": [
+    "kits/BEDROOM/0-BD.wav",
+    "kits/BEDROOM/1-SD.wav",
+    "kits/BEDROOM/2-CP.wav",
+    "kits/BEDROOM/3-CH.wav",
+    "kits/BEDROOM/4-OH.wav",
+    "kits/BEDROOM/5-TM.wav",
+    "kits/BEDROOM/6-RS.wav",
+    "kits/BEDROOM/7-CB.wav"
+   ]
+  },
+  {
+   "name": "VAPOR 808",
+   "rows": [
+    "kits/VAPOR 808/0-BD.wav",
+    "kits/VAPOR 808/1-SD.wav",
+    "kits/VAPOR 808/2-CP.wav",
+    "kits/VAPOR 808/3-CH.wav",
+    "kits/VAPOR 808/4-OH.wav",
+    "kits/VAPOR 808/5-TM.wav",
+    "kits/VAPOR 808/6-RS.wav",
+    "kits/VAPOR 808/7-CB.wav"
+   ]
+  },
+  {
+   "name": "LINN",
+   "rows": [
+    "kits/LINN/0-BD.wav",
+    "kits/LINN/1-SD.wav",
+    "kits/LINN/2-CP.wav",
+    "kits/LINN/3-CH.wav",
+    "kits/LINN/4-OH.wav",
+    "kits/LINN/5-TM.wav",
+    "kits/LINN/6-RS.wav",
+    "kits/LINN/7-CB.wav"
+   ]
+  },
+  {
+   "name": "GATED",
+   "rows": [
+    "kits/GATED/0-BD.wav",
+    "kits/GATED/1-SD.wav",
+    "kits/GATED/2-CP.wav",
+    "kits/GATED/3-CH.wav",
+    "kits/GATED/4-OH.wav",
+    "kits/GATED/5-TM.wav",
+    "kits/GATED/6-RS.wav",
+    "kits/GATED/7-CB.wav"
+   ]
+  },
+  {
+   "name": "NES",
+   "rows": [
+    "kits/NES/0-BD.wav",
+    "kits/NES/1-SD.wav",
+    "kits/NES/2-CP.wav",
+    "kits/NES/3-CH.wav",
+    "kits/NES/4-OH.wav",
+    "kits/NES/5-TM.wav",
+    "kits/NES/6-RS.wav",
+    "kits/NES/7-CB.wav"
+   ]
+  },
+  {
+   "name": "GAMEBOY",
+   "rows": [
+    "kits/GAMEBOY/0-BD.wav",
+    "kits/GAMEBOY/1-SD.wav",
+    "kits/GAMEBOY/2-CP.wav",
+    "kits/GAMEBOY/3-CH.wav",
+    "kits/GAMEBOY/4-OH.wav",
+    "kits/GAMEBOY/5-TM.wav",
+    "kits/GAMEBOY/6-RS.wav",
+    "kits/GAMEBOY/7-CB.wav"
+   ]
+  },
+  {
+   "name": "SNES",
+   "rows": [
+    "kits/SNES/0-BD.wav",
+    "kits/SNES/1-SD.wav",
+    "kits/SNES/2-CP.wav",
+    "kits/SNES/3-CH.wav",
+    "kits/SNES/4-OH.wav",
+    "kits/SNES/5-TM.wav",
+    "kits/SNES/6-RS.wav",
+    "kits/SNES/7-CB.wav"
+   ]
+  }
+ ],
+ "insts": [
+  {
+   "name": "UPRIGHT",
+   "kind": "oneshot",
+   "zones": [
+    {
+     "file": "insts/UPRIGHT/00-41.wav",
+     "root16": 657,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/UPRIGHT/01-45.wav",
+     "root16": 720,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/UPRIGHT/02-49.wav",
+     "root16": 784,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/UPRIGHT/03-53.wav",
+     "root16": 849,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/UPRIGHT/04-57.wav",
+     "root16": 913,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/UPRIGHT/05-61.wav",
+     "root16": 976,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/UPRIGHT/06-65.wav",
+     "root16": 1041,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/UPRIGHT/07-69.wav",
+     "root16": 1105,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/UPRIGHT/08-73.wav",
+     "root16": 1169,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/UPRIGHT/09-77.wav",
+     "root16": 1233,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/UPRIGHT/10-81.wav",
+     "root16": 1298,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/UPRIGHT/11-85.wav",
+     "root16": 1365,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    }
+   ]
+  },
+  {
+   "name": "FM PIANO",
+   "kind": "oneshot",
+   "zones": [
+    {
+     "file": "insts/FM PIANO/00-24.wav",
+     "root16": 384,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/01-28.wav",
+     "root16": 448,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/02-32.wav",
+     "root16": 512,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/03-36.wav",
+     "root16": 576,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/04-40.wav",
+     "root16": 640,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/05-44.wav",
+     "root16": 704,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/06-48.wav",
+     "root16": 768,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/07-52.wav",
+     "root16": 832,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/08-56.wav",
+     "root16": 896,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/09-60.wav",
+     "root16": 960,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/10-64.wav",
+     "root16": 1024,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/11-68.wav",
+     "root16": 1088,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/12-72.wav",
+     "root16": 1152,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/13-76.wav",
+     "root16": 1216,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/14-80.wav",
+     "root16": 1280,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    },
+    {
+     "file": "insts/FM PIANO/15-84.wav",
+     "root16": 1344,
+     "ls": 48509,
+     "le": 48509,
+     "looped": false
+    }
+   ]
+  },
+  {
+   "name": "VIBES",
+   "kind": "oneshot",
+   "zones": [
+    {
+     "file": "insts/VIBES/00-53.wav",
+     "root16": 848,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/VIBES/01-57.wav",
+     "root16": 912,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/VIBES/02-60.wav",
+     "root16": 968,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/VIBES/03-64.wav",
+     "root16": 1024,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/VIBES/04-67.wav",
+     "root16": 1072,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/VIBES/05-71.wav",
+     "root16": 1136,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/VIBES/06-74.wav",
+     "root16": 1184,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/VIBES/07-77.wav",
+     "root16": 1232,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/VIBES/08-81.wav",
+     "root16": 1296,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/VIBES/09-84.wav",
+     "root16": 1344,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    },
+    {
+     "file": "insts/VIBES/10-88.wav",
+     "root16": 1408,
+     "ls": 57329,
+     "le": 57329,
+     "looped": false
+    }
+   ]
+  },
+  {
+   "name": "MARIMBA",
+   "kind": "oneshot",
+   "zones": [
+    {
+     "file": "insts/MARIMBA/00-41.wav",
+     "root16": 657,
+     "ls": 26459,
+     "le": 26459,
+     "looped": false
+    },
+    {
+     "file": "insts/MARIMBA/01-48.wav",
+     "root16": 769,
+     "ls": 26459,
+     "le": 26459,
+     "looped": false
+    },
+    {
+     "file": "insts/MARIMBA/02-54.wav",
+     "root16": 879,
+     "ls": 26459,
+     "le": 26459,
+     "looped": false
+    },
+    {
+     "file": "insts/MARIMBA/03-59.wav",
+     "root16": 945,
+     "ls": 26459,
+     "le": 26459,
+     "looped": false
+    },
+    {
+     "file": "insts/MARIMBA/04-65.wav",
+     "root16": 1041,
+     "ls": 26459,
+     "le": 26459,
+     "looped": false
+    },
+    {
+     "file": "insts/MARIMBA/05-72.wav",
+     "root16": 1152,
+     "ls": 26459,
+     "le": 26459,
+     "looped": false
+    },
+    {
+     "file": "insts/MARIMBA/06-79.wav",
+     "root16": 1264,
+     "ls": 26459,
+     "le": 26459,
+     "looped": false
+    },
+    {
+     "file": "insts/MARIMBA/07-83.wav",
+     "root16": 1328,
+     "ls": 26459,
+     "le": 26459,
+     "looped": false
+    },
+    {
+     "file": "insts/MARIMBA/08-89.wav",
+     "root16": 1424,
+     "ls": 26459,
+     "le": 26459,
+     "looped": false
+    },
+    {
+     "file": "insts/MARIMBA/09-96.wav",
+     "root16": 1537,
+     "ls": 26459,
+     "le": 26459,
+     "looped": false
+    }
+   ]
+  },
+  {
+   "name": "GLOCK",
+   "kind": "oneshot",
+   "zones": [
+    {
+     "file": "insts/GLOCK/00-79.wav",
+     "root16": 1264,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/GLOCK/01-83.wav",
+     "root16": 1338,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/GLOCK/02-90.wav",
+     "root16": 1449,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/GLOCK/03-96.wav",
+     "root16": 1536,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/GLOCK/04-103.wav",
+     "root16": 1648,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/GLOCK/05-108.wav",
+     "root16": 1728,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    }
+   ]
+  },
+  {
+   "name": "KALIMBA",
+   "kind": "oneshot",
+   "zones": [
+    {
+     "file": "insts/KALIMBA/00-59.wav",
+     "root16": 949,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/KALIMBA/01-61.wav",
+     "root16": 983,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/KALIMBA/02-62.wav",
+     "root16": 1006,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/KALIMBA/03-66.wav",
+     "root16": 1056,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/KALIMBA/04-68.wav",
+     "root16": 1093,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/KALIMBA/05-71.wav",
+     "root16": 1137,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/KALIMBA/06-73.wav",
+     "root16": 1169,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/KALIMBA/07-75.wav",
+     "root16": 1200,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/KALIMBA/08-78.wav",
+     "root16": 1255,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/KALIMBA/09-80.wav",
+     "root16": 1290,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    },
+    {
+     "file": "insts/KALIMBA/10-83.wav",
+     "root16": 1328,
+     "ls": 39689,
+     "le": 39689,
+     "looped": false
+    }
+   ]
+  },
+  {
+   "name": "SAX",
+   "kind": "loop",
+   "zones": [
+    {
+     "file": "insts/SAX/00-44.wav",
+     "root16": 704,
+     "ls": 9922,
+     "le": 33279,
+     "looped": true
+    },
+    {
+     "file": "insts/SAX/01-48.wav",
+     "root16": 768,
+     "ls": 9922,
+     "le": 33013,
+     "looped": true
+    },
+    {
+     "file": "insts/SAX/02-51.wav",
+     "root16": 831,
+     "ls": 9922,
+     "le": 33069,
+     "looped": true
+    },
+    {
+     "file": "insts/SAX/03-56.wav",
+     "root16": 896,
+     "ls": 9922,
+     "le": 33070,
+     "looped": true
+    },
+    {
+     "file": "insts/SAX/04-60.wav",
+     "root16": 960,
+     "ls": 9922,
+     "le": 33179,
+     "looped": true
+    },
+    {
+     "file": "insts/SAX/05-64.wav",
+     "root16": 1024,
+     "ls": 9922,
+     "le": 33000,
+     "looped": true
+    },
+    {
+     "file": "insts/SAX/06-68.wav",
+     "root16": 1088,
+     "ls": 9922,
+     "le": 33068,
+     "looped": true
+    },
+    {
+     "file": "insts/SAX/07-72.wav",
+     "root16": 1152,
+     "ls": 9922,
+     "le": 33098,
+     "looped": true
+    },
+    {
+     "file": "insts/SAX/08-76.wav",
+     "root16": 1216,
+     "ls": 9922,
+     "le": 33100,
+     "looped": true
+    },
+    {
+     "file": "insts/SAX/09-80.wav",
+     "root16": 1280,
+     "ls": 9922,
+     "le": 33096,
+     "looped": true
+    },
+    {
+     "file": "insts/SAX/10-84.wav",
+     "root16": 1344,
+     "ls": 9922,
+     "le": 33078,
+     "looped": true
+    },
+    {
+     "file": "insts/SAX/11-88.wav",
+     "root16": 1409,
+     "ls": 9922,
+     "le": 33092,
+     "looped": true
+    }
+   ]
+  },
+  {
+   "name": "GLASS",
+   "kind": "loop",
+   "zones": [
+    {
+     "file": "insts/GLASS/00-75.wav",
+     "root16": 1205,
+     "ls": 24255,
+     "le": 63901,
+     "looped": true
+    },
+    {
+     "file": "insts/GLASS/01-77.wav",
+     "root16": 1246,
+     "ls": 24255,
+     "le": 63929,
+     "looped": true
+    },
+    {
+     "file": "insts/GLASS/02-82.wav",
+     "root16": 1312,
+     "ls": 24255,
+     "le": 63960,
+     "looped": true
+    },
+    {
+     "file": "insts/GLASS/03-86.wav",
+     "root16": 1377,
+     "ls": 24255,
+     "le": 63923,
+     "looped": true
+    }
+   ]
+  }
+ ]
+}

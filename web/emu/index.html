@@ -1,0 +1,1780 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     The Spelunkr Groovebox: Phantom Tracker's firmware (a Dungeon Tracker and Felucca fork) in the browser, laid out as
+     a TV guide: the device and its FX PAD, the song as the schedule, two octaves of keys. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spelunkr Groovebox</title>
+<meta name="description" content="Make vaporwave, lo-fi and chiptune tracks in your browser: a groovebox tracker for spelunkr.tv viewers. Save, share a link, export WAV.">
+<meta name="theme-color" content="#1C0A57">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%23FFE13A%22/%3E%3Ctext x=%228%22 y=%2213%22 font-size=%2213%22 text-anchor=%22middle%22 font-family=%22monospace%22 fill=%22%231C0A57%22%3ES%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --indigo: #1C0A57; --night: #0B0530; --panel: #0E1E78; --row: #13288F; --rowhot: #1D3BB8; --rest: #0A1660;
+  --rule: #2F49C8; --rule2: #6C7CFF; --strip: #2B0E70; --yellow: #FFE13A; --gold: #F5C93A; --orange: #E2741F;
+  --rust: #B5480F; --btn: #2E3FD8; --ink: #F4F4FF; --soft: #C9D2FF; --dim: #9FB4FF; --faint: #5D6CC0;
+  --play: #3FBF6A; --rec: #FF6A5A;
+  --head: 'Jersey 10', 'Arial Narrow', sans-serif; --mono: 'VT323', ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--indigo); }
+body { min-height: 100vh; color: var(--ink); font: 21px/1.15 var(--mono);
+       background: linear-gradient(180deg, #1C0A57 0%, #3A1478 42%, #8E2F6E 76%, #D8661E 100%) fixed; }
+button { font: inherit; color: inherit; }
+a { color: var(--yellow); }
+.h { font-family: var(--head); letter-spacing: .01em; }
+.panel { background: var(--panel); border: 4px solid var(--rule); box-shadow: 0 0 0 3px var(--night); min-width: 0; }
+.strip { background: var(--strip); border-bottom: 3px solid var(--rule); }
+.btn { font-family: var(--head); font-size: 23px; line-height: 1; min-height: 44px; padding: 4px 10px; cursor: pointer;
+       background: var(--btn); color: #fff; border: 2px solid var(--rule2); user-select: none; -webkit-user-select: none;
+       touch-action: none; }
+.btn:hover { filter: brightness(1.12); }
+.btn:focus-visible, .key:focus-visible, .pad:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+.btn.lit { background: var(--gold); color: var(--indigo); border-color: #FFE98A; }
+.btn.dim { background: #23309F; }
+.btn.breath { animation: breath 1.13s ease-in-out infinite; }
+@keyframes breath { 50% { background: #5A68F0; } }
+.btn.held { box-shadow: inset 0 0 0 3px var(--yellow); }
+.btn.latched { box-shadow: inset 0 0 0 3px #79b8ff; }
+.btn.play { background: var(--play); color: var(--night); border-color: #9BF0B5; }
+.btn.play.lit { background: #8CF2AE; }
+.btn.rec { background: var(--row); color: var(--rec); border-color: var(--rec); }
+.btn.rec.lit { background: var(--rec); color: var(--night); }
+.btn.quiet { background: var(--row); color: var(--soft); border-color: var(--rule); }
+.btn.orange { background: var(--orange); color: var(--indigo); border-color: #FFB36B; }
+
+/* header */
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 20px;
+         background: linear-gradient(105deg, var(--orange) 0, var(--orange) 250px, var(--indigo) 251px); border-bottom: 3px solid var(--night); }
+.logo { display: flex; align-items: center; gap: 10px; width: 230px; text-decoration: none; }
+.logo b { width: 44px; height: 44px; border-radius: 8px; background: var(--yellow); color: var(--indigo); display: grid; place-items: center;
+          font: 40px/1 var(--head); border: 3px solid var(--indigo); }
+.logo span { font: 26px/.95 var(--head); color: var(--yellow); }
+header nav { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+header nav .btn { background: var(--panel); min-height: 40px; }
+header nav a.btn, header nav label.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: #fff; }
+header nav .btn.on { background: var(--rec); color: var(--night); border-color: #FFB0A6; }
+.power { display: flex; align-items: center; gap: 8px; font: 22px var(--head); color: var(--soft); padding: 4px 12px; border: 2px solid var(--rule);
+         background: var(--panel); min-height: 40px; cursor: pointer; }
+.power input { width: 20px; height: 20px; accent-color: var(--yellow); }
+.bpm { font: 30px/1 var(--head); min-width: 110px; text-align: right; }
+
+main { max-width: 1480px; margin: 0 auto; padding: 16px 20px 16px; display: flex; flex-direction: column; gap: 16px; }
+.top { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+
+/* the device */
+.device { flex: 999 1 1010px; display: flex; flex-direction: column; }
+.trackbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 14px; }
+.trackbar .arrow { width: 38px; min-height: 38px; padding: 0; font-size: 18px; }
+.trackbar .num { font: 36px/1 var(--head); }
+.trackbar .who { font: 30px/1 var(--head); color: var(--yellow); }
+.trackbar .what { color: var(--soft); }
+.trackbar .state { margin-left: auto; font: 26px/1 var(--head); }
+.trackbar .pat { color: var(--dim); }
+.body { display: flex; flex-wrap: wrap; gap: 18px; padding: 16px; align-items: flex-start; justify-content: center; }
+.face { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 216px; }
+.face .btn[hidden] { display: none; }
+.face .btn { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; min-height: 52px; padding: 3px 4px; }
+.face .btn .a { font-size: 21px; line-height: .95; text-align: center; overflow-wrap: anywhere; }
+.face .btn .d { font: 14px/1 var(--mono); opacity: .75; letter-spacing: .04em; }
+.face .btn.ctx .a { color: var(--yellow); }
+.face .btn.lit.ctx .a, .face .btn.play .a, .face .btn.rec.lit .a { color: inherit; }
+.trackbar .pg { color: var(--yellow); font: 22px/1 var(--head); border: 2px solid var(--rule2); padding: 2px 8px; }
+.screenwrap { display: flex; flex-direction: column; align-items: center; gap: 14px; min-width: 0; }
+.bezel { padding: 12px; background: #050314; border: 3px solid var(--rule); border-radius: 10px; position: relative; max-width: 100%; }
+#screen { display: block; width: 480px; height: 480px; max-width: 100%; height: auto; aspect-ratio: 1; image-rendering: auto; background: #000; }
+.side { display: flex; flex-direction: column; gap: 18px; }
+.knobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; }
+.stepper { display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 0; width: 148px; user-select: none; -webkit-user-select: none; }
+.stepper .lab { font: 23px/1 var(--head); color: var(--yellow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+.stepper .row { display: flex; align-items: center; gap: 4px; }
+.stepper .val { flex: 1 1 auto; min-width: 0; text-align: center; font-size: 21px; color: var(--ink); white-space: nowrap; overflow: hidden;
+                text-overflow: ellipsis; background: var(--night); border: 2px solid var(--rule); padding: 3px 2px; line-height: 1.1; }
+.stepper .arr { flex: none; width: 38px; height: 38px; padding: 0; font-size: 16px; line-height: 1; cursor: pointer; background: var(--btn); color: #fff;
+                border: 2px solid var(--rule2); touch-action: none; }
+.stepper .arr:hover { filter: brightness(1.15); }
+.stepper .arr:active { background: var(--gold); color: var(--indigo); }
+.stepper .arr:focus-visible { outline: 3px solid var(--yellow); outline-offset: 1px; }
+.stepper .bar { height: 5px; background: var(--rest); }
+.stepper .bar i { display: block; height: 100%; width: 0; background: var(--yellow); transition: width .08s; }
+.stepper.free .bar { visibility: hidden; }
+.stepper.nudge .val { animation: nudge .25s; }
+@keyframes nudge { 0% { background: #4A3BB8; } }
+.knob.idle { opacity: .45; }
+.wheels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; border-top: 2px solid var(--rule); padding-top: 14px; }
+.wheels .stepper .lab { color: #fff; font-size: 21px; }
+.wheels .stepper .val { color: var(--dim); font-size: 19px; }
+.start { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; background: rgba(11, 5, 48, .82); text-align: center; padding: 16px; }
+.start[hidden] { display: none; }
+.start .btn { font-size: 30px; padding: 12px 26px; }
+.start .bare { background: none; border: 0; text-decoration: underline; font-size: 20px; min-height: 0; }
+.start p { margin: 0; max-width: 22em; color: var(--soft); }
+
+/* the FX PAD */
+.fxpad { flex: 1 1 280px; display: flex; flex-direction: column; }
+.fxpad .title { display: flex; align-items: baseline; gap: 10px; padding: 6px 14px; }
+.fxpad .title b { font: 28px/1 var(--head); color: var(--yellow); }
+.fxpad .title span { color: var(--soft); }
+.pads { display: flex; flex-wrap: wrap; gap: 14px; padding: 14px; justify-content: center; }
+.padbox { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.pad { position: relative; width: 190px; height: 190px; background: var(--row); border: 3px solid var(--rule2); cursor: crosshair; touch-action: none;
+       background-image: linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px); background-size: 19px 19px; }
+.pad::before, .pad::after { content: ""; position: absolute; background: var(--rule2); }
+.pad::before { left: 0; right: 0; top: 50%; height: 2px; }
+.pad::after { top: 0; bottom: 0; left: 50%; width: 2px; }
+.pad .dot { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: var(--yellow); left: 50%; top: 50%;
+            box-shadow: 0 0 0 4px rgba(255, 225, 58, .35), 0 0 18px var(--yellow); opacity: .35; transition: left .12s, top .12s, opacity .12s; z-index: 1; }
+.pad.on .dot { opacity: 1; transition: none; }
+.pad .lbl { position: absolute; font: 18px/1 var(--head); color: var(--yellow); z-index: 1; pointer-events: none; text-shadow: 0 1px 0 var(--night); }
+.pad .t { top: 4px; left: 50%; transform: translateX(-50%); } .pad .b { bottom: 4px; left: 50%; transform: translateX(-50%); }
+.pad .l { left: 5px; top: 50%; transform: translateY(-130%); } .pad .r { right: 5px; top: 50%; transform: translateY(-130%); }
+.padbox .name { font: 22px/1 var(--head); }
+.fxpad .hint { padding: 0 14px 14px; color: var(--soft); }
+/* VAPOR, on the whole song (felucca_web.c web_vapor) */
+.vapor { border-top: 3px solid var(--rule); }
+.vapor .title { align-items: center; }
+.vapor .title .btn { margin-left: auto; }
+.vapor .title span { white-space: nowrap; font-size: 18px; }
+.vapor .title .btn { min-height: 34px; padding: 2px 12px; font-size: 20px; }
+.vknobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; padding: 12px 12px 6px; }
+.vknobs .stepper { width: auto; }
+.vknobs .stepper .lab { font-size: 21px; }
+
+/* the guide */
+.guide { overflow-x: auto; }
+.guide .inner { min-width: 980px; }
+.ghead { display: flex; align-items: stretch; }
+.ghead .c0 { width: 300px; flex: 0 0 300px; padding: 4px 12px; font: 24px var(--head); color: var(--yellow); display: flex; align-items: center; gap: 10px; }
+.ghead .c0 small { font: 18px var(--mono); color: var(--dim); }
+.ghead .col { flex: 1 1 0; min-width: 0; padding: 4px 10px; font: 24px var(--head); color: var(--yellow); border-left: 2px solid var(--rule); white-space: nowrap; overflow: hidden; }
+.ghead .col small { font: 18px var(--mono); color: var(--dim); }
+.ghead .col.now { background: #4A1C9A; }
+.grow { display: flex; align-items: stretch; height: 60px; border-bottom: 2px solid var(--rule); position: relative; }
+.grow.sel { outline: 3px solid var(--yellow); outline-offset: -3px; z-index: 1; }
+.ghd { width: 300px; flex: 0 0 300px; display: flex; align-items: center; gap: 10px; padding: 0 10px; background: var(--panel); cursor: pointer; border: 0; text-align: left; }
+.grow.sel .ghd { background: linear-gradient(90deg, var(--orange), var(--rust)); }
+.ghd .n { font: 46px/.9 var(--head); width: 46px; color: var(--yellow); }
+.ghd .ic { width: 34px; height: 34px; border-radius: 6px; background: var(--indigo); border: 2px solid var(--yellow); color: var(--yellow);
+           display: grid; place-items: center; font: 22px/1 var(--head); flex: none; }
+.ghd .nm { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; line-height: 1; }
+.ghd .nm b { font: 24px/1 var(--head); font-weight: normal; color: #fff; }
+.ghd .nm span { font-size: 18px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ms { width: 32px; height: 32px; min-height: 0; padding: 0; font-size: 20px; background: var(--row); flex: none; }
+.ms.on { background: var(--yellow); color: var(--indigo); border-color: #FFE98A; }
+.blk { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 4px 10px; border: 0;
+       border-left: 2px solid var(--rule); background: var(--row); color: #fff; cursor: pointer; text-align: left; position: relative; }
+.blk:hover { filter: brightness(1.15); }
+.blk.rest { background: var(--rest); color: var(--faint); }
+.blk.now { background: var(--rowhot); }
+.blk .lt { font: 24px/1 var(--head); }
+.blk .bar { height: 6px; background: var(--rest); position: relative; overflow: hidden; }
+.blk .bar i { position: absolute; inset: 0 auto 0 0; background: var(--dim); }
+.blk .head { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+.blk.queued { animation: queued .5s steps(2) infinite; }
+@keyframes queued { 50% { background: #4A3BB8; } }
+.gempty { padding: 10px 14px; color: var(--soft); }
+
+/* the keys: fixed along the bottom */
+.keybar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: center; gap: 16px;
+          padding: 10px 12px; background: rgba(11, 5, 48, .94); border-top: 3px solid var(--rule); flex-wrap: wrap; }
+.keybar .lab { font: 26px var(--head); color: var(--yellow); min-width: 80px; text-align: center; }
+.keys { position: relative; display: flex; gap: 3px; height: 120px; touch-action: none; }
+.key { width: 46px; height: 120px; background: #E9ECFF; border: 2px solid var(--rule2); border-radius: 0 0 6px 6px; padding: 0 0 4px; cursor: pointer;
+       display: flex; flex-direction: column; justify-content: flex-end; align-items: center; color: var(--indigo); font: 17px/1 var(--mono); }
+.key small { color: #5A4FA0; font-size: 15px; }
+.key.blk2 { position: absolute; top: 0; width: 30px; height: 74px; background: var(--night); color: var(--yellow); z-index: 1; border-radius: 0 0 5px 5px; }
+.key.on, .key:active { background: var(--yellow) !important; color: var(--indigo); }
+.key.dim { box-shadow: inset 0 -10px 0 #8E98E8; }
+.key.blk2.dim { box-shadow: inset 0 -10px 0 #3C48B8; }
+.key.lit { box-shadow: inset 0 -14px 0 var(--orange); }
+.key.breath { animation: kbreath 1.13s ease-in-out infinite; }
+@keyframes kbreath { 50% { box-shadow: inset 0 -14px 0 #8E98E8; } }
+
+footer { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 10px 20px; margin-bottom: 150px;
+         background: var(--night); font: 21px var(--head); }
+footer .credits { font: 17px/1.3 var(--mono); color: var(--soft); flex-basis: 100%; }
+footer .credits a { color: var(--soft); }
+.tag { color: var(--yellow); }
+.msg { min-height: 1.3em; text-align: center; color: var(--yellow); font: 22px var(--head); }
+
+dialog { border: 4px solid var(--rule); box-shadow: 0 0 0 3px var(--night); padding: 18px 20px; max-width: 30em; background: var(--panel); color: var(--ink); }
+dialog::backdrop { background: rgba(11, 5, 48, .7); }
+dialog h2 { margin: 0 0 10px; font: 30px var(--head); color: var(--yellow); font-weight: normal; }
+dialog fieldset { border: 0; padding: 0; margin: 0 0 10px; display: grid; gap: 6px; }
+dialog input[type=number] { width: 4em; font: inherit; background: var(--night); color: #fff; border: 2px solid var(--rule2); }
+dialog small { color: var(--soft); }
+dialog progress { width: 100%; }
+dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+#sharelink { width: 100%; font: 16px var(--mono); padding: 6px; background: var(--night); color: #fff; border: 2px solid var(--rule2); }
+
+/* phone, held upright: one octave, the buttons under the screen */
+/* SAMPLES: the user's own (web/emu/spk_samples.js) */
+.samples .title { display: flex; align-items: baseline; gap: 10px; padding: 6px 14px; flex-wrap: wrap; }
+.samples .title b { font: 28px/1 var(--head); color: var(--yellow); }
+.samples .title span { color: var(--soft); }
+.sbody { display: flex; gap: 14px; padding: 14px; align-items: flex-start; flex-wrap: wrap; }
+.slots { display: grid; grid-template-columns: 1fr; gap: 6px; width: 230px; flex: none; }
+.slot { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--row); border: 2px solid var(--rule); color: #fff; cursor: pointer; text-align: left; min-height: 44px; }
+.slot .n { font: 26px/1 var(--head); color: var(--yellow); width: 20px; }
+.slot .t { display: flex; flex-direction: column; line-height: 1.05; min-width: 0; }
+.slot .t b { font: 21px/1 var(--head); font-weight: normal; }
+.slot .t span { font-size: 17px; color: var(--dim); white-space: nowrap; }
+.slot.on { background: linear-gradient(90deg, var(--orange), var(--rust)); border-color: var(--yellow); }
+.slot.on .t span { color: #FFE0C0; }
+.slot.empty .t b { color: var(--faint); }
+.sed { flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.sed.drag { outline: 3px dashed var(--yellow); outline-offset: 4px; }
+.sbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sbar .btn { min-height: 40px; font-size: 21px; }
+.sbar label.btn { display: inline-flex; align-items: center; }
+.sbar .lab { font: 22px var(--head); color: var(--yellow); }
+.sbar .hint, .sbar .drop { color: var(--soft); font-size: 19px; }
+.sbar .fld { display: inline-flex; align-items: center; gap: 6px; font: 21px var(--head); color: var(--yellow); }
+.sbar input, .sbar select { font: 21px var(--mono); background: var(--night); color: #fff; border: 2px solid var(--rule2); padding: 3px 6px; }
+.sbar input { width: 7.5em; text-transform: uppercase; }
+.sbar.use { border-top: 2px solid var(--rule); padding-top: 10px; }
+.wavewrap { position: relative; }
+#smpwave { display: block; width: 100%; height: 160px; background: var(--night); border: 2px solid var(--rule); cursor: crosshair; touch-action: none; }
+.wavewrap .empty[hidden] { display: none; }
+.wavewrap .empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--soft); pointer-events: none; text-align: center; padding: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; min-height: 36px; }
+.chips .btn { min-height: 34px; min-width: 40px; padding: 2px 8px; font-size: 19px; background: var(--row); }
+.chips .btn.all { background: var(--btn); }
+.sed[aria-disabled="true"] .sbar:not(:first-child) .btn, .sed[aria-disabled="true"] .chips { opacity: .45; pointer-events: none; }
+
+/* the hover help: one box for every title on the page */
+.tip { position: fixed; z-index: 60; max-width: 340px; padding: 7px 10px; background: var(--night); color: var(--ink); border: 3px solid var(--yellow);
+       box-shadow: 0 6px 24px rgba(0, 0, 0, .5); font: 19px/1.15 var(--mono); pointer-events: none; }
+.tip[hidden] { display: none; }
+
+/* first-run help: a card above the keys, the thing it talks about outlined */
+.tour { position: fixed; z-index: 20; left: 50%; bottom: 168px; transform: translateX(-50%); width: min(460px, calc(100vw - 24px));
+        background: var(--panel); border: 4px solid var(--yellow); box-shadow: 0 0 0 3px var(--night), 0 10px 40px rgba(0, 0, 0, .55); }
+.tour[hidden] { display: none; }
+.tour.high { bottom: auto; top: 76px; }
+.tour .top { display: flex; align-items: baseline; gap: 10px; padding: 6px 12px; }
+.tour .top b { font: 28px/1 var(--head); color: var(--yellow); font-weight: normal; }
+.tour .top span { margin-left: auto; color: var(--dim); }
+.tour p { margin: 0; padding: 12px 14px 4px; font-size: 22px; line-height: 1.2; }
+.tour p kbd { font: inherit; color: var(--yellow); }
+.tour .row { display: flex; gap: 8px; padding: 10px 12px 12px; align-items: center; }
+.tour .row .skip { margin-right: auto; background: none; border: 0; color: var(--soft); text-decoration: underline; font-size: 20px; min-height: 0; }
+.tour .row a { color: var(--soft); font-size: 20px; margin-right: auto; }
+.tour-hi { outline: 4px solid var(--yellow) !important; outline-offset: 4px; animation: tourhi 1.1s ease-in-out infinite; }
+@keyframes tourhi { 50% { outline-color: var(--orange); } }
+@media (prefers-reduced-motion: reduce) { .tour-hi { animation: none; } }
+.helpbtn { min-width: 44px; }
+
+@media (max-width: 720px) {
+  header { padding: 8px 10px; background: linear-gradient(105deg, var(--orange) 0, var(--orange) 140px, var(--indigo) 141px); }
+  .logo { width: auto; } .logo b { width: 36px; height: 36px; font-size: 32px; } .logo span { font-size: 21px; }
+  header nav { order: 3; width: 100%; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  header nav .btn { font-size: 19px; padding: 4px 6px; justify-content: center; }
+  .bpm { font-size: 24px; min-width: 0; margin-left: auto; }
+  main { padding: 10px 8px 12px; }
+  .body { padding: 10px 6px; gap: 12px; }
+  .face { order: 3; width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .face .btn { font-size: 19px; padding: 2px; }
+  .side { order: 2; width: 100%; }
+  .knobs, .wheels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wheels { border: 0; padding: 0; }
+  .stepper { width: auto; } .stepper .lab { font-size: 20px; } .stepper .arr { width: 44px; height: 44px; }
+  .keys .key.hi { display: none; }
+  .key { width: 40px; height: 104px; } .key.blk2 { width: 26px; height: 64px; }
+  .keys { height: 104px; }
+  .keybar { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "dn lab up" "keys keys keys"; gap: 6px; padding: 6px 8px 8px; justify-items: center; }
+  .keybar .btn { min-width: 0; min-height: 36px; padding: 2px 12px; font-size: 20px; }
+  #octdn { grid-area: dn; justify-self: start; } #octup { grid-area: up; justify-self: end; } .keybar .lab { grid-area: lab; min-width: 0; font-size: 20px; }
+  .keys { grid-area: keys; }
+  .pad { width: 150px; height: 150px; }
+  footer { margin-bottom: 170px; }
+  .tour { bottom: 186px; } .tour p { font-size: 20px; }
+  header nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .slots { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sbar .hint { display: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr" title="spelunkr.tv: the channel this groovebox is made for (leaves this page; your song stays saved here)."><b aria-hidden="true">S</b><span>Spelunkr<br>Groovebox</span></a>
+  <nav aria-label="Song">
+    <button class="btn orange" id="newsong" type="button">NEW SONG</button>
+    <button class="btn" id="randsong" type="button">&#127922; RANDOM</button>
+    <button class="btn" id="recbtn" type="button" title="Record what you hear, live, to a WAV file">RECORD <span id="rectime"></span></button>
+    <button class="btn" id="bounce" type="button" title="Render the song (or the pattern) to WAV, with stems if you like">EXPORT</button>
+    <button class="btn" id="share" type="button" title="A link that plays this song in anyone's browser">SHARE</button>
+    <button class="btn" id="saveproj" type="button" title="Download everything saved here as a .phantom file">SAVE</button>
+    <label class="btn" style="display:inline-flex;align-items:center" title="Open a .phantom project file"><input type="file" id="openproj" accept=".phantom,.json,application/json" hidden>OPEN</label>
+    <button class="btn" id="smpgo" type="button" title="Load your own samples, slice them, put them on a track">SAMPLES</button>
+    <a class="btn" id="manual" href="guide.html" target="_blank" rel="noopener" title="The manual, in a new tab">MANUAL</a>
+  </nav>
+  <button class="btn helpbtn" id="helpbtn" type="button" title="A quick tour of the groovebox" aria-label="Help: a quick tour">?</button>
+  <label class="power" title="The device's own names (FX, SEQ, GLO, ...) instead of the plain ones"><input type="checkbox" id="power"> POWER USER</label>
+  <div class="bpm" id="bpm" aria-live="off">--- BPM</div>
+</header>
+
+<main>
+  <div class="top">
+    <section class="panel device" aria-label="The groovebox">
+      <div class="trackbar strip">
+        <button class="btn arrow" type="button" id="tprev" aria-label="Previous track">&#9660;</button>
+        <span class="num h" id="tnum">TRACK --</span>
+        <button class="btn arrow" type="button" id="tnext" aria-label="Next track">&#9650;</button>
+        <span class="who" id="twho"></span>
+        <span class="what" id="twhat"></span>
+        <span class="pg" id="tpage" title="The page the screen shows">HOME</span>
+        <span class="state" id="tstate">STOPPED</span>
+        <span class="pat" id="tpat"></span>
+      </div>
+      <div class="body">
+        <div class="face" id="face"></div>
+        <div class="screenwrap">
+          <div class="bezel">
+            <canvas id="screen" width="480" height="480" role="img" aria-label="The groovebox's screen"></canvas>
+            <div class="start" id="start">
+              <button class="btn orange" id="go" type="button">SWITCH ON</button>
+              <button class="btn bare" id="gobare" type="button" hidden>Switch on without it</button>
+              <p id="status">Make a track for the channel. Headphones on.</p>
+            </div>
+          </div>
+        </div>
+        <div class="side">
+          <div class="knobs" id="knobs"></div>
+          <div class="wheels" id="wheels"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel fxpad" aria-label="FX PAD">
+      <div class="title strip"><b>FX PAD</b><span id="padtrack">on the selected track</span></div>
+      <div class="pads">
+        <div class="padbox"><div class="pad" id="pad0" tabindex="0" role="slider" aria-label="FILTER and GATE"><span class="dot"></span>
+          <span class="lbl t">CHOP FAST</span><span class="lbl b">CHOP SLOW</span><span class="lbl l">DARK</span><span class="lbl r">THIN</span></div>
+          <span class="name">FILTER · GATE</span></div>
+        <div class="padbox"><div class="pad" id="pad1" tabindex="0" role="slider" aria-label="ECHO and FLANGE"><span class="dot"></span>
+          <span class="lbl t">JET</span><span class="lbl b">HOLLOW</span><span class="lbl l">ECHO</span><span class="lbl r">PING</span></div>
+          <span class="name">ECHO · FLANGE</span></div>
+      </div>
+      <div class="hint">Hold and drag to bend the track. Let go and it snaps back. The middle is off.</div>
+      <div class="vapor">
+        <div class="title strip"><b>VAPOR</b><span>on the song</span>
+          <button class="btn" type="button" id="vapgo" title="One tap: slowed, warbly, dusty. Tap again for clean">VAPORIZE</button></div>
+        <div class="vknobs" id="vknobs"></div>
+        <div class="hint">Slow the record down, warp the tape, add dust and crunch. Saved with the song, heard in exports and shared links.</div>
+      </div>
+    </section>
+  </div>
+
+  <p class="msg" id="studiomsg" role="status"></p>
+
+  <section class="panel guide" aria-label="The song">
+    <div class="inner">
+      <div class="ghead strip" id="ghead"></div>
+      <div id="grows"></div>
+    </div>
+  </section>
+
+  <section class="panel samples" id="samples" aria-label="Your samples">
+    <div class="title strip"><b>SAMPLES</b><span>your own sounds: load, trim, slice, put on a track</span></div>
+    <div class="sbody">
+      <div class="slots" id="smpslots" role="listbox" aria-label="Sample slots"></div>
+      <div class="sed" id="smped">
+        <div class="sbar">
+          <label class="btn orange"><input type="file" id="smpfile" accept="audio/*,.wav,.mp3,.ogg,.flac,.m4a,.aif,.aiff" hidden>LOAD A FILE</label>
+          <span class="drop">or drop an audio file here</span>
+          <label class="fld">NAME <input id="smpname" maxlength="8" spellcheck="false" autocomplete="off"></label>
+          <label class="fld">ROOT <select id="smproot" title="The note the sample plays at its own pitch (as a synth)"></select></label>
+          <button class="btn quiet" type="button" id="smpclear">CLEAR SLOT</button>
+        </div>
+        <div class="wavewrap"><canvas id="smpwave" height="160" aria-label="The waveform: drag the edges to trim, click to add a slice, drag a slice to move it, double-click it to remove it"></canvas>
+          <div class="empty" id="smpempty">Empty slot. Load a WAV, MP3, OGG or FLAC (up to 30 seconds).</div></div>
+        <div class="sbar">
+          <span class="lab">SLICES</span>
+          <button class="btn quiet" type="button" id="smphits" title="A slice at each hit">AUTO</button>
+          <button class="btn quiet" type="button" data-eq="4">4</button><button class="btn quiet" type="button" data-eq="8">8</button>
+          <button class="btn quiet" type="button" data-eq="16">16</button>
+          <button class="btn quiet" type="button" id="smpnone">NONE</button>
+          <span class="hint">Click the wave to add a slice, drag one to move it, double-click to remove. Drag the edges to trim.</span>
+        </div>
+        <div class="chips" id="smpchips" aria-label="Hear a slice"></div>
+        <div class="sbar use">
+          <span class="lab" id="smpfor">PUT IT ON TRACK --</span>
+          <button class="btn" type="button" data-use="0" title="The whole sample, played at the pitch of the key">AS A SYNTH</button>
+          <button class="btn" type="button" data-use="1" title="A slice a key, from C3 up">AS CHOPS</button>
+          <button class="btn" type="button" data-use="2" title="Slices 1 to 8 on the drum rows: kick, snare, clap, hat, open hat, tom, rim, cowbell">AS A DRUM KIT</button>
+          <span class="hint" id="smpinfo"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="keybar" aria-label="Keys">
+  <button class="btn quiet" type="button" id="octdn">OCT &#8722;</button>
+  <div class="keys" id="keys"></div>
+  <button class="btn quiet" type="button" id="octup">OCT +</button>
+  <span class="lab" id="octlab">C3</span>
+</div>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<div class="tour" id="tour" role="dialog" aria-labelledby="tourtitle" aria-live="polite" hidden>
+  <div class="top strip"><b id="tourtitle">WELCOME</b><span id="tourstep"></span></div>
+  <p id="tourtext"></p>
+  <div class="row"><button class="btn skip" type="button" id="tourskip">Skip the tour</button>
+    <button class="btn quiet" type="button" id="tourback">BACK</button><button class="btn orange" type="button" id="tournext">NEXT</button></div>
+</div>
+
+<footer>
+  <span><span id="foot">SWITCH ON TO START</span></span>
+  <span class="tag">Like cable TV, but weirder. SPELUNKR.TV</span>
+  <span class="credits">Spelunkr Groovebox @VERSION@ beta@PREVIEW@ · <a href="guide.html" title="The guide: how to use the groovebox, from the first beat to the export.">the guide</a> · Space plays and stops · Z–M and Q–O play the keys (S D G H J, 2 3 5 6 7 9 the black ones) · [ ] octave · arrows scroll and pick the track ·
+    a Felucca fork: built on Phantom Tracker, Dungeon Tracker by Bourbon Weather and Felucca by Leo Kuroshita (Hügelton Instruments) ·
+    free software, <a href="https://www.gnu.org/licenses/gpl-3.0.html" title="The licence: free to use, change and share, as long as the source stays open.">GPL-3.0</a>: <a href="@SOURCE@" title="The source code of this groovebox.">the source</a> · VT323 and Jersey 10 fonts, SIL OFL ·
+    sampled instruments and kits from the <a href="https://github.com/sgossner/VCSL" title="Where the sampled instruments and drum kits come from (free, public domain).">Versilian Community Sample Library</a> (CC0) ·
+    M-VAVE and FM-1 are their owners' trademarks; this is not affiliated with them.</span>
+</footer>
+
+<dialog id="bouncedlg">
+  <form method="dialog" id="bounceform">
+    <h2>EXPORT THE SONG</h2>
+    <fieldset>
+      <label><input type="radio" name="what" value="song" id="whatsong"> The song, once through</label>
+      <label><input type="radio" name="what" value="pattern" id="whatpat" checked> The pattern, <input type="number" id="loops" min="1" max="64" value="4"> times</label>
+      <small id="bouncelen"></small>
+    </fieldset>
+    <fieldset>
+      <label>Let it ring out for up to <input type="number" id="tail" min="0" max="20" value="4"> s</label>
+      <label><input type="checkbox" id="stems"> Stems too: one WAV per track, in a zip</label>
+      <small>Rendered from the top, faster than real time. 24-bit, 44.1 kHz. What you play live isn't in it: use RECORD for that.</small>
+    </fieldset>
+    <progress id="bounceprog" hidden></progress>
+    <div class="buttons"><button class="btn" value="cancel" id="bouncecancel">CANCEL</button><button class="btn orange" value="go" id="bouncego">EXPORT</button></div>
+  </form>
+</dialog>
+<dialog id="newdlg">
+  <form method="dialog">
+    <h2 id="newtitle">START A NEW SONG?</h2>
+    <p style="margin:0 0 8px" id="newtext"></p>
+    <small>Changed your mind afterwards? Hold SAVE on the groovebox to undo it.</small>
+    <div class="buttons"><button class="btn" value="cancel">CANCEL</button><button class="btn orange" value="go" id="newgo">START</button></div>
+  </form>
+</dialog>
+<dialog id="sharedlg">
+  <form method="dialog">
+    <h2>SHARE THIS SONG</h2>
+    <p style="margin:0 0 8px">Anyone who opens this link hears your song in their own groovebox, and can carry on from it.</p>
+    <input id="sharelink" readonly>
+    <small id="shareinfo"></small>
+    <div class="buttons"><button class="btn" value="close">CLOSE</button><button class="btn orange" value="copy" id="sharecopy">COPY LINK</button></div>
+  </form>
+</dialog>
+
+<script type="module">
+import { midiKnob, packSong, unpackSong } from "./worklet.js";
+import { wav24, zip } from "./bounce.js";
+import * as SPK from "./spk_samples.js";
+const $ = (id) => document.getElementById(id);
+const STORE = "spelunkr-groovebox-flash", POWER = "spelunkr-groovebox-power";
+
+// ------------------------------------------------------------------ the firmware's controls
+// panel.c's buttons (bit) and encoders (role); the plain names, the device's names (POWER USER)
+const B = { FX: 0, SCL: 1, ENV: 2, LFO: 3, EDIT: 4, GLO: 5, HOME: 6, SAVE: 7, ARP: 8, SEQ: 9, PLAY: 10, REC: 11, "OCT-": 12, "OCT+": 13 };
+const PLAY_GREEN = 14;
+const FACE = [["HOME", "HOME"], ["EDIT", "SOUND"], ["SEQ", "STEPS"], ["GLO", "MIX"], ["FX", "EFFECTS"], ["SCL", "SCALE"],
+              ["ENV", "ENVELOPE"], ["LFO", "WOBBLE"], ["ARP", "ARP"], ["SAVE", "SAVE"], ["PLAY", "PLAY"], ["REC", "RECORD"],
+              ["OCT-", "OCTAVE −"], ["OCT+", "OCTAVE +"]];
+const WHEEL_TIP = {
+  SOUNDS: "SOUNDS: ◀ ▶ step through every sound for this track (kits on the drum tracks). Hold an arrow to fly through them.",
+  TRACK: "TRACK: ◀ ▶ pick the track the keys, the screen and the controls work on (the rows below too).",
+  SCROLL: "SCROLL: ◀ ▶ move through the screen's lists, pages and menus (the keyboard's ↑ ↓ too).",
+  VOLUME: "VOLUME: ◀ ▶ the overall volume.",
+};
+const WHEELS = [{ role: 2, dev: "PRESETS", plain: "SOUNDS", hint: "browse" }, { role: 1, dev: "ALGORITHM", plain: "TRACK", hint: "pick" },
+                { role: 0, dev: "SELECT", plain: "SCROLL", hint: "menus" }, { role: "master", dev: "MASTER", plain: "VOLUME", hint: "" }];
+const KEYS = 27;                                   // C3 .. D5 (the firmware's keys from C: core.h KEY_OFF)
+const BLACK = (k) => [1, 3, 6, 8, 10].includes(k % 12);
+const NOTE = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+const KEYCODE = ["KeyZ", "KeyS", "KeyX", "KeyD", "KeyC", "KeyV", "KeyG", "KeyB", "KeyH", "KeyN", "KeyJ", "KeyM",
+                 "KeyQ", "Digit2", "KeyW", "Digit3", "KeyE", "KeyR", "Digit5", "KeyT", "Digit6", "KeyY", "Digit7", "KeyU",
+                 "KeyI", "Digit9", "KeyO"];
+const KEYLABEL = ["Z", "S", "X", "D", "C", "V", "G", "B", "H", "N", "J", "M", "Q", "2", "W", "3", "E", "R", "5", "T", "6", "Y", "7", "U", "I", "9", "O"];
+// the cards' short labels in plain words (POWER USER: as the screen says them)
+const KNOB_PLAIN = { HBT: "TEMPO", SWG: "SWING", CLK: "CLOCK", FILTR: "FILTER", FLANG: "FLANGE", SEC: "PART", FEED: "TRACK",
+  PAT: "PATTERN", REPS: "REPEATS", COL: "COLUMN", ACC: "ACCENT", VL: "VELOCITY", CHN: "CHANCE", LEN: "LENGTH", DIV: "SPEED",
+  ATK: "ATTACK", DEC: "DECAY", SUS: "SUSTAIN", REL: "RELEASE", RES: "RESONANCE", RESO: "RESONANCE", CUT: "CUTOFF",
+  LRATE: "SPEED", RATE: "SPEED", DPTH: "DEPTH", REV: "REVERB", DLY: "DELAY", "No.": "SOUND", ENG: "ENGINE", FAV: "FAVORITE",
+  OCT: "OCTAVE", TRN: "TRANSPOSE", GLD: "GLIDE", VCE: "VOICE", PROB: "CHANCE", RATCH: "REPEATS", NDG: "NUDGE",
+  SET: "SOUND", BITS: "CRUNCH", DRV: "DRIVE", SCAN: "WAVE", WARP: "BEND", CLARITY: "TONE", BD: "KICK", SD: "SNARE", HH: "HAT", OH: "OPEN HAT", PC: "PERC", CP: "CLAP" };
+const ROLE = ["DRUMS", "SYNTH 1", "SYNTH 2", "SYNTH 3", "PERC"];   // by track index (NTRK order); shown by pos
+const ICON = ["D", "1", "2", "3", "P"];
+
+let node = null, btnMask = 0, keyMask = 0, latched = 0, masterValue = 700, lastLeds = [0, 0, 0, 0, 0], power = false, G = null;
+const btnBy = new Map(), keyBy = new Map();
+const send = (m) => { if (node) node.port.postMessage(m); };
+try { power = localStorage.getItem(POWER) === "1"; } catch {}
+$("power").checked = power;
+
+// the face buttons
+const faceEls = [];
+for (const [dev, plain] of FACE) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn" + (dev === "PLAY" ? " play" : dev === "REC" ? " rec" : dev.startsWith("OCT") ? " quiet oct" : "");
+  b.dataset.dev = dev; b.dataset.plain = plain;
+  bindButton(b, B[dev]);
+  $("face").append(b);
+  faceEls.push({ el: b, bit: B[dev] });
+}
+// each face button: what a tap does on this page (the firmware's web_guide "b": [act, hold]), and its own name small;
+// POWER USER: its own name big, the job small
+let btnCtx = null;
+const DEEP = new Set(["FX", "SCL", "ENV", "LFO", "ARP"]);
+// each face button in plain words (the hover); what it does on this screen (the device's) comes first
+const FACE_TIP = {
+  HOME: "the home screen: the track's four main controls. Tap again for the mixer (levels, pan, reverb), again for the tempo. Hold it for the settings menu.",
+  EDIT: "the sound's settings. Hold it: the white keys pick another engine, OCTAVE + scrambles the sound, OCTAVE − puts it back.",
+  SEQ: "the pattern's steps, one row a step (a tracker): ROW picks a step, COLUMN what to change. Tap again for the knob moves. Hold it for tools: a beat, random, clear, length, swing.",
+  GLO: "patterns A–F (the white keys C to A pick or copy one). Tap again: the song, its parts in order. Hold it: every track's level.",
+  FX: "the FX PAD on the screen. Hold it to glitch the whole mix: stutter, tunnel, jumps, crush.",
+  SCL: "the scale: every note kept in a key, and chords on the white keys.",
+  ENV: "the envelope: how each note starts, holds and fades.",
+  LFO: "the wobble: slow movement on the sound. A tap freezes what you hear while you edit the steps (tap again: your edits come in).",
+  ARP: "the arpeggiator: hold a chord and it plays the notes one after another.",
+  SAVE: "save and load sounds and songs on the device itself. Hold it to undo a load, a NEW SONG or a RANDOM.",
+  PLAY: "play and stop (the space bar too).",
+  REC: "record: tap it, press PLAY and play the keys; what you play goes into the pattern. Tap again to stop recording.",
+  "OCT-": "the keys an octave lower (the [ key too). On some screens it does that screen's job instead: the button says which.",
+  "OCT+": "the keys an octave higher (the ] key too). On some screens it does that screen's job instead: the button says which.",
+};   // in-depth: shown with POWER USER (the FX PAD is on the page)
+function names() {
+  faceEls.forEach((f) => { f.el.hidden = !power && DEEP.has(f.el.dataset.dev); });
+  faceEls.forEach((f, i) => {
+    const dev = f.el.dataset.dev.replace("-", " −").replace("+", " +"), ctx = btnCtx && btnCtx[f.bit];
+    const act = ctx && ctx[0] ? ctx[0] : f.el.dataset.plain;
+    const big = power ? dev : act, small = power ? (act !== dev ? act : "") : dev;
+    if (f.big !== big || f.small !== small) {
+      f.big = big; f.small = small;
+      f.el.innerHTML = `<span class="a"></span><span class="d"></span>`;
+      f.el.firstChild.textContent = big;
+      f.el.lastChild.textContent = small;
+    }
+    f.el.classList.toggle("ctx", !power && act !== f.el.dataset.plain);
+    const hold = ctx && ctx[1] ? ctx[1] : "";
+    f.el.title = `${act}: ${FACE_TIP[f.el.dataset.dev]}${hold ? ` Hold it: ${hold}.` : ""}` + (power ? "" : ` (The device calls it ${dev}.)`);
+    f.el.setAttribute("aria-label", `${act} (${dev} button)${hold ? ", " + hold : ""}`);
+  });
+  for (const w of wheelEls) { w.lab.textContent = power ? w.dev : w.plain; knobName(w, w.lab.textContent); w.el.title = WHEEL_TIP[w.plain]; }
+}
+function bindButton(el, bit) {
+  el.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    if (e.shiftKey || e.button === 2) { latched ^= 1 << bit; syncButtons(); return; }
+    if (latched & (1 << bit)) { latched &= ~(1 << bit); syncButtons(); return; }
+    el.setPointerCapture(e.pointerId);
+    btnBy.set("p" + e.pointerId, bit);
+    syncButtons();
+  });
+  el.addEventListener("contextmenu", (e) => e.preventDefault());
+  el.addEventListener("keydown", (e) => {            // (Enter / Space press it only when the keyboard put the focus here:
+    if ((e.key === "Enter" || e.key === " ") && !e.repeat && el.matches(":focus-visible")) {   // after a click, Space is PLAY)
+      btnBy.set("f" + bit, bit); syncButtons(); e.preventDefault(); e.stopPropagation();
+    }
+  });
+  el.addEventListener("keyup", (e) => { if (btnBy.delete("f" + bit)) { syncButtons(); e.stopPropagation(); } });
+}
+function syncButtons() {
+  let m = latched;
+  for (const b of btnBy.values()) m |= 1 << b;
+  if (m !== btnMask) { btnMask = m; send({ type: "buttons", mask: m }); }
+  for (const f of faceEls) {
+    f.el.classList.toggle("held", !!(m & (1 << f.bit)));
+    f.el.classList.toggle("latched", !!(latched & (1 << f.bit)));
+  }
+}
+function release(e) {
+  const id = "p" + e.pointerId;
+  if (btnBy.delete(id)) syncButtons();
+  if (keyBy.delete(id)) syncKeys();
+}
+for (const t of ["pointerup", "pointercancel"]) addEventListener(t, release);
+
+// the steppers (Ed, Nov 22 2026: "replace all of the virtual knobs with arrow buttons"): KNOB 1..4 (named by the
+// device), the four wheels, VAPOR. Each: its name, ◀ the value ▶, a level bar where there is a level. An arrow turns
+// it a step; held, it repeats and speeds up. The mouse wheel over it and the keyboard's arrows (on a focused arrow)
+// turn it too. (`.knob` still: the global keys leave it alone.)
+function makeKnob(parent, role, wheel) {
+  const el = document.createElement("div");
+  el.className = "knob stepper" + (wheel ? " wheel" : "");
+  el.setAttribute("role", "group");
+  el.innerHTML = `<span class="lab"></span><span class="row"><button type="button" class="arr dn" aria-label="down">&#9664;</button>` +
+    `<span class="val"></span><button type="button" class="arr up" aria-label="up">&#9654;</button></span><span class="bar"><i></i></span>`;
+  parent.append(el);
+  const k = { el, role, bar: el.querySelector(".bar i"), lab: el.querySelector(".lab"), val: el.querySelector(".val"), angle: -135 };
+  for (const [sel, d] of [[".dn", -1], [".up", 1]]) {
+    const b = el.querySelector(sel);
+    let timer = null, reps = 0;
+    const stop = () => { clearTimeout(timer); timer = null; };
+    const again = () => {                               // held: after a beat, faster and faster, then bigger steps
+      reps++;
+      turn(k, d * (reps > 24 ? 4 : reps > 10 ? 2 : 1));
+      timer = setTimeout(again, Math.max(40, 110 - reps * 6));
+    };
+    b.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      b.setPointerCapture(e.pointerId);
+      reps = 0;
+      turn(k, d);
+      timer = setTimeout(again, 380);
+    });
+    for (const t of ["pointerup", "pointercancel", "lostpointercapture"]) b.addEventListener(t, stop);
+    b.addEventListener("contextmenu", (e) => e.preventDefault());
+    b.addEventListener("keydown", (e) => {
+      const kd = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, ...(b.matches(":focus-visible") ? { Enter: d, " ": d } : {}) }[e.key];
+      if (kd) { turn(k, kd); e.preventDefault(); e.stopPropagation(); }
+    });
+  }
+  let wheelAcc = 0;
+  el.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
+    if (Math.abs(dy) >= 50) { turn(k, dy < 0 ? 1 : -1); wheelAcc = 0; return; }
+    wheelAcc -= dy;
+    const n = Math.trunc(wheelAcc / 25);
+    if (n) { wheelAcc -= n * 25; turn(k, n); }
+  }, { passive: false });
+  return k;
+}
+// the level bar, by the old dial's angle (-135 .. 135); a stepper with no level (the wheels that browse, a card with
+// no gauge) shows none
+function setAngle(k, a) {
+  k.angle = a;
+  const free = (typeof k.role === "number" && k.role < 3) || k.free;
+  k.el.classList.toggle("free", !!free);
+  if (!free) k.bar.style.width = Math.max(0, Math.min(100, (a + 135) / 270 * 100)) + "%";
+}
+function knobName(k, name) {                            // its arrows say what they turn
+  k.el.setAttribute("aria-label", name);
+  k.el.querySelector(".dn").setAttribute("aria-label", name + " down");
+  k.el.querySelector(".up").setAttribute("aria-label", name + " up");
+}
+function turn(k, n) {
+  if (!n) return;
+  if (k.role === "vapor") { vapSet(k.k, k.v + n * 4); return; }
+  if (k.role === "master") {
+    masterValue = Math.max(0, Math.min(1023, masterValue + n * 16));
+    send({ type: "master", value: masterValue });
+    setAngle(k, -135 + 270 * masterValue / 1023);
+    k.val.textContent = Math.round(masterValue / 10.23) + "%";
+  } else {
+    send({ type: "enc", role: k.role, n });
+    if (k.role < 3 || k.free) { k.el.classList.remove("nudge"); void k.el.offsetWidth; k.el.classList.add("nudge"); }
+  }
+}
+const knobEls = [3, 4, 5, 6].map((r) => makeKnob($("knobs"), r, false));
+// VAPOR: SLOWED WOW VINYL CRUSH, 0..127 each, the song's (the device keeps them: web_vapor)
+const VAPOR = [
+  { lab: "SLOWED", tip: "Plays the whole record slower: lower and lazier", show: (v) => v ? Math.round(100 - v * 30 / 127) + "%" : "OFF" },
+  { lab: "WOW", tip: "A warbly old tape: the pitch drifts", show: (v) => v ? Math.round(v / 1.27) + "%" : "OFF" },
+  { lab: "VINYL", tip: "Crackle and hiss of an old record", show: (v) => v ? Math.round(v / 1.27) + "%" : "OFF" },
+  { lab: "CRUSH", tip: "Fewer bits, lower rate: crunchy", show: (v) => v ? Math.round(v / 1.27) + "%" : "OFF" },
+];
+const VAPORIZE = [56, 40, 44, 0];
+let vapTouched = 0;
+const vapEls = VAPOR.map((d, k) => Object.assign(makeKnob($("vknobs"), "vapor", false), { k, v: 0, d }));
+function vapShow(el, v) {
+  el.v = v;
+  el.lab.textContent = el.d.lab;
+  knobName(el, el.d.lab);
+  el.val.textContent = el.d.show(v);
+  el.el.title = `${el.d.lab}: ${el.d.tip} (${el.d.show(v)})`;
+  setAngle(el, -135 + 270 * v / 127);
+}
+function vapSet(k, v) {
+  v = Math.max(0, Math.min(127, Math.round(v)));
+  vapTouched = performance.now();
+  vapShow(vapEls[k], v);
+  send({ type: "vapor", k, v });
+  $("vapgo").textContent = vapEls.some((e) => e.v) ? "CLEAN" : "VAPORIZE";
+}
+vapEls.forEach((el) => vapShow(el, 0));
+$("vapgo").addEventListener("click", () => {
+  const on = vapEls.some((e) => e.v);
+  vapEls.forEach((el, k) => vapSet(k, on ? 0 : VAPORIZE[k]));
+});
+knobEls.forEach((k, i) => { k.lab.textContent = "KNOB " + (i + 1); setAngle(k, -135); });
+const wheelEls = WHEELS.map((w) => Object.assign(makeKnob($("wheels"), w.role, true), w));
+wheelEls.forEach((w) => { w.val.textContent = w.hint; });
+setAngle(wheelEls[3], -135 + 270 * masterValue / 1023);
+wheelEls[3].val.textContent = Math.round(masterValue / 10.23) + "%";
+names();
+function manualLink() {                                   // MANUAL: the guide; with POWER USER, the device's full manual
+  $("manual").href = power ? "manual.html" : "guide.html";
+  $("manual").title = power ? "The device's full manual, in a new tab" : "The manual, in a new tab";
+}
+manualLink();
+$("power").addEventListener("change", () => {
+  power = $("power").checked;
+  try { localStorage.setItem(POWER, power ? "1" : "0"); } catch {}
+  send({ type: "plain", on: !power });                    // the screen too: the device's words with POWER USER
+  manualLink();
+  names();
+});
+
+// the keys: C3 .. D5 (the phone: one octave, C3 .. C4)
+const keyEls = [];
+{
+  let white = 0;
+  for (let k = 0; k < KEYS; k++) {
+    const el = document.createElement("button");
+    el.type = "button";
+    const octave = 3 + Math.floor(k / 12), name = NOTE[k % 12];
+    el.className = "key" + (BLACK(k) ? " blk2" : "") + (k > 12 ? " hi" : "");
+    el.setAttribute("aria-label", name + octave);
+    el.title = `${name}${octave}: play this note (computer key ${KEYLABEL[k]}). On a drum track each key plays a drum; on some screens a key picks or does something, as the screen shows.`;
+    el.innerHTML = BLACK(k) ? `<small>${KEYLABEL[k]}</small>` : `${name === "C" ? name + octave : name}<small>${KEYLABEL[k]}</small>`;
+    if (BLACK(k)) el.style.left = (white * 49 - 17) + "px";
+    else white++;
+    el.addEventListener("pointerdown", (e) => { e.preventDefault(); el.releasePointerCapture?.(e.pointerId); keyBy.set("p" + e.pointerId, k); syncKeys(); });
+    el.addEventListener("pointerenter", (e) => { if (e.buttons && keyBy.has("p" + e.pointerId)) { keyBy.set("p" + e.pointerId, k); syncKeys(); } });
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
+    $("keys").append(el);
+    keyEls.push(el);
+  }
+  const phone = matchMedia("(max-width: 720px)");
+  const place = () => {                                // black keys over the white ones' gaps, by the white keys' width
+    const w = phone.matches ? 43 : 49, bw = phone.matches ? 13 : 17;
+    let n = 0;
+    keyEls.forEach((el, k) => { if (BLACK(k)) el.style.left = (n * w - bw) + "px"; else n++; });
+  };
+  place();
+  phone.addEventListener("change", place);
+}
+function syncKeys() {
+  let m = 0;
+  for (const k of keyBy.values()) m |= 1 << k;
+  if (m !== keyMask) { keyMask = m; send({ type: "keys", mask: m }); }
+  keyEls.forEach((el, k) => el.classList.toggle("on", !!(m & (1 << k))));
+}
+$("octdn").addEventListener("click", () => tapButton(B["OCT-"]));
+$("octup").addEventListener("click", () => tapButton(B["OCT+"]));
+function tapButton(bit) {
+  btnBy.set("t" + bit, bit); syncButtons();
+  setTimeout(() => { btnBy.delete("t" + bit); syncButtons(); }, 70);
+}
+
+// the computer keyboard: the keys (trackers' layout), Space PLAY, [ ] OCT, arrows SELECT / ALGORITHM, Esc HOME
+const KMAP = {};
+KEYCODE.forEach((c, k) => { KMAP[c] = { key: k }; });
+Object.assign(KMAP, { Space: { btn: B.PLAY }, BracketLeft: { btn: B["OCT-"] }, BracketRight: { btn: B["OCT+"] }, Escape: { btn: B.HOME } });
+const ARROWS = { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowRight: [1, 1], ArrowLeft: [1, -1] };
+addEventListener("keydown", (e) => {
+  if (!node || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.("input, select, .knob, dialog, .tour")) return;
+  if (ARROWS[e.code]) { const [r, n] = ARROWS[e.code]; send({ type: "enc", role: r, n }); e.preventDefault(); return; }
+  const m = KMAP[e.code];
+  if (!m) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  if (m.key !== undefined) { keyBy.set("k" + e.code, m.key); syncKeys(); }
+  else { btnBy.set("k" + e.code, m.btn); syncButtons(); }
+});
+addEventListener("keyup", (e) => {
+  const id = "k" + e.code;
+  if (keyBy.delete(id)) syncKeys();
+  if (btnBy.delete(id)) syncButtons();
+});
+addEventListener("blur", () => {
+  for (const id of [...btnBy.keys()]) if (id[0] === "k") btnBy.delete(id);
+  for (const id of [...keyBy.keys()]) if (id[0] === "k") keyBy.delete(id);
+  syncButtons(); syncKeys();
+});
+
+// ------------------------------------------------------------------ the FX PAD (felucca_web.c web_xy)
+for (const j of [0, 1]) {
+  const pad = $("pad" + j), dot = pad.querySelector(".dot");
+  let held = null;
+  const at = (e) => {
+    const r = pad.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+    dot.style.left = x * 100 + "%"; dot.style.top = y * 100 + "%";
+    send({ type: "xy", j, x: Math.round(x * 127), y: Math.round((1 - y) * 127), on: 1 });
+  };
+  pad.addEventListener("pointerdown", (e) => { e.preventDefault(); pad.setPointerCapture(e.pointerId); held = e.pointerId; pad.classList.add("on"); at(e); });
+  pad.addEventListener("pointermove", (e) => { if (held === e.pointerId) at(e); });
+  const up = (e) => {
+    if (held !== e.pointerId) return;
+    held = null;
+    pad.classList.remove("on");
+    dot.style.left = dot.style.top = "50%";
+    send({ type: "xy", j, x: 64, y: 64, on: 0 });
+  };
+  pad.addEventListener("pointerup", up);
+  pad.addEventListener("pointercancel", up);
+}
+
+// ------------------------------------------------------------------ screen and lights
+const canvas = $("screen"), ctx = canvas.getContext("2d");
+let img = ctx.createImageData(480, 480);
+function drawScreen(fb) {
+  const side = Math.round(Math.sqrt(fb.length));
+  if (img.width !== side) { canvas.width = canvas.height = side; img = ctx.createImageData(side, side); }
+  const d = img.data;
+  for (let i = 0; i < side * side; i++) {
+    const v = fb[i], p = ((v >> 8) | (v << 8)) & 0xFFFF;
+    d[i * 4] = ((p >> 11) & 31) * 255 / 31;
+    d[i * 4 + 1] = ((p >> 5) & 63) * 255 / 63;
+    d[i * 4 + 2] = (p & 31) * 255 / 31;
+    d[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+function drawLights([litB, litK, dimB, dimK, dimLo = 0, brB = 0, brK = 0]) {
+  for (const f of faceEls) {
+    const bit = 1 << f.bit, green = f.bit === B.PLAY && (litB & (1 << PLAY_GREEN));
+    f.el.classList.toggle("lit", !!(litB & bit) || !!green);
+    f.el.classList.toggle("breath", !(litB & bit) && !!(brB & bit));
+  }
+  keyEls.forEach((el, k) => {
+    el.classList.toggle("lit", !!(litK & (1 << k)));
+    el.classList.toggle("dim", !(litK & (1 << k)) && !!(dimK & (1 << k)));
+    el.classList.toggle("breath", !!(brK & (1 << k)));
+  });
+}
+
+// ------------------------------------------------------------------ the guide (felucca_web.c web_guide)
+const dec = new TextDecoder(), phoneMQ = matchMedia("(max-width: 720px)");
+let guideSig = "";
+function showGuide(g) {
+  G = g;
+  const pos = (k) => g.tracks[k].pos, order = [...g.tracks.keys()].sort((a, b) => pos(a) - pos(b));
+  const sel = g.tracks[g.sel], letter = (p) => "ABCDEF"[p] ?? "-";
+  $("bpm").textContent = g.bpm + " BPM";
+  $("tnum").textContent = "TRACK " + String(pos(g.sel) + 1).padStart(2, "0");
+  $("twho").textContent = ROLE[g.sel] + (sel.b ? " +B" : "");
+  $("twhat").textContent = sel.sound ? `${sel.sound} · ${sel.engine}` : sel.engine;
+  $("tstate").textContent = g.play ? "PLAYING" : "STOPPED";
+  $("tpage").textContent = g.page;
+  if (g.b && JSON.stringify(g.b) !== JSON.stringify(btnCtx)) { btnCtx = g.b; names(); }
+  $("tpat").textContent = "PATTERN " + letter(g.cur) + (g.queue >= 0 ? " → " + letter(g.queue) : "");
+  $("padtrack").textContent = "on " + ROLE[g.sel];
+  smpTrack(g);
+  $("octlab").textContent = phoneMQ.matches ? `C${3 + g.oct}–C${4 + g.oct}` : `C${3 + g.oct}–D${5 + g.oct}`;
+  g.knobs.forEach((k, i) => {                              // KNOB 1..4: what their cards on the screen say now
+    const el = knobEls[i], lab = k.label ? (power ? k.label : KNOB_PLAIN[k.label] || k.label) : "—";
+    el.lab.textContent = lab;
+    knobName(el, k.label ? lab : `KNOB ${i + 1}`);
+    el.val.textContent = k.label ? k.val : "—";
+    el.el.title = k.label ? `${lab}${k.val ? " (now " + k.val + ")" : ""}: ◀ ▶ change it, hold an arrow to keep going, or scroll over it. ` +
+      `It is the screen's card ${i + 1}: what it changes follows the screen.` : `Control ${i + 1}: nothing to change on this screen.`;
+    el.el.classList.toggle("idle", !k.label);
+    el.free = k.frac < 0;                                   // (no gauge: no bar)
+    setAngle(el, el.free ? el.angle : -135 + 270 * Math.max(0, Math.min(1000, k.frac)) / 1000);
+  });
+  for (const j of [0, 1]) {                               // a pad moved on the screen's knobs shows where it is
+    const pad = $("pad" + j);
+    if (pad.classList.contains("on")) continue;
+    const on = g.xy[j * 3 + 2], dot = pad.querySelector(".dot");
+    dot.style.left = (on ? g.xy[j * 3] / 127 * 100 : 50) + "%";
+    dot.style.top = (on ? 100 - g.xy[j * 3 + 1] / 127 * 100 : 50) + "%";
+    dot.style.opacity = on ? 1 : "";
+  }
+  if (g.vapor && performance.now() - vapTouched > 600) {   // VAPOR as the song has it (a load, a shared link)
+    g.vapor.forEach((v, k) => { if (vapEls[k].v !== v) vapShow(vapEls[k], v); });
+    $("vapgo").textContent = g.vapor.some((v) => v) ? "CLEAN" : "VAPORIZE";
+  }
+  $("foot").textContent = `${g.tracks.length} TRACKS · PATTERN ${letter(g.cur)} OF A–F · ${g.song.rows.length ? g.song.rows.length + " SECTIONS IN THE SONG" : "NO SONG YET"} · SAVED IN THIS BROWSER`;
+
+  // the columns: the song's sections, else the patterns A..F stored
+  const song = g.song.rows.length > 0;
+  const cols = song ? g.song.rows.map((r, i) => ({ label: "PART " + (i + 1), sub: "×" + r[0], pats: r.slice(1), now: g.song.running && g.song.row === i, w: r[0] }))
+    : [0, 1, 2, 3, 4, 5].filter((p) => (g.used >> p) & 1 || p === g.cur).map((p) => ({ label: "PATTERN " + letter(p), sub: "", pats: g.tracks.map(() => p), now: p === g.cur, queued: p === g.queue, w: 1, p }));
+  const sig = JSON.stringify([cols.map((c) => [c.label, c.sub, c.pats, c.w]), order, g.sel, song, power,
+                              g.tracks.map((t) => [t.sound, t.engine, t.mute, t.solo, t.b, t.pats])]);
+  if (sig !== guideSig) {
+    guideSig = sig;
+    const head = $("ghead");
+    head.innerHTML = `<div class="c0">${song ? "THE SONG" : "PATTERNS"} <small>${song ? "click a part to cue its pattern" : "click one to play it next"}</small></div>`;
+    for (const c of cols) {
+      const d = document.createElement("div");
+      d.className = "col";
+      d.style.flexGrow = c.w;
+      d.innerHTML = `${c.label} <small>${c.sub}</small>`;
+      head.append(d);
+    }
+    const rows = $("grows");
+    rows.innerHTML = "";
+    for (const k of order) {
+      const t = g.tracks[k], row = document.createElement("div");
+      row.className = "grow" + (k === g.sel ? " sel" : "");
+      row.dataset.k = k;
+      const hd = document.createElement("div");
+      hd.className = "ghd";
+      hd.innerHTML = `<span class="n">${String(t.pos + 1).padStart(2, "0")}</span><span class="ic" aria-hidden="true">${ICON[k]}</span>` +
+        `<span class="nm"><b>${ROLE[k]}${t.b ? " +B" : ""}</b><span></span></span>`;
+      hd.querySelector(".nm span").textContent = t.sound ? `${t.sound} · ${t.engine}` : t.engine;
+      hd.addEventListener("click", () => send({ type: "track", k }));
+      hd.title = `${ROLE[k]}: click to work on this track (the keys, the screen and the controls follow).`;
+      const m = document.createElement("button"), s = document.createElement("button");
+      m.type = s.type = "button";
+      m.title = `Mute ${ROLE[k]}: silence it (click again to bring it back).`;
+      s.title = `Solo ${ROLE[k]}: hear only this track (click again for all).`;
+      m.className = "btn ms" + (t.mute ? " on" : ""); m.textContent = "M"; m.setAttribute("aria-label", "Mute " + ROLE[k]); m.setAttribute("aria-pressed", !!t.mute);
+      s.className = "btn ms" + (t.solo ? " on" : ""); s.textContent = "S"; s.setAttribute("aria-label", "Solo " + ROLE[k]); s.setAttribute("aria-pressed", !!t.solo);
+      m.addEventListener("click", (e) => { e.stopPropagation(); send({ type: "mute", k }); });
+      s.addEventListener("click", (e) => { e.stopPropagation(); send({ type: "solo", k }); });
+      hd.append(m, s);
+      row.append(hd);
+      cols.forEach((c, i) => {
+        const p = c.pats[k], dens = p >= 0 ? t.pats[p] : -1, b = document.createElement("button");
+        b.type = "button";
+        b.className = "blk" + (dens <= 0 ? " rest" : "");
+        b.style.flexGrow = c.w;
+        b.dataset.col = i;
+        b.innerHTML = dens <= 0 ? `<span class="lt">${p >= 0 ? letter(p) + " · " : ""}rest</span>` :
+          `<span class="lt">${letter(p)}</span><span class="bar"><i style="width:${Math.min(100, dens * 2)}%"></i></span>`;
+        b.setAttribute("aria-label", `${ROLE[k]}, ${c.label}: ${dens > 0 ? "pattern " + letter(p) : "rest"}`);
+        b.title = p >= 0 ? `${ROLE[k]} in ${c.label}: pattern ${letter(p)}${dens > 0 ? "" : " (nothing on this track)"}. Click: this track, and pattern ${letter(p)} plays next.` : `${ROLE[k]} is silent in ${c.label}.`;
+        b.addEventListener("click", () => { send({ type: "track", k }); if (p >= 0) send({ type: "cue", p }); });
+        row.append(b);
+      });
+      rows.append(row);
+    }
+    if (!song && cols.length <= 1)
+      rows.insertAdjacentHTML("beforeend", `<div class="gempty">One pattern so far. Tap ${power ? "GLO" : "MIX"} for the patterns page and press D3 (X) to copy it into B; E3 to A3 for C–F. Then put them in order on the song page (tap ${power ? "GLO" : "MIX"} again).</div>`);
+  }
+  // live: the playing column, the queued one, the playhead in each row
+  const heads = $("ghead").children;
+  cols.forEach((c, i) => heads[i + 1]?.classList.toggle("now", !!c.now));
+  for (const row of $("grows").children) {
+    if (!row.dataset.k) continue;
+    const k = +row.dataset.k, t = g.tracks[k];
+    for (const b of row.querySelectorAll(".blk")) {
+      const c = cols[+b.dataset.col];
+      b.classList.toggle("now", !!c.now);
+      b.classList.toggle("queued", !!c.queued);
+      let h = b.querySelector(".head");
+      if (c.now && g.play && t.len > 0) {
+        if (!h) { h = document.createElement("i"); h.className = "head"; b.append(h); }
+        h.style.left = (t.step % t.len) / t.len * 100 + "%";
+      } else if (h) h.remove();
+    }
+  }
+}
+$("tprev").addEventListener("click", () => send({ type: "enc", role: 1, n: -1 }));
+$("tnext").addEventListener("click", () => send({ type: "enc", role: 1, n: 1 }));
+
+// ------------------------------------------------------------------ the saves, kept in this browser
+function loadFlash() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORE) || "{}"), out = {};
+    for (const [off, b64] of Object.entries(raw)) out[off] = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    return out;
+  } catch { return {}; }
+}
+const b64 = (u8) => { let s = ""; for (let i = 0; i < u8.length; i += 4096) s += String.fromCharCode.apply(null, u8.subarray(i, i + 4096)); return btoa(s); };
+function saveFlash(sectors) {
+  try {
+    const raw = {};
+    for (const [off, u8] of Object.entries(sectors)) raw[off] = b64(u8);
+    localStorage.setItem(STORE, JSON.stringify(raw));
+    return true;
+  } catch { return false; }
+}
+
+// ------------------------------------------------------------------ MIDI in: keyboards and controllers
+async function midiOn() {
+  if (!navigator.requestMIDIAccess) return;
+  try {
+    const access = await navigator.requestMIDIAccess();
+    const bind = () => {
+      for (const input of access.inputs.values())
+        input.onmidimessage = (e) => {
+          const d = e.data;
+          if (d.length >= 2 && d[0] >= 0x80 && d[0] < 0xF0) send({ type: "midi", data: [d[0], d[1], d[2] || 0] });
+        };
+    };
+    access.onstatechange = bind;
+    bind();
+  } catch {}
+}
+
+// ------------------------------------------------------------------ switching on
+const say = (t) => { $("status").textContent = t; };
+let ac = null, wasmBytes = null, onPort = null, warned = false;
+async function boot(sectors, song) {
+  const n = new AudioWorkletNode(ac, "felucca", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
+  await new Promise((res, rej) => {
+    n.port.onmessage = (e) => {
+      const m = e.data;
+      if (m.type === "ready") res();
+      else if (m.type === "error") rej(new Error(m.message));
+      else if (m.type === "frame") {
+        if (m.fb) drawScreen(m.fb);
+        if (m.leds) drawLights(lastLeds = m.leds);
+        if (m.guide) { try { showGuide(JSON.parse(dec.decode(m.guide))); } catch (err) { console.warn(err); } }
+        if (m.sectors && !saveFlash(m.sectors) && !warned) {
+          warned = true;
+          studioSay("This browser doesn't keep the saves (private window or storage full): use SAVE before you leave.", true);
+        }
+      } else if (onPort) onPort(m);
+    };
+    n.port.postMessage({ type: "load", wasm: wasmBytes.slice(0), sectors, song, master: masterValue, plain: !power });
+  });
+  smp.forEach((s, k) => s && smpSend(k, n.port));         // (the user samples: the device keeps them in RAM)
+  n.connect(ac.destination);
+  return n;
+}
+async function switchOn(withSong) {
+  const go = $("go");
+  go.disabled = true;
+  $("gobare").hidden = true;
+  go.textContent = "STARTING…";
+  try {
+    ac = new AudioContext({ sampleRate: 44100, latencyHint: "interactive" });
+    [wasmBytes] = await Promise.all([
+      fetch("felucca.wasm").then((r) => { if (!r.ok) throw new Error(`felucca.wasm: ${r.status}`); return r.arrayBuffer(); }),
+      ac.audioWorklet.addModule("worklet.js")]);
+    node = await boot(loadFlash(), withSong ? sharedSong : null);
+    await ac.resume();
+    $("start").hidden = true;
+    syncButtons(); syncKeys();
+    send({ type: "visible", on: !document.hidden });
+    midiOn();
+    if (sharedSong) sharedDone(withSong);
+    if (tourDue()) setTimeout(() => tourShow(0), 700);   // first visit: the tour (after the screen is up)
+  } catch (err) {
+    node = null;
+    go.disabled = false;
+    go.textContent = "SWITCH ON";
+    say("Could not start: " + (err && err.message || err) + (window.isSecureContext ? "" : ". The page must be served over https") + ". A current Chrome, Edge, Firefox or Safari should work.");
+  }
+}
+async function restart(sectors, song) {
+  const old = node;
+  node = null;
+  if (old) { old.port.postMessage({ type: "off" }); old.disconnect(); old.port.onmessage = null; }
+  guideSig = "";
+  node = await boot(sectors, song);
+  syncButtons(); syncKeys();
+  send({ type: "visible", on: !document.hidden });
+}
+$("go").addEventListener("click", () => switchOn(!!sharedSong));
+$("gobare").addEventListener("click", () => switchOn(false));
+document.addEventListener("visibilitychange", () => send({ type: "visible", on: !document.hidden }));
+
+// ------------------------------------------------------------------ the studio: record, export, share, save, open
+const studioMsg = $("studiomsg");
+let sayTimer = 0;
+function studioSay(t, keep) {
+  studioMsg.textContent = t;
+  clearTimeout(sayTimer);
+  if (t && !keep) sayTimer = setTimeout(() => { studioMsg.textContent = ""; }, 9000);
+}
+let askId = 0;
+function ask(type) {
+  const id = ++askId;
+  return new Promise((res) => {
+    const prev = onPort;
+    onPort = (m) => { if (m.id === id) { onPort = prev; res(m); } else if (prev) prev(m); };
+    send({ type, id });
+  });
+}
+const stamp = () => { const d = new Date(), z = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}`; };
+const dlCap = window.claude?.use ? window.claude.use("downloads").catch(() => null) : Promise.resolve(null);
+async function download(blob, name) {
+  const cap = await dlCap;
+  if (cap) {                                         // (published as a claude.ai artifact: its downloads take zip and json)
+    if (/\.wav$/.test(name)) { blob = zip([{ name, data: await blob.arrayBuffer() }]); name = name.replace(/\.wav$/, ".zip"); }
+    else if (/\.phantom$/.test(name)) name += ".json";
+    try { await cap.save({ filename: name, data: blob }); } catch (e) { if (e && e.code !== "declined") studioSay("Couldn't save the file here (" + (e.code || e) + ")."); }
+    return;
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+// RECORD: what you hear, live (30 minutes at most)
+const REC_MAX = 44100 * 60 * 30;
+let rec = null;
+function recPort(m) {
+  if (m.type !== "rec" || !rec) return;
+  rec.l.push(m.l); rec.r.push(m.r); rec.n += m.l.length;
+  $("rectime").textContent = mmss(rec.n / 44100);
+  if (m.last) recDone();
+  else if (rec.n >= REC_MAX) recStop();
+}
+function recStop() { if (rec && !rec.stopping) { rec.stopping = true; send({ type: "rec", on: false }); } }
+function recDone() {
+  const r = rec;
+  rec = null;
+  $("recbtn").classList.remove("on");
+  $("rectime").textContent = "";
+  if (!r || !r.n) return;
+  const join = (parts) => { const out = new Float32Array(r.n); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out; };
+  download(new Blob([wav24(join(r.l), join(r.r), r.n, 44100)], { type: "audio/wav" }), `spelunkr-take-${stamp()}.wav`);
+  studioSay(`Recorded ${mmss(r.n / 44100)}: saved as a WAV.`);
+}
+$("recbtn").addEventListener("click", () => {
+  if (!node) return;
+  if (rec) { recStop(); return; }
+  rec = { l: [], r: [], n: 0 };
+  $("recbtn").classList.add("on");
+  $("rectime").textContent = "0:00";
+  send({ type: "rec", on: true });
+  studioSay("Recording what you hear. Press RECORD again to save it.", true);
+});
+onPort = recPort;
+
+// EXPORT: the device cloned into a worker, played from the top faster than real time
+const dlg = $("bouncedlg");
+let bouncing = null;
+$("bounce").addEventListener("click", () => {
+  if (!node || bouncing) return;
+  $("bounceprog").hidden = true;
+  $("bouncego").disabled = false;
+  $("bouncelen").textContent = "";
+  dlg.showModal();
+  ask("info").then((m) => {
+    $("whatsong").disabled = !m.sections;
+    if (!m.sections) $("whatpat").checked = true;
+    else if (!dlg.dataset.picked) $("whatsong").checked = true;
+    $("bouncelen").textContent = `${m.bpm} BPM · the pattern loops every ${m.loop.toFixed(1)} s` + (m.sections ? ` · the song has ${m.sections} parts` : " · no song yet");
+  });
+});
+for (const r of ["whatsong", "whatpat"]) $(r).addEventListener("change", () => { dlg.dataset.picked = "1"; });
+$("bounceform").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (e.submitter && e.submitter.value === "cancel") { if (bouncing) bouncing.terminate(); bouncing = null; dlg.close(); return; }
+  if (bouncing) return;
+  const job = { song: $("whatsong").checked, loops: Math.max(1, Math.min(64, +$("loops").value || 1)), tail: Math.max(0, Math.min(20, +$("tail").value || 0)),
+                stems: $("stems").checked, names: ROLE, base: `spelunkr-${stamp()}` };
+  $("bouncego").disabled = true;
+  const prog = $("bounceprog");
+  prog.hidden = false;
+  prog.removeAttribute("value");
+  const snap = await ask("snapshot");
+  const w = bouncing = new Worker(new URL("./bounce.js", import.meta.url), { type: "module" });
+  w.onmessage = (ev) => {
+    const m = ev.data;
+    if (m.type === "progress") { prog.max = m.of; prog.value = m.done + 0.5; $("bouncelen").textContent = `${m.what === "mix" ? "The mix" : "Stem: " + m.what}… ${mmss(m.seconds)}`; }
+    else if (m.type === "done") {
+      w.terminate(); bouncing = null; dlg.close();
+      if (m.files.length === 1) download(new Blob([m.files[0].data], { type: "audio/wav" }), m.files[0].name);
+      else download(zip(m.files), `${job.base}.zip`);
+      studioSay(`Exported ${mmss(m.seconds)}${m.files.length > 1 ? ` with ${m.files.length - 1} stems` : ""}.`);
+    } else if (m.type === "error") {
+      w.terminate(); bouncing = null;
+      $("bouncego").disabled = false; prog.hidden = true;
+      $("bouncelen").textContent = "Couldn't export: " + m.message + ".";
+    }
+  };
+  w.postMessage({ ...job, wasm: wasmBytes.slice(0), mem: snap.mem }, [snap.mem]);
+});
+
+// ------------------------------------------------------------------ SAMPLES: the user's own (Ed, Nov 22 2026: "upload
+// user samples, slice them and assign them to a synth or drum track from inside the same page"). spk_samples.js makes
+// them, felucca_web.c web_spk_* plays them. Kept in this browser (IndexedDB) and in SAVE's file; a share link has none.
+const smp = Array.from({ length: SPK.NSLOT }, () => null);   // {name, root, pcm (Float32 at RATE), trim [a, b], starts []}
+let smpSel = 0, smpSendT = 0, smpSaveT = 0, smpPeaks = null, smpDrag = null, smpPlay = null;
+const IDB = "spelunkr-groovebox", IDBS = "samples";
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(IDB, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(IDBS);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbAll() {
+  try {
+    const db = await idb();
+    return await new Promise((res) => {
+      const out = {}, c = db.transaction(IDBS).objectStore(IDBS).openCursor();
+      c.onsuccess = () => { const cur = c.result; if (cur) { out[cur.key] = cur.value; cur.continue(); } else res(out); };
+      c.onerror = () => res(out);
+    });
+  } catch { return {}; }
+}
+async function idbPut(k, v) {
+  try {
+    const db = await idb();
+    await new Promise((res) => {
+      const tx = db.transaction(IDBS, "readwrite");
+      if (v) tx.objectStore(IDBS).put(v, k); else tx.objectStore(IDBS).delete(k);
+      tx.oncomplete = tx.onerror = tx.onabort = () => res();
+    });
+  } catch {}
+}
+const stored = (s) => s && { ...SPK.toStored(s), trim: s.trim.slice() };
+const unstored = (o) => { const s = SPK.fromStored(o); s.trim = Array.isArray(o.trim) ? o.trim.slice() : [0, s.pcm.length]; return s; };
+// the slices as played: the trim's start, then each marker inside the trim
+const smpStarts = (s) => [s.trim[0], ...s.starts.filter((x) => x > s.trim[0] + 64 && x < s.trim[1] - 64)];
+function smpBuilt(s) {
+  const [a, b] = s.trim;
+  return SPK.buildSlot(s.pcm.subarray(a, b), smpStarts(s).map((x) => x - a), s.root);
+}
+function smpSend(k, port = node && node.port) {
+  if (!port) return;
+  const s = smp[k];
+  if (!s) { port.postMessage({ type: "spk", k, data: null }); return; }
+  const b = smpBuilt(s);
+  port.postMessage({ type: "spk", k, data: b.data, meta: b.meta, name: s.name });
+}
+function smpChanged(k, now) {                       // an edit: drawn now, the device and the browser's copy soon after
+  smpShow();
+  clearTimeout(smpSendT); clearTimeout(smpSaveT);
+  if (now) smpSend(k); else smpSendT = setTimeout(() => smpSend(k), 150);
+  smpSaveT = setTimeout(() => idbPut(k, stored(smp[k])), 600);
+}
+const secs = (n) => (n / SPK.RATE).toFixed(1) + " s";
+const noteName = (m) => NOTE[m % 12] + (Math.floor(m / 12) - 1);
+for (let m = 24; m <= 96; m++) $("smproot").add(new Option(noteName(m), m));
+
+function smpShow() {
+  const list = $("smpslots");
+  list.innerHTML = "";
+  smp.forEach((s, k) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "slot" + (k === smpSel ? " on" : "") + (s ? "" : " empty");
+    b.setAttribute("role", "option");
+    b.setAttribute("aria-selected", k === smpSel);
+    const n = s ? smpStarts(s).length : 0;
+    b.innerHTML = `<span class="n">${k + 1}</span><span class="t"><b></b><span></span></span>`;
+    b.querySelector("b").textContent = s ? s.name : "empty";
+    b.querySelector(".t span").textContent = s ? `${secs(s.trim[1] - s.trim[0])} · ${n} slice${n === 1 ? "" : "s"}` : "load a sound";
+    b.title = s ? `Slot ${k + 1}: ${s.name}. Click to work on it below.` : `Slot ${k + 1}: empty. Click it, then LOAD A FILE.`;
+    b.addEventListener("click", () => { smpSel = k; smpPeaks = null; smpShow(); });
+    list.append(b);
+  });
+  const s = smp[smpSel];
+  $("smped").setAttribute("aria-disabled", s ? "false" : "true");
+  $("smpempty").hidden = !!s;
+  $("smpname").value = s ? s.name : "";
+  $("smpname").disabled = $("smproot").disabled = $("smpclear").disabled = !s;
+  if (s) $("smproot").value = s.root;
+  const chips = $("smpchips");
+  chips.innerHTML = "";
+  if (s) {
+    const st = smpStarts(s);
+    const all = document.createElement("button");
+    all.type = "button"; all.className = "btn all"; all.textContent = "▶ ALL";
+    all.addEventListener("click", () => smpHear(s.trim[0], s.trim[1]));
+    chips.append(all);
+    st.forEach((a, i) => {
+      const c = document.createElement("button");
+      c.type = "button"; c.className = "btn"; c.textContent = i + 1;
+      c.title = `Hear slice ${i + 1}` + (i < 8 ? ` (as a kit: ${["kick", "snare", "clap", "hat", "open hat", "tom", "rim", "cowbell"][i]})` : "") + `; as chops: ${noteName(SPK.CHOP_KEY + i)}`;
+      c.addEventListener("click", () => smpHear(a, i + 1 < st.length ? st[i + 1] : s.trim[1]));
+      chips.append(c);
+    });
+  }
+  smpDraw();
+}
+function smpDraw() {
+  const cv = $("smpwave"), dpr = devicePixelRatio || 1, w = Math.max(100, Math.round(cv.clientWidth * dpr)), h = Math.round(160 * dpr);
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; smpPeaks = null; }
+  const g = cv.getContext("2d"), s = smp[smpSel];
+  g.fillStyle = "#0B0530"; g.fillRect(0, 0, w, h);
+  if (!s) return;
+  const n = s.pcm.length, X = (i) => i / n * w;
+  if (!smpPeaks || smpPeaks.len !== n || smpPeaks.w !== w) {
+    const mn = new Float32Array(w), mx = new Float32Array(w);
+    for (let x = 0; x < w; x++) {
+      const a = Math.floor(x / w * n), b = Math.max(a + 1, Math.floor((x + 1) / w * n));
+      let lo = 0, hi = 0;
+      for (let i = a; i < b && i < n; i++) { const v = s.pcm[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+      mn[x] = lo; mx[x] = hi;
+    }
+    smpPeaks = { len: n, w, mn, mx };
+  }
+  const xa = X(s.trim[0]), xb = X(s.trim[1]), mid = h / 2;
+  for (let x = 0; x < w; x++) {
+    g.fillStyle = x >= xa && x <= xb ? "#9FB4FF" : "#3C48B8";
+    g.fillRect(x, mid - smpPeaks.mx[x] * mid * 0.92, 1, Math.max(1, (smpPeaks.mx[x] - smpPeaks.mn[x]) * mid * 0.92));
+  }
+  g.fillStyle = "rgba(11, 5, 48, .55)";
+  g.fillRect(0, 0, xa, h); g.fillRect(xb, 0, w - xb, h);
+  g.fillStyle = "#E2741F";                                  // the trim's edges
+  g.fillRect(xa - 2 * dpr, 0, 4 * dpr, h); g.fillRect(xb - 2 * dpr, 0, 4 * dpr, h);
+  g.fillRect(xa, 0, 10 * dpr, 6 * dpr); g.fillRect(xb - 10 * dpr, 0, 10 * dpr, 6 * dpr);
+  g.font = `${18 * dpr}px VT323, monospace`;
+  smpStarts(s).forEach((a, i) => {                         // the slices: a line and its number
+    const x = X(a);
+    g.fillStyle = "#FFE13A";
+    if (i) g.fillRect(x - 1 * dpr, 0, 2 * dpr, h);
+    g.fillRect(x + (i ? 0 : 2 * dpr), h - 18 * dpr, 16 * dpr + (i + 1 > 9 ? 8 * dpr : 0), 18 * dpr);
+    g.fillStyle = "#1C0A57";
+    g.fillText(String(i + 1), x + (i ? 3 : 5) * dpr, h - 4 * dpr);
+  });
+  if (smpPlay && ac) {                                      // the playhead
+    const t = ac.currentTime - smpPlay.t0, at = smpPlay.a + t * SPK.RATE;
+    if (at < smpPlay.b) {
+      g.fillStyle = "#FFFFFF"; g.fillRect(X(at), 0, 2 * dpr, h);
+      requestAnimationFrame(smpDraw);
+    } else smpPlay = null;
+  }
+}
+addEventListener("resize", () => { smpPeaks = null; smpDraw(); });
+function smpHear(a, b) {
+  const s = smp[smpSel];
+  if (!s) return;
+  if (!ac) ac = new AudioContext({ sampleRate: 44100, latencyHint: "interactive" });
+  ac.resume();
+  if (smpPlay && smpPlay.src) try { smpPlay.src.stop(); } catch {}
+  const seg = s.pcm.subarray(a, b), buf = ac.createBuffer(1, Math.max(1, seg.length), SPK.RATE);
+  buf.copyToChannel(seg, 0);
+  const src = ac.createBufferSource();
+  src.buffer = buf; src.connect(ac.destination); src.start();
+  smpPlay = { src, a, b, t0: ac.currentTime };
+  requestAnimationFrame(smpDraw);
+}
+// the wave: drag an edge to trim, click to add a slice, drag a slice, double-click (or right-click) one to remove it
+function smpHit(e) {
+  const s = smp[smpSel], cv = $("smpwave"), r = cv.getBoundingClientRect();
+  const x = e.clientX - r.left, at = Math.round(Math.max(0, Math.min(1, x / r.width)) * s.pcm.length), px = (i) => i / s.pcm.length * r.width;
+  if (Math.abs(x - px(s.trim[0])) <= 9) return { kind: "a", at };
+  if (Math.abs(x - px(s.trim[1])) <= 9) return { kind: "b", at };
+  const i = s.starts.findIndex((m) => Math.abs(x - px(m)) <= 7);
+  return i >= 0 ? { kind: "m", i, at } : { kind: "add", at };
+}
+$("smpwave").addEventListener("pointerdown", (e) => {
+  const s = smp[smpSel];
+  if (!s || e.button !== 0) return;
+  e.preventDefault();
+  $("smpwave").setPointerCapture(e.pointerId);
+  const h = smpHit(e);
+  if (h.kind === "add") {
+    if (h.at <= s.trim[0] + 64 || h.at >= s.trim[1] - 64) return;
+    if (smpStarts(s).length >= SPK.NSLICE) { $("smpinfo").textContent = `${SPK.NSLICE} slices at most.`; return; }
+    s.starts.push(h.at);
+    s.starts.sort((a, b) => a - b);
+    smpDrag = { kind: "m", i: s.starts.indexOf(h.at) };
+    smpChanged(smpSel);
+  } else smpDrag = h;
+});
+$("smpwave").addEventListener("pointermove", (e) => {
+  const s = smp[smpSel];
+  if (!s) return;
+  const h = smpHit(e);
+  $("smpwave").style.cursor = h.kind === "a" || h.kind === "b" ? "ew-resize" : h.kind === "m" ? "grab" : "crosshair";
+  if (!smpDrag) return;
+  const min = Math.round(0.03 * SPK.RATE);
+  if (smpDrag.kind === "a") s.trim[0] = Math.max(0, Math.min(h.at, s.trim[1] - min));
+  else if (smpDrag.kind === "b") s.trim[1] = Math.min(s.pcm.length, Math.max(h.at, s.trim[0] + min));
+  else if (smpDrag.kind === "m") {
+    s.starts[smpDrag.i] = Math.max(s.trim[0] + 65, Math.min(s.trim[1] - 65, h.at));
+    const v = s.starts[smpDrag.i];
+    s.starts.sort((a, b) => a - b);
+    smpDrag.i = s.starts.indexOf(v);
+  }
+  smpChanged(smpSel);
+});
+for (const t of ["pointerup", "pointercancel"]) $("smpwave").addEventListener(t, () => { smpDrag = null; });
+function smpRemoveAt(e) {
+  const s = smp[smpSel];
+  if (!s) return;
+  const h = smpHit(e);
+  if (h.kind === "m") { e.preventDefault(); s.starts.splice(h.i, 1); smpChanged(smpSel); }
+}
+$("smpwave").addEventListener("dblclick", smpRemoveAt);
+$("smpwave").addEventListener("contextmenu", smpRemoveAt);
+$("smphits").addEventListener("click", () => {
+  const s = smp[smpSel];
+  if (!s) return;
+  const [a, b] = s.trim;
+  s.starts = SPK.sliceTransients(s.pcm.subarray(a, b), 16).filter((x) => x > 0).map((x) => x + a);
+  smpChanged(smpSel);
+});
+for (const b of document.querySelectorAll("[data-eq]")) b.addEventListener("click", () => {
+  const s = smp[smpSel];
+  if (!s) return;
+  const [a, e] = s.trim;
+  s.starts = SPK.sliceEqual(e - a, +b.dataset.eq).filter((x) => x > 0).map((x) => x + a);
+  smpChanged(smpSel);
+});
+$("smpnone").addEventListener("click", () => { const s = smp[smpSel]; if (s) { s.starts = []; smpChanged(smpSel); } });
+$("smpname").addEventListener("input", () => {
+  const s = smp[smpSel];
+  if (!s) return;
+  s.name = $("smpname").value.toUpperCase().replace(/[^A-Z0-9 _-]/g, "").slice(0, 8);
+  smpChanged(smpSel);
+});
+$("smproot").addEventListener("change", () => { const s = smp[smpSel]; if (s) { s.root = +$("smproot").value; smpChanged(smpSel); } });
+$("smpclear").addEventListener("click", () => {
+  if (!smp[smpSel]) return;
+  smp[smpSel] = null;
+  smpPeaks = null;
+  idbPut(smpSel, null);
+  smpSend(smpSel);
+  smpShow();
+  $("smpinfo").textContent = `Slot ${smpSel + 1} cleared: a track that played it is silent now.`;
+});
+async function smpLoadFile(f) {
+  if (!f) return;
+  $("smpinfo").textContent = `Loading ${f.name}…`;
+  let ab;
+  try {
+    const off = new OfflineAudioContext(1, 1, SPK.RATE);      // (decoded at RATE: the browser resamples it)
+    ab = await off.decodeAudioData(await f.arrayBuffer());
+  } catch { $("smpinfo").textContent = `Couldn't read ${f.name}: try a WAV, MP3, OGG or FLAC.`; return; }
+  const n = Math.min(ab.length, SPK.RATE * SPK.MAX_SECONDS), pcm = new Float32Array(n);
+  for (let c = 0; c < ab.numberOfChannels; c++) {
+    const d = ab.getChannelData(c);
+    for (let i = 0; i < n; i++) pcm[i] += d[i] / ab.numberOfChannels;
+  }
+  let pk = 0;
+  for (const v of pcm) pk = Math.max(pk, Math.abs(v));
+  if (pk > 0) for (let i = 0; i < n; i++) pcm[i] *= 0.9 / pk;   // (every sample as loud: its peak at -1 dB)
+  const trim = SPK.autoTrim(pcm), base = f.name.replace(/\.[^.]*$/, "");
+  const s = { name: base.toUpperCase().replace(/[^A-Z0-9 _-]/g, "").trim().slice(0, 8) || `USER ${smpSel + 1}`,
+              root: SPK.rootFromName(base), pcm, trim, starts: [] };
+  s.starts = SPK.sliceTransients(pcm.subarray(trim[0], trim[1]), 16).filter((x) => x > 0).map((x) => x + trim[0]);
+  smp[smpSel] = s;
+  smpPeaks = null;
+  smpChanged(smpSel, true);
+  $("smpinfo").textContent = (ab.length > n ? `Kept the first ${SPK.MAX_SECONDS} seconds. ` : "") +
+    `${s.name}: ${smpStarts(s).length} slices found at the hits. Now put it on a track.`;
+}
+$("smpfile").addEventListener("change", (e) => { const f = e.target.files[0]; e.target.value = ""; smpLoadFile(f); });
+for (const t of ["dragenter", "dragover"]) $("smped").addEventListener(t, (e) => { e.preventDefault(); $("smped").classList.add("drag"); });
+for (const t of ["dragleave", "drop"]) $("smped").addEventListener(t, () => $("smped").classList.remove("drag"));
+$("smped").addEventListener("drop", (e) => { e.preventDefault(); smpLoadFile(e.dataTransfer.files[0]); });
+const USE = ["as a synth: play it on the keys, A3 at its root pitch", "as chops: a slice a key, from C3 up",
+             "as a drum kit: slices 1 to 8 on the drum rows"];
+for (const b of document.querySelectorAll("[data-use]")) b.addEventListener("click", () => {
+  const s = smp[smpSel], mode = +b.dataset.use;
+  if (!s) return;
+  if (!node) { $("smpinfo").textContent = "Switch the groovebox on first."; return; }
+  smpSend(smpSel);
+  node.port.postMessage({ type: "spkuse", k: smpSel, mode });
+  const t = G ? ROLE[G.sel] : "the track";
+  $("smpinfo").textContent = `${t} plays ${s.name} ${USE[mode].replace("A3", noteName(s.root))}.`;
+});
+$("smpgo").addEventListener("click", () => $("samples").scrollIntoView({ behavior: "smooth", block: "start" }));
+function smpTrack(g) {                                   // (showGuide) which track the buttons put it on
+  const t = `PUT IT ON TRACK ${String(g.tracks[g.sel].pos + 1).padStart(2, "0")} (${ROLE[g.sel]})`;
+  if ($("smpfor").textContent !== t) $("smpfor").textContent = t;
+}
+idbAll().then((o) => {
+  for (const [k, v] of Object.entries(o)) if (+k < SPK.NSLOT && v) { try { smp[+k] = unstored(v); } catch {} }
+  smpShow();
+  if (node) smp.forEach((s, k) => s && smpSend(k));
+});
+smpShow();
+
+// SAVE / OPEN: the saves as a .phantom file
+const PROJ_FORMAT = "phantom-tracker-flash";
+$("saveproj").addEventListener("click", async () => {
+  if (!node) return;
+  const m = await ask("save");
+  if (m.rc === 1) { studioSay("Stop playback first (Space), then SAVE: the music is saved as it stands when stopped."); return; }
+  const sectors = {};
+  for (const [off, u8] of Object.entries(m.sectors)) sectors[off] = b64(u8);
+  saveFlash(m.sectors);
+  const samples = smp.map((s, k) => s && { k, ...stored(s), pcm16: SPK.b64of(new Uint8Array(SPK.toInt16(s.pcm, 0).buffer)) }).filter(Boolean);
+  download(new Blob([JSON.stringify({ format: PROJ_FORMAT, version: 1, app: "spelunkr-groovebox", firmware: "@VERSION@", saved: new Date().toISOString(), sectors, samples })],
+                    { type: "application/json" }), `spelunkr-${stamp()}.phantom`);
+  studioSay("Saved: OPEN that file here later to carry on.");
+});
+$("openproj").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f || !node) return;
+  try {
+    const j = JSON.parse(await f.text());
+    if (j.format !== PROJ_FORMAT || !j.sectors) throw new Error("not a groovebox project file");
+    const sectors = {};
+    for (const [off, s] of Object.entries(j.sectors)) sectors[off] = Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+    if (rec) recDone();
+    saveFlash(sectors);
+    if (Array.isArray(j.samples)) {                        // its samples take the slots (a slot it has none for: empty)
+      for (let k = 0; k < SPK.NSLOT; k++) smp[k] = null;
+      for (const o of j.samples) {
+        if (!(o.k >= 0 && o.k < SPK.NSLOT)) continue;
+        const u8 = SPK.u8of(o.pcm16);
+        smp[o.k] = unstored({ ...o, pcm16: new Int16Array(u8.buffer, 0, u8.length >> 1) });
+      }
+      smp.forEach((s, k) => idbPut(k, stored(s)));
+      smpPeaks = null;
+      smpShow();
+    }
+    await restart(sectors);
+    studioSay(`Opened ${f.name}${Array.isArray(j.samples) && j.samples.length ? ` with ${j.samples.length} sample${j.samples.length > 1 ? "s" : ""}` : ""}. Press Space to play.`);
+  } catch (err) { studioSay("Couldn't open it: " + (err && err.message || err) + "."); }
+});
+
+// SHARE: the song as a link (#song=…)
+let sharedSong = null;
+function hadSaves() { try { return !!localStorage.getItem(STORE); } catch { return false; } }
+async function readShared() {
+  const m = /^#song=([A-Za-z0-9_-]+)/.exec(location.hash);
+  if (!m) return null;
+  try { return await unpackSong(m[1]); } catch { say("This song link is damaged or cut short: ask for it again (copy the whole link)."); return null; }
+}
+// ------------------------------------------------------------------ the hover help (Ed: "the mouse hover pop up also
+// provide an explanation for every clickable option"): every title on the page shows in one box, at once and styled;
+// the titles move to data-tip as they appear (a MutationObserver), so the browser's own slow tooltip never doubles it
+const TIPS = {
+  "#newsong": "NEW SONG: start from nothing. Clears every track's steps and patterns A–F, and puts the starting sounds back. It asks first.",
+  "#randsong": "RANDOM: roll a whole song for you (lo-fi, chillwave, electro or chiptune): sounds, beat, chords, bass, tune and parts. It asks first.",
+  "#recbtn": "RECORD: record what you hear, live, to a WAV file (everything you play and turn). Click again to stop and download it.",
+  "#bounce": "EXPORT: make a WAV of the song or the pattern, faster than real time, with a WAV for each track if you like.",
+  "#share": "SHARE: a link that plays this song in anyone's browser (your own samples don't fit in a link).",
+  "#saveproj": "SAVE: download everything as a project file (.phantom), your samples too. OPEN brings it back.",
+  "label:has(#openproj)": "OPEN: load a project file (.phantom) you saved before. It replaces what's here.",
+  "#smpgo": "SAMPLES: your own sounds. Load a file, trim it, slice it, put it on a track.",
+  "#manual": "MANUAL: the guide, in a new tab (with POWER USER: the device's full manual).",
+  "#helpbtn": "The tour: a walk through making a whole song, from NEW SONG to EXPORT.",
+  ".power": "POWER USER: every button and setting, and the device's own names (FX, SEQ, GLO …). Off: the simple set, in plain words.",
+  "#tprev": "The track before (TRACK ◀).",
+  "#tnext": "The next track (TRACK ▶).",
+  "#tpage": "The screen you're on.",
+  "#octdn": "OCT −: the keys an octave lower (the [ key).",
+  "#octup": "OCT +: the keys an octave higher (the ] key).",
+  "#octlab": "The notes the keys play now.",
+  "#pad0": "FILTER · GATE: hold and drag on the track. Left darker, right thinner; up chops fast, down chops slow. Let go: it snaps back.",
+  "#pad1": "ECHO · FLANGE: hold and drag on the track. Left echo, right ping-pong; up a jet, down hollow. Let go: it snaps back.",
+  "#vapgo": "VAPORIZE: slowed, warbly and dusty in one tap. When it's on, CLEAN takes it all off.",
+  "#smpfile": "",
+  "label:has(#smpfile)": "LOAD A FILE: a WAV, MP3, OGG or FLAC into this slot (up to 30 seconds). You can also drop a file on the panel.",
+  "#smpname": "The sample's name (8 letters): the tracks show it.",
+  "#smproot": "ROOT: the key where the sample plays at its own pitch, when it's on a track AS A SYNTH.",
+  "#smpclear": "CLEAR SLOT: empty this slot. A track that played it goes silent.",
+  "#smpwave": "The sample. Drag an orange edge to trim; click to add a slice; drag a slice to move it; double-click (or right-click) a slice to remove it.",
+  "#smphits": "AUTO: a slice at each hit.",
+  "[data-eq='4']": "4 equal slices.", "[data-eq='8']": "8 equal slices.", "[data-eq='16']": "16 equal slices.",
+  "#smpnone": "NONE: no slices, the whole sample.",
+  "[data-use='0']": "AS A SYNTH: the whole sample on the selected track, played at the pitch of each key.",
+  "[data-use='1']": "AS CHOPS: a slice on each key from C3 up, on the selected track.",
+  "[data-use='2']": "AS A DRUM KIT: slices 1 to 8 on the selected track's drum rows: kick, snare, clap, hat, open hat, tom, rim, cowbell.",
+  "#go": "SWITCH ON: start the groovebox (the sound starts here).",
+  "#gobare": "Start without the shared song: your own saves instead.",
+  "#tournext": "On to the next step.", "#tourback": "Back a step.", "#tourskip": "Close the tour (the ? button brings it back).",
+  "#sharecopy": "Copy the link to paste anywhere.",
+  "#whatsong": "The whole song, its parts in order, once.", "#whatpat": "The pattern playing now, looped as many times as you say.",
+  "#stems": "Also a WAV for each track, in a zip (for mixing elsewhere).",
+  "#bouncego": "Make the WAV now.",
+  "dialog button[value='cancel']": "Close this without doing anything.",
+  "#sharedlg button[value='close']": "Close.",
+  "#newgo": "Go ahead: the song you have now is replaced.",
+  "#loops": "How many times the pattern plays in the WAV.",
+  "#tail": "How long to let the sound ring out after the end.",
+  ".logo": "spelunkr.tv: like cable TV, but weirder.",
+  "footer a[href='guide.html']": "The guide: how everything works, in plain words.",
+  "#screen": "The groovebox's screen. The buttons on the left and the controls on the right work it.",
+};
+function tipsInit() {
+  for (const [sel, t] of Object.entries(TIPS)) if (t) document.querySelectorAll(sel).forEach((e) => { if (!e.title && !e.dataset.tip) e.title = t; });
+}
+const tipBox = $("tip");
+let tipEl = null, tipT = 0, tipX = 0, tipY = 0;
+function tipTake(e) {                                    // a title becomes data-tip (and the accessible description)
+  if (!e.title) return;
+  e.dataset.tip = e.title;
+  if (!e.getAttribute("aria-label")) e.setAttribute("aria-label", e.title);
+  e.removeAttribute("title");
+}
+new MutationObserver((ms) => { for (const m of ms) { tipTake(m.target); if (m.target === tipEl) tipShow(); } })
+  .observe(document.body, { subtree: true, attributes: true, attributeFilter: ["title"] });
+function tipPlace() {
+  const r = tipBox.getBoundingClientRect();
+  let x = tipX + 16, y = tipY + 20;
+  if (x + r.width > innerWidth - 8) x = Math.max(8, tipX - r.width - 12);
+  if (y + r.height > innerHeight - 8) y = Math.max(8, tipY - r.height - 14);
+  tipBox.style.left = x + "px"; tipBox.style.top = y + "px";
+}
+function tipShow() {
+  if (!tipEl || !tipEl.dataset.tip) { tipBox.hidden = true; return; }
+  tipBox.textContent = tipEl.dataset.tip;
+  tipBox.hidden = false;
+  tipPlace();
+}
+function tipHide() { clearTimeout(tipT); tipEl = null; tipBox.hidden = true; }
+document.addEventListener("pointerover", (e) => {
+  if (e.pointerType !== "mouse") return;
+  for (const el of document.querySelectorAll("[title]")) tipTake(el);
+  const el = e.target.closest?.("[data-tip]");
+  if (el === tipEl) return;
+  tipHide();
+  if (!el) return;
+  tipEl = el;
+  tipX = e.clientX; tipY = e.clientY;
+  tipT = setTimeout(tipShow, 280);
+});
+document.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" && tipEl) { tipX = e.clientX; tipY = e.clientY; if (!tipBox.hidden) tipPlace(); } });
+document.addEventListener("pointerdown", () => { if (!tipBox.hidden) tipBox.hidden = true; clearTimeout(tipT); }, true);
+addEventListener("scroll", tipHide, true);
+document.addEventListener("focusin", (e) => {             // the keyboard: a focused control's help under it
+  const el = e.target.closest?.("[data-tip],[title]");
+  if (!el || !e.target.matches?.(":focus-visible")) return;
+  tipTake(el);
+  const r = el.getBoundingClientRect();
+  tipEl = el; tipX = r.left; tipY = r.bottom - 6;
+  tipShow();
+});
+document.addEventListener("focusout", tipHide);
+tipsInit();
+
+// ------------------------------------------------------------------ NEW SONG, RANDOM (felucca_web.c web_new_song): the song
+// replaced, so asked first; the device's undo (SAVE held) still brings the old one back
+function newSong(random) {
+  if (!node) { studioSay("Switch the groovebox on first."); return; }
+  $("newtitle").textContent = random ? "ROLL A RANDOM SONG?" : "START A NEW SONG?";
+  $("newtext").textContent = random
+    ? "A whole song made up for you: a style (lo-fi, chillwave, electro or chiptune), sounds, a beat, chords, a bass and a tune, arranged into parts. It replaces the song you have now."
+    : "Every track's steps cleared, patterns A–F emptied, the starting sounds back. It replaces the song you have now.";
+  $("newgo").textContent = random ? "ROLL IT" : "START";
+  const d = $("newdlg");
+  d.returnValue = "";
+  d.onclose = () => {
+    if (d.returnValue !== "go") return;
+    node.port.postMessage({ type: "newsong", random });
+    studioSay(random ? "A random song: press PLAY (Space) to hear it. RANDOM again rolls another." : "A new song: pick a track and its sound, then make a beat.");
+  };
+  d.showModal();
+}
+$("newsong").addEventListener("click", () => newSong(false));
+$("randsong").addEventListener("click", () => newSong(true));
+
+// ------------------------------------------------------------------ first-run help: a short tour, once (? brings it back)
+const TOURKEY = "spelunkr-groovebox-tour";
+const btnSel = (dev) => `.face .btn[data-dev="${dev}"]`;
+const TOUR = [                                           // (Ed: "cover every part of the song creation process from new
+  // song all the way to export"; each step points at what it talks about)
+  { t: "WELCOME", el: null, x: () => "This tour walks you through a whole song, from a blank page to a WAV you can use. "
+      + "Each step lights up what to use: try it, then press <kbd>NEXT</kbd>. The <kbd>?</kbd> at the top brings the tour back any time." },
+  { t: "1 · START A SONG", el: "#newsong", x: () => "<kbd>NEW SONG</kbd> starts from nothing: no steps, the starting sounds. "
+      + "<kbd>RANDOM</kbd> rolls a whole song to play with (lo-fi, chillwave, electro or chiptune). Both ask first." },
+  { t: "2 · PLAY AND STOP", el: btnSel("PLAY"), x: () => `<kbd>PLAY</kbd>${phoneMQ.matches ? "" : " (or the space bar)"} starts and stops the music. `
+      + "Leave it playing while you work: every change is heard on the next loop." },
+  { t: "3 · PICK A TRACK", el: "#grows", x: () => "Each row is a track: DRUMS, three synths and PERC. Click a row to work on it: "
+      + "the keys, the screen and the controls follow. Start with <kbd>DRUMS</kbd>." },
+  { t: "4 · PICK ITS SOUND", el: "#wheels", x: () => "<kbd>SOUNDS</kbd> ◀ ▶ steps through the sounds for that track: dusty lo-fi kits (CRATE, BEDROOM), "
+      + "80s drum machines (VAPOR 808, LINN, GATED), chiptune kits (NES, GAMEBOY, SNES); on the synths pianos, vibes, sax, chip sounds and more." },
+  { t: "5 · MAKE A BEAT", el: btnSel("SEQ"), x: () => "Hold <kbd>STEPS</kbd>: the screen shows a tool on each key. Still holding it, press "
+      + (phoneMQ.matches ? "the B key" : "<kbd>B</kbd> (computer key M)") + " for a BEAT, or G for a RANDOM one; let go. "
+      + "Tap <kbd>STEPS</kbd> to see every step: <kbd>ROW</kbd> picks a step, <kbd>COLUMN</kbd> a drum, the third control turns it on or off." },
+  { t: "6 · PLAY THE KEYS", el: ".keybar", x: () => (phoneMQ.matches ? "Play on these keys. "
+      : "Play on these keys, or on your computer keyboard: <kbd>Z</kbd> to <kbd>M</kbd> and <kbd>Q</kbd> to <kbd>O</kbd>. ")
+      + "<kbd>OCT −</kbd> and <kbd>OCT +</kbd> move up and down. On a drum track each key is a drum. A MIDI keyboard works too." },
+  { t: "7 · RECORD A PART", el: btnSel("REC"), x: () => "Click a synth row (SYNTH 1) and pick its sound. Tap <kbd>RECORD</kbd>: the music starts, "
+      + "and what you play on the keys goes into the loop. Tap <kbd>RECORD</kbd> again to stop recording (the music keeps going), <kbd>PLAY</kbd> to stop. "
+      + "Start over: hold <kbd>STEPS</kbd> and press C (CLEAR). Do the same for a bass on SYNTH 2." },
+  { t: "8 · SHAPE THE SOUND", el: "#knobs", x: () => "These four controls change the selected track's sound: its tone, its decay, WOW and AGE on the sampled ones. "
+      + "<kbd>SOUND</kbd> shows more of its settings; <kbd>POWER USER</kbd> shows everything (envelope, wobble, arpeggio, scale, effects)." },
+  { t: "9 · MORE PATTERNS", el: btnSel("GLO"), x: () => "A pattern is a loop of every track. Tap <kbd>MIX</kbd>: patterns A to F on the white keys "
+      + (phoneMQ.matches ? "C to A" : "C to A (computer keys Z to N)") + ". Press D (X) for pattern B: it starts as a copy of A. "
+      + "Change it (a fill, a chorus, a drop). The columns below show your patterns: click one to play it next." },
+  { t: "10 · ARRANGE THE SONG", el: btnSel("GLO"), x: () => "Tap <kbd>MIX</kbd> again: the SONG screen. Easiest way: tap <kbd>RECORD</kbd> there, "
+      + "press <kbd>PLAY</kbd>, and click the patterns below as the music goes (each one starts when the loop comes round); press <kbd>PLAY</kbd> to stop. "
+      + "What you played becomes the song's parts, and the columns show them. <kbd>PLAY</kbd> on the SONG screen plays the song." },
+  { t: "11 · MIX IT", el: btnSel("HOME"), x: () => "On the home screen, tap <kbd>HOME</kbd> (its button says MIXER): each track's level, pan and reverb, "
+      + "on the four controls. <kbd>M</kbd> and <kbd>S</kbd> on the rows below mute a track or play it alone. <kbd>VOLUME</kbd> is everything." },
+  { t: "12 · MAKE IT VAPOR", el: ".vapor", x: () => "Slow the whole song down, warp the tape, add crackle: tap <kbd>VAPORIZE</kbd> or use the four controls. "
+      + "The FX PAD above bends a track while you hold it." },
+  { t: "13 · YOUR OWN SAMPLES", el: "#smpgo", x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file, trim it, slice it, "
+      + "and put it on a track as a synth, as chops on the keys, or as a drum kit." },
+  { t: "14 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>SAVE</kbd> downloads a project file (your samples too) "
+      + "and <kbd>OPEN</kbd> brings it back. <kbd>SHARE</kbd> makes a link: whoever opens it hears your song and can carry on from it." },
+  { t: "15 · EXPORT", el: "#bounce", x: () => "<kbd>EXPORT</kbd> makes the WAV: the song once through (or the pattern looped), with a WAV for each track if you like. "
+      + "<kbd>RECORD</kbd> at the top records you playing live instead. That's a whole song: have fun!" },
+];
+let tourAt = -1, tourEl = null;
+function tourShow(i) {
+  if (tourEl) tourEl.classList.remove("tour-hi");
+  tourEl = null;
+  tourAt = i;
+  if (i < 0 || i >= TOUR.length) {
+    $("tour").hidden = true;
+    try { localStorage.setItem(TOURKEY, "done"); } catch {}
+    return;
+  }
+  const st = TOUR[i];
+  $("tour").hidden = false;
+  $("tourtitle").textContent = st.t;
+  $("tourstep").textContent = `${i + 1} of ${TOUR.length}`;
+  $("tourtext").innerHTML = st.x();
+  $("tourback").hidden = i === 0;
+  $("tournext").textContent = i === TOUR.length - 1 ? "DONE" : "NEXT";
+  $("tourskip").hidden = i === TOUR.length - 1;
+  tourEl = st.el ? document.querySelector(st.el) : null;
+  if (tourEl) {
+    tourEl.classList.add("tour-hi");
+    if (!tourEl.closest(".keybar")) tourEl.scrollIntoView({ block: "center", behavior: "auto" });
+  }
+  const card = $("tour");                              // over what it points at: the card goes to the top instead
+  card.classList.remove("high");
+  if (tourEl) {
+    const a = tourEl.getBoundingClientRect(), c = card.getBoundingClientRect();
+    const over = (a, c) => a.left < c.right && a.right > c.left && a.top < c.bottom && a.bottom > c.top;
+    if (over(a, c)) {
+      card.classList.add("high");
+      const c2 = card.getBoundingClientRect();
+      if (over(a, c2) && !tourEl.closest(".keybar")) window.scrollBy(0, a.top - (c2.bottom + 14));   // (a phone: below the card)
+    }
+  }
+  $("tournext").focus({ preventScroll: true });
+}
+function tourDue() { try { return localStorage.getItem(TOURKEY) !== "done"; } catch { return true; } }
+$("tournext").addEventListener("click", () => tourShow(tourAt + 1));
+$("tourback").addEventListener("click", () => tourShow(tourAt - 1));
+$("tourskip").addEventListener("click", () => tourShow(-1));
+$("helpbtn").addEventListener("click", () => tourShow(0));
+$("tour").addEventListener("keydown", (e) => { if (e.key === "Escape") { tourShow(-1); e.stopPropagation(); } });
+function sharedDone(loaded) {
+  sharedSong = null;
+  try { history.replaceState(null, "", location.pathname + location.search); } catch {}
+  if (loaded) { send({ type: "play" }); studioSay("Playing the shared song. Make it yours: what you change saves here, as your own."); }
+}
+readShared().then((song) => {
+  if (!song) return;
+  sharedSong = song;
+  $("go").textContent = "HEAR THE SHARED SONG";
+  $("gobare").hidden = false;
+  say(hadSaves() ? "It replaces the music you had open here; your saved projects and sounds stay." : "Someone shared a song with you.");
+});
+addEventListener("hashchange", async () => {
+  const song = await readShared();
+  if (!song) return;
+  if (!node) { sharedSong = song; $("go").textContent = "HEAR THE SHARED SONG"; $("gobare").hidden = false; return; }
+  if (!confirm("Open the shared song? It replaces the music you have open; your saved projects and sounds stay.")) { sharedDone(false); return; }
+  if (rec) recDone();
+  sharedSong = song;
+  await restart(loadFlash(), song);
+  sharedDone(true);
+});
+$("share").addEventListener("click", async () => {
+  if (!node) return;
+  const m = await ask("share");
+  if (m.rc === 1) { studioSay("Stop playback first (Space), then SHARE: the song is shared as it stands when stopped."); return; }
+  if (m.rc) { studioSay("Couldn't make the link."); return; }
+  const url = `${location.origin}${location.pathname}#song=${await packSong(m.song)}`;
+  $("sharelink").value = url;
+  $("shareinfo").textContent = `${url.length.toLocaleString()} characters. It holds the song: the tracks and their sounds, patterns A–F and the song's parts.` +
+    (smp.some(Boolean) ? " Your own samples don't fit in a link: a track playing one is silent for whoever opens it. SAVE makes a file that has them." : "");
+  $("sharedlg").showModal();
+  $("sharelink").select();
+});
+$("sharecopy").addEventListener("click", async (e) => {
+  e.preventDefault();
+  try { await navigator.clipboard.writeText($("sharelink").value); } catch { $("sharelink").select(); document.execCommand?.("copy"); }
+  $("sharecopy").textContent = "COPIED";
+  setTimeout(() => { $("sharecopy").textContent = "COPY LINK"; }, 1500);
+});
+</script>
+</body>
+</html>

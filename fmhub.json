@@ -1,0 +1,10 @@
+{
+  "what": "Phantom Tracker: a groovebox tracker. Four FEEDs on MORPH's 16 wavetable SIGNALs, DEBRIS, FM, and Dungeon Tracker's GENESIS, ANALOG and SID, a NOISE kit, a PHANTOM to jam over them, a Kaoss-style FX PAD per FEED, and ATTRITION to tear the signal apart.",
+  "author": "Bourbon Weather",
+  "kinds": ["groovebox", "tracker"],
+  "play": "https://bourbonwx.github.io/Phantom-Cosmonaut/webapp/emulator/",
+  "editor": "https://bourbonwx.github.io/Phantom-Cosmonaut/webapp/editor/",
+  "cheat": "https://github.com/BourbonWX/Phantom-Cosmonaut/blob/main/docs/QUICKSTART.md",
+  "image": "docs/card.png",
+  "color": "#FF7D00"
+}

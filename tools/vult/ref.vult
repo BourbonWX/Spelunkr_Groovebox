@@ -1,0 +1,2 @@
+fun lad(x:real, cut:real, res:real) : real { return Ladder.process_euler(x, cut, res); }
+fun comb(x:real, cv:real, tone:real, res:real) : real { return Rescomb.process(x, cv, tone, res); }
