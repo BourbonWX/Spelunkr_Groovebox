@@ -4,7 +4,7 @@
  *   build/host/boot_song_test [OUT_DIR]    (tests/run_rondo.sh; OUT_DIR: WAVs of six rolls, 16 bars of the verse each)
  * 1. 300 rolls: THE PARTY within its points, a ROGUE in it, the tracks in class order; every track a sound of its
  *    class's own list (a ROGUE a kit: FMKIT's or a SAMPLE kit) and a 16-step part with notes in their registers; the
- *    tempo 96..128.
+ *    tempo 70..150 (Spelunkr's styles).
  * 2. they differ: at least 280 of the 300 songs are distinct.
  * 3. the melodic notes belong to one seven-note scale (one key) per song.
  * 4. the dungeon: the four adventurers join, at L1; HOME says PRESS PLAY until PLAY.
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
             bad += !any[k];
             bad += memcmp(trk[k].step, bank_pat[1].step[k], sizeof trk[k].step) != 0;   /* (the tracks: the verse) */
         }
-        bad += song.g[G_BPM] < 76 || song.g[G_BPM] > 128;   /* (0.10: by the style) */
+        bad += song.g[G_BPM] < 70 || song.g[G_BPM] > 150;   /* (Spelunkr: by the style, 70..150) */
         {   /* 0.10: CHORDS' B side on, panned apart; PERC's two lanes both play; the verse's pans per step (locks) */
             uint32_t l1 = 0, l2 = 0, pans = 0;
             for (p = 0; p < 4u; p++)
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
     okb(what, !bad && kits[0] && !kits[1] && i >= NENG_SHOWN);   /* (Phantom Cosmonaut: MOD KIT retired, every kit GEN KIT's) */
     snprintf(what, sizeof what, "  0.10: CHORDS' B side panned apart %u of 300, BASS / LEAD B sides %u, PERC's two lanes %u, "
              "the verse's per-step pans %u", bnew[0], bnew[1], bnew[2], bnew[3]);
-    okb(what, bnew[0] == 300u && bnew[1] > 150u && bnew[1] < 450u && bnew[2] == 300u && bnew[3] == 300u);
+    okb(what, bnew[0] == 300u && bnew[1] > 150u && bnew[1] < 450u && bnew[2] == 300u && bnew[3] >= 270u);   /* (Spelunkr: a kick can take a panned hat's step) */
     snprintf(what, sizeof what, "  they differ: %u of 300 distinct", distinct);
     okb(what, distinct >= 280u);
     snprintf(what, sizeof what, "  one key each: the melodic notes in a seven-note scale (%u songs off)", offkey);

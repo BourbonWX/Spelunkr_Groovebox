@@ -584,6 +584,8 @@ EXPORT uint32_t web_spk_in_use(void)
     return m;
 }
 
+EXPORT uint32_t web_rs_style(void) { return rsg.sty; }   /* the last RANDOM SONG's style (boot_song.c ST_*): tests */
+
 /* NEW SONG (the page's button; the device's SAVE > TOOLS > NEW + DEFAULT SOUNDS): every track cleared, the power-on
  * sounds; RANDOM SONG (MENU > SYSTEM > RANDOM SONG): a song rolled. The page has asked first, so no arming here; playing
  * stops first. Either can be undone: SAVE held */
