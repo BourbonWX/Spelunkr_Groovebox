@@ -8,7 +8,7 @@ saves in this browser, and a link shares it.
 1. Press **SWITCH ON**. Headphones on: the starter song is ready.
 2. Press **PLAY** (or the space bar). Press it again to stop.
 3. The **?** button at the top runs the tour again: it walks through a whole song, from a blank page to the export.
-   Hover over anything on the page to see what it does.
+   Hover over anything on the page to see what it does. **GUIDE** at the top opens this guide.
 
 ## The page
 
@@ -96,5 +96,22 @@ The **FX PAD** bends the track you picked while you hold it: drag around, let go
 
 Without it, the groovebox shows what you need to make a song: the main sound pages and plain names. Tick **POWER
 USER** for everything: the envelope, wobble (LFO), arpeggio, scale and effect pages, every sound setting, and the
-device's own names (FX, SEQ, GLO, ...) on the buttons and the screen. **MANUAL** then opens the full manual of the
-device under the hood ([here](manual.html)).
+device's own names (FX, SEQ, GLO, ...) on the buttons and the screen. The full manual of the device under the hood
+is [the manual](manual.html), linked in the small print at the bottom of the page.
+
+## Which browser
+
+Use an up-to-date **Chrome, Edge, Firefox or Brave** on a computer for the best of it, and the only way to play it
+with a MIDI keyboard on every system.
+
+- **Built on Chrome** (Edge, Brave, Opera, Vivaldi, Arc, Samsung Internet, most Android browsers): the same as
+  Chrome. In **Brave**, its fingerprinting protection adds a tiny, unhearable noise to sound the page reads back, so a
+  sample you load there can carry it; its Shields can also block song codes: turn Shields off for the groovebox.
+- **Safari, and every browser on an iPhone or iPad** (they all run Safari underneath): Safari 16.4 or newer should
+  run it all, but **without MIDI keyboards** (Apple doesn't offer them to web pages). On an iPhone with the silent
+  switch on, web pages make no sound: flip it off.
+- **Browsers built for privacy** (Tor Browser, LibreWolf, Mullvad Browser, Firefox with "resist fingerprinting"):
+  expect trouble. They turn off or scramble what the groovebox runs on (Tor's safer modes turn off WebAssembly, its
+  engine, so it won't start) and can block song codes. That's their job; use another browser for this.
+- **Browsers more than about three years old**: the groovebox may play, but SHARE and CODE need newer features.
+

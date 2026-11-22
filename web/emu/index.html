@@ -279,6 +279,19 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
 @media (prefers-reduced-motion: reduce) { .tour-hi { animation: none; } }
 .helpbtn { min-width: 44px; }
 
+/* a laptop's width: the header's eleven buttons, POWER USER and the tempo stay on one row */
+@media (max-width: 1700px) and (min-width: 721px) {
+  header { gap: 8px 10px; padding: 10px 14px; }
+  header nav { gap: 5px; }
+  header nav .btn { font-size: 19px; padding: 3px 8px; min-height: 38px; }
+  .power { font-size: 19px; }
+  .bpm { font-size: 26px; min-width: 0; }
+}
+@media (max-width: 1280px) and (min-width: 721px) {
+  .logo { width: 150px; } .logo span { font-size: 20px; }
+  header { background: linear-gradient(105deg, var(--orange) 0, var(--orange) 170px, var(--indigo) 171px); }
+  header nav .btn { font-size: 17px; padding: 3px 6px; }
+}
 @media (max-width: 720px) {
   header { padding: 8px 10px; background: linear-gradient(105deg, var(--orange) 0, var(--orange) 140px, var(--indigo) 141px); }
   .logo { width: auto; } .logo b { width: 36px; height: 36px; font-size: 32px; } .logo span { font-size: 21px; }
@@ -322,7 +335,7 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
     <button class="btn" id="saveproj" type="button" title="Download everything saved here as a .phantom file">SAVE</button>
     <label class="btn" style="display:inline-flex;align-items:center" title="Open a .phantom project file"><input type="file" id="openproj" accept=".phantom,.json,application/json" hidden>OPEN</label>
     <button class="btn" id="smpgo" type="button" title="Load your own samples, slice them, put them on a track">SAMPLES</button>
-    <a class="btn" id="manual" href="guide.html" target="_blank" rel="noopener" title="The manual, in a new tab">MANUAL</a>
+    <a class="btn" id="guidebtn" href="guide.html" target="_blank" rel="noopener" title="The guide, in a new tab">GUIDE</a>
   </nav>
   <button class="btn helpbtn" id="helpbtn" type="button" title="A quick tour of the groovebox" aria-label="Help: a quick tour">?</button>
   <label class="power" title="The device's own names (FX, SEQ, GLO, ...) instead of the plain ones"><input type="checkbox" id="power"> POWER USER</label>
@@ -443,7 +456,7 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
 <footer>
   <span><span id="foot">SWITCH ON TO START</span></span>
   <span class="tag">Like cable TV, but weirder. SPELUNKR.TV</span>
-  <span class="credits">Spelunkr Groovebox @VERSION@ beta@PREVIEW@ · <a href="guide.html" title="The guide: how to use the groovebox, from the first beat to the export.">the guide</a> · Space plays and stops · Z–M and Q–O play the keys (S D G H J, 2 3 5 6 7 9 the black ones) · [ ] octave · arrows scroll and pick the track ·
+  <span class="credits">Spelunkr Groovebox @VERSION@ beta@PREVIEW@ · <a href="manual.html" target="_blank" rel="noopener" title="The manual: the device under the hood, every page and setting (for POWER USERs).">the manual</a> · Space plays and stops · Z–M and Q–O play the keys (S D G H J, 2 3 5 6 7 9 the black ones) · [ ] octave · arrows scroll and pick the track ·
     a Felucca fork: built on Phantom Tracker, Dungeon Tracker by Bourbon Weather and Felucca by Leo Kuroshita (Hügelton Instruments) ·
     free software, <a href="https://www.gnu.org/licenses/gpl-3.0.html" title="The licence: free to use, change and share, as long as the source stays open.">GPL-3.0</a>: <a href="@SOURCE@" title="The source code of this groovebox.">the source</a> · VT323 and Jersey 10 fonts, SIL OFL ·
     sampled instruments and kits from the <a href="https://github.com/sgossner/VCSL" title="Where the sampled instruments and drum kits come from (free, public domain).">Versilian Community Sample Library</a> (CC0) ·
@@ -736,16 +749,10 @@ wheelEls.forEach((w) => { w.val.textContent = w.hint; });
 setAngle(wheelEls[3], -135 + 270 * masterValue / 1023);
 wheelEls[3].val.textContent = Math.round(masterValue / 10.23) + "%";
 names();
-function manualLink() {                                   // MANUAL: the guide; with POWER USER, the device's full manual
-  $("manual").href = power ? "manual.html" : "guide.html";
-  $("manual").title = power ? "The device's full manual, in a new tab" : "The manual, in a new tab";
-}
-manualLink();
 $("power").addEventListener("change", () => {
   power = $("power").checked;
   try { localStorage.setItem(POWER, power ? "1" : "0"); } catch {}
   send({ type: "plain", on: !power });                    // the screen too: the device's words with POWER USER
-  manualLink();
   names();
 });
 
@@ -1719,7 +1726,7 @@ const TIPS = {
   "#saveproj": "SAVE: download everything as a project file (.phantom), your samples too. OPEN brings it back.",
   "label:has(#openproj)": "OPEN: load a project file (.phantom) you saved before. It replaces what's here.",
   "#smpgo": "SAMPLES: your own sounds. Load a file, trim it, slice it, put it on a track.",
-  "#manual": "MANUAL: the guide, in a new tab (with POWER USER: the device's full manual).",
+  "#guidebtn": "GUIDE: how to use the groovebox, from the first beat to sharing it, in a new tab.",
   "#helpbtn": "The tour: a walk through making a whole song, from NEW SONG to EXPORT.",
   ".power": "POWER USER: every button and setting, and the device's own names (FX, SEQ, GLO …). Off: the simple set, in plain words.",
   "#tprev": "The track before (TRACK ◀).",
