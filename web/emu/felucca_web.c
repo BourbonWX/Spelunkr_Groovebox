@@ -152,32 +152,58 @@ static void fm1_irq_on(void) {}
 #define LCD_PX (240u * LCD_SCALE)
 static uint16_t web_fb[LCD_PX * LCD_PX];   /* RGB565 as the panel gets it (high byte first) */
 static uint32_t web_draws;
+/* the rows that changed since the worklet last took the frame (web_screen_rows): a write that leaves a pixel as it was
+ * changes nothing, so the page copies and converts only what moved (the screen redraws whole regions every frame) */
+static uint32_t web_dy0 = LCD_PX, web_dy1;
+static void lcd_rows(uint32_t y0, uint32_t y1)
+{
+    if (y0 < web_dy0) web_dy0 = y0;
+    if (y1 > web_dy1) web_dy1 = y1;
+    web_draws++;
+}
 /* x y w h in layout pixels; lcd_blit's p holds the drawn pixels: (w * LCD_SCALE) x (h * LCD_SCALE) */
 static void lcd_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint16_t c)
 {
-    uint32_t i, j;
+    uint32_t i, j, lo = LCD_PX, hi = 0;
     uint16_t sw = (uint16_t)((c >> 8) | (c << 8));
     x *= LCD_SCALE; y *= LCD_SCALE; w *= LCD_SCALE; h *= LCD_SCALE;
-    for (j = 0; j < h && y + j < LCD_PX; j++)
-        for (i = 0; i < w && x + i < LCD_PX; i++)
-            web_fb[(y + j) * LCD_PX + x + i] = sw;
-    web_draws++;
+    if (x >= LCD_PX) return;
+    if (x + w > LCD_PX) w = LCD_PX - x;
+    for (j = 0; j < h && y + j < LCD_PX; j++) {
+        uint16_t *row = web_fb + (y + j) * LCD_PX + x;
+        uint32_t diff = 0;
+        for (i = 0; i < w; i++) {
+            diff |= row[i] ^ sw;
+            row[i] = sw;
+        }
+        if (diff) { if (lo == LCD_PX) lo = y + j; hi = y + j + 1; }
+    }
+    if (hi) lcd_rows(lo, hi);
 }
 static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *p)
 {
-    uint32_t i, j;
+    uint32_t i, j, lo = LCD_PX, hi = 0, cw;
     x *= LCD_SCALE; y *= LCD_SCALE; w *= LCD_SCALE; h *= LCD_SCALE;
-    for (j = 0; j < h && y + j < LCD_PX; j++)
-        for (i = 0; i < w && x + i < LCD_PX; i++)
-            web_fb[(y + j) * LCD_PX + x + i] = p[j * w + i];
-    web_draws++;
+    if (x >= LCD_PX) return;
+    cw = x + w > LCD_PX ? LCD_PX - x : w;
+    for (j = 0; j < h && y + j < LCD_PX; j++) {
+        uint16_t *row = web_fb + (y + j) * LCD_PX + x;
+        const uint16_t *src = p + j * w;
+        uint32_t diff = 0;
+        for (i = 0; i < cw; i++) {
+            diff |= row[i] ^ src[i];
+            row[i] = src[i];
+        }
+        if (diff) { if (lo == LCD_PX) lo = y + j; hi = y + j + 1; }
+    }
+    if (hi) lcd_rows(lo, hi);
 }
 static void lcd_sync(void) {}
 static void lcd_power(uint32_t s)              /* MENU > SCREEN OFF (lcd.c): off, the page dark; on: redrawn before */
 {
     if (!s) {
         memset(web_fb, 0, sizeof web_fb);
-        web_draws++;
+        lcd_rows(0, LCD_PX);
     }
 }
 static void lcd_wake_now(void) {}
@@ -771,6 +797,14 @@ EXPORT void web_test_note(uint32_t p, uint32_t e, uint32_t k, uint32_t n, uint32
 EXPORT uint16_t *web_screen(void) { return web_fb; }
 EXPORT uint32_t web_screen_px(void) { return LCD_PX; }   /* the frame's side in pixels (480) */
 EXPORT uint32_t web_screen_draws(void) { return web_draws; }
+/* the changed rows since the last call, y0 | y1 << 16 (y1 exclusive; 0 nothing), then none */
+EXPORT uint32_t web_screen_rows(void)
+{
+    uint32_t r = web_dy1 > web_dy0 ? web_dy0 | web_dy1 << 16 : 0u;
+    web_dy0 = LCD_PX;
+    web_dy1 = 0;
+    return r;
+}
 EXPORT uint32_t web_now_ms(void) { return fm1_ms; }
 EXPORT uint32_t web_playing(void) { return song.playing; }
 EXPORT uint32_t web_sample_rate(void) { return FS; }

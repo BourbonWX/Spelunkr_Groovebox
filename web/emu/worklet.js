@@ -234,10 +234,17 @@ if (typeof registerProcessor === "function") {
       }
       const transfer = [];
       const draws = ex.web_screen_draws();
-      if (draws !== this.sentDraws) {
+      if (draws !== this.sentDraws) {                 // only the rows that changed (felucca_web.c web_screen_rows)
+        const side = this.fbSide, rows = ex.web_screen_rows ? ex.web_screen_rows() : 0;
+        let y0 = 0, y1 = side;
+        if (this.sentDraws !== undefined && ex.web_screen_rows) { y0 = rows & 0xFFFF; y1 = rows >>> 16; }
         this.sentDraws = draws;
-        msg.fb = new Uint16Array(mem, ex.web_screen(), this.fbN).slice();
-        transfer.push(msg.fb.buffer);
+        if (y1 > y0) {
+          msg.fb = new Uint16Array(mem, ex.web_screen() + y0 * side * 2, (y1 - y0) * side).slice();
+          msg.fbY = y0;
+          msg.fbSide = side;
+          transfer.push(msg.fb.buffer);
+        }
       }
       const writes = ex.web_flash_writes_count();
       if (writes !== this.sentWrites) {               // a save is done within one main-loop pass: whole here

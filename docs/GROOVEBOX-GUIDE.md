@@ -78,7 +78,8 @@ The **VAPOR** panel works on the whole song: **SLOWED** plays the record slower 
 tape, **VINYL** adds crackle and hiss, **CRUSH** makes it crunchy (◀ ▶ on each). **VAPORIZE** sets all four in one tap. It is saved
 with the song and heard in exports and shared links.
 
-The **FX PAD** bends the track you picked while you hold it: drag around, let go and it snaps back.
+The **FX PAD** bends the track you picked while you hold it: drag around, let go and it snaps back. Each pad has a
+**LOCK**: with it on, the pad stays where you let go (and follows the track you pick) until you turn LOCK off.
 
 ## Save, share, export
 

@@ -135,6 +135,11 @@ main { max-width: 1480px; margin: 0 auto; padding: 16px 20px 16px; display: flex
 .pad .t { top: 4px; left: 50%; transform: translateX(-50%); } .pad .b { bottom: 4px; left: 50%; transform: translateX(-50%); }
 .pad .l { left: 5px; top: 50%; transform: translateY(-130%); } .pad .r { right: 5px; top: 50%; transform: translateY(-130%); }
 .padbox .name { font: 22px/1 var(--head); }
+.padfoot { display: flex; align-items: center; gap: 10px; }
+.padfoot .lock { min-height: 32px; padding: 2px 12px; font-size: 20px; }
+.padfoot .lock[aria-pressed="true"] { background: var(--yellow); color: var(--night); border-color: var(--yellow); }
+.pad.locked { border-color: var(--yellow); }
+.pad.locked .dot { opacity: 1; }
 .fxpad .hint { padding: 0 14px 14px; color: var(--soft); }
 /* VAPOR, on the whole song (felucca_web.c web_vapor) */
 .vapor { border-top: 3px solid var(--rule); }
@@ -357,12 +362,12 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
       <div class="pads">
         <div class="padbox"><div class="pad" id="pad0" tabindex="0" role="slider" aria-label="FILTER and GATE"><span class="dot"></span>
           <span class="lbl t">CHOP FAST</span><span class="lbl b">CHOP SLOW</span><span class="lbl l">DARK</span><span class="lbl r">THIN</span></div>
-          <span class="name">FILTER · GATE</span></div>
+          <span class="padfoot"><span class="name">FILTER · GATE</span><button class="btn lock" type="button" id="lock0" aria-pressed="false">LOCK</button></span></div>
         <div class="padbox"><div class="pad" id="pad1" tabindex="0" role="slider" aria-label="ECHO and FLANGE"><span class="dot"></span>
           <span class="lbl t">JET</span><span class="lbl b">HOLLOW</span><span class="lbl l">ECHO</span><span class="lbl r">PING</span></div>
-          <span class="name">ECHO · FLANGE</span></div>
+          <span class="padfoot"><span class="name">ECHO · FLANGE</span><button class="btn lock" type="button" id="lock1" aria-pressed="false">LOCK</button></span></div>
       </div>
-      <div class="hint">Hold and drag to bend the track. Let go and it snaps back. The middle is off.</div>
+      <div class="hint">Hold and drag to bend the track. Let go and it snaps back, unless <b>LOCK</b> is on: then it stays where you leave it. The middle is off.</div>
       <div class="vapor">
         <div class="title strip"><b>VAPOR</b><span>on the song</span>
           <button class="btn" type="button" id="vapgo" title="One tap: slowed, warbly, dusty. Tap again for clean">VAPORIZE</button></div>
@@ -797,6 +802,28 @@ addEventListener("blur", () => {
 });
 
 // ------------------------------------------------------------------ the FX PAD (felucca_web.c web_xy)
+// Each pad springs back when let go, unless its LOCK is on (Ed, Nov 22): then it stays where it was left, on the
+// selected track (it follows a track change), until LOCK goes off or the middle is touched.
+const padLock = [false, false], padAt = [null, null];
+function padSend(j) {
+  const a = padAt[j];
+  send(a ? { type: "xy", j, x: a.x, y: a.y, on: 1 } : { type: "xy", j, x: 64, y: 64, on: 0 });
+}
+function padRelease(j) {
+  const pad = $("pad" + j), dot = pad.querySelector(".dot");
+  padAt[j] = null;
+  pad.classList.remove("on", "locked");
+  dot.style.left = dot.style.top = "50%";
+  padSend(j);
+}
+function padLockSet(j, on) {
+  padLock[j] = on;
+  const b = $("lock" + j);
+  b.setAttribute("aria-pressed", on);
+  b.textContent = on ? "LOCKED" : "LOCK";
+  $("pad" + j).classList.toggle("locked", on && !!padAt[j]);
+  if (!on && !$("pad" + j).classList.contains("on")) padRelease(j);
+}
 for (const j of [0, 1]) {
   const pad = $("pad" + j), dot = pad.querySelector(".dot");
   let held = null;
@@ -804,36 +831,46 @@ for (const j of [0, 1]) {
     const r = pad.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
     dot.style.left = x * 100 + "%"; dot.style.top = y * 100 + "%";
-    send({ type: "xy", j, x: Math.round(x * 127), y: Math.round((1 - y) * 127), on: 1 });
+    padAt[j] = { x: Math.round(x * 127), y: Math.round((1 - y) * 127) };
+    padSend(j);
   };
   pad.addEventListener("pointerdown", (e) => { e.preventDefault(); pad.setPointerCapture(e.pointerId); held = e.pointerId; pad.classList.add("on"); at(e); });
   pad.addEventListener("pointermove", (e) => { if (held === e.pointerId) at(e); });
   const up = (e) => {
     if (held !== e.pointerId) return;
     held = null;
-    pad.classList.remove("on");
-    dot.style.left = dot.style.top = "50%";
-    send({ type: "xy", j, x: 64, y: 64, on: 0 });
+    const a = padAt[j];
+    if (padLock[j] && a && (Math.abs(a.x - 64) > 6 || Math.abs(a.y - 64) > 6)) {   // locked: it stays (the middle: off)
+      pad.classList.remove("on");
+      pad.classList.add("locked");
+    } else padRelease(j);
   };
   pad.addEventListener("pointerup", up);
   pad.addEventListener("pointercancel", up);
+  $("lock" + j).addEventListener("click", () => padLockSet(j, !padLock[j]));
+}
+let padSel = -1;                                          // a locked pad follows the selected track
+function padFollow(sel) {
+  if (sel === padSel) return;
+  padSel = sel;
+  for (const j of [0, 1]) if (padAt[j]) setTimeout(() => padSend(j), 60);
 }
 
 // ------------------------------------------------------------------ screen and lights
 const canvas = $("screen"), ctx = canvas.getContext("2d");
-let img = ctx.createImageData(480, 480);
-function drawScreen(fb) {
-  const side = Math.round(Math.sqrt(fb.length));
-  if (img.width !== side) { canvas.width = canvas.height = side; img = ctx.createImageData(side, side); }
-  const d = img.data;
-  for (let i = 0; i < side * side; i++) {
-    const v = fb[i], p = ((v >> 8) | (v << 8)) & 0xFFFF;
-    d[i * 4] = ((p >> 11) & 31) * 255 / 31;
-    d[i * 4 + 1] = ((p >> 5) & 63) * 255 / 63;
-    d[i * 4 + 2] = (p & 31) * 255 / 31;
-    d[i * 4 + 3] = 255;
-  }
-  ctx.putImageData(img, 0, 0);
+let img = ctx.createImageData(480, 480), img32 = new Uint32Array(img.data.buffer);
+// RGB565 as the panel gets it (high byte first) -> RGBA, once for all 65536 values (little-endian ABGR words)
+const RGB565 = new Uint32Array(65536);
+for (let v = 0; v < 65536; v++) {
+  const p = ((v >> 8) | (v << 8)) & 0xFFFF;
+  RGB565[v] = 0xFF000000 | Math.round((p & 31) * 255 / 31) << 16 | Math.round(((p >> 5) & 63) * 255 / 63) << 8 | Math.round(((p >> 11) & 31) * 255 / 31);
+}
+// fb: rows y0.. of a side x side frame (the worklet sends only the rows that changed)
+function drawScreen(fb, y0 = 0, side = Math.round(Math.sqrt(fb.length))) {
+  if (img.width !== side) { canvas.width = canvas.height = side; img = ctx.createImageData(side, side); img32 = new Uint32Array(img.data.buffer); }
+  const o = y0 * side;
+  for (let i = 0; i < fb.length; i++) img32[o + i] = RGB565[fb[i]];
+  ctx.putImageData(img, 0, 0, 0, y0, side, fb.length / side);
 }
 function drawLights([litB, litK, dimB, dimK, dimLo = 0, brB = 0, brK = 0]) {
   for (const f of faceEls) {
@@ -864,6 +901,7 @@ function showGuide(g) {
   if (g.b && JSON.stringify(g.b) !== JSON.stringify(btnCtx)) { btnCtx = g.b; names(); }
   $("tpat").textContent = "PATTERN " + letter(g.cur) + (g.queue >= 0 ? " → " + letter(g.queue) : "");
   $("padtrack").textContent = "on " + ROLE[g.sel];
+  padFollow(g.sel);
   smpTrack(g);
   $("octlab").textContent = phoneMQ.matches ? `C${3 + g.oct}–C${4 + g.oct}` : `C${3 + g.oct}–D${5 + g.oct}`;
   g.knobs.forEach((k, i) => {                              // KNOB 1..4: what their cards on the screen say now
@@ -879,7 +917,7 @@ function showGuide(g) {
   });
   for (const j of [0, 1]) {                               // a pad moved on the screen's knobs shows where it is
     const pad = $("pad" + j);
-    if (pad.classList.contains("on")) continue;
+    if (pad.classList.contains("on") || pad.classList.contains("locked")) continue;
     const on = g.xy[j * 3 + 2], dot = pad.querySelector(".dot");
     dot.style.left = (on ? g.xy[j * 3] / 127 * 100 : 50) + "%";
     dot.style.top = (on ? 100 - g.xy[j * 3 + 1] / 127 * 100 : 50) + "%";
@@ -1016,7 +1054,7 @@ async function boot(sectors, song) {
       if (m.type === "ready") res();
       else if (m.type === "error") rej(new Error(m.message));
       else if (m.type === "frame") {
-        if (m.fb) drawScreen(m.fb);
+        if (m.fb) drawScreen(m.fb, m.fbY, m.fbSide);
         if (m.leds) drawLights(lastLeds = m.leds);
         if (m.guide) { try { showGuide(JSON.parse(dec.decode(m.guide))); } catch (err) { console.warn(err); } }
         if (m.sectors && !saveFlash(m.sectors) && !warned) {
@@ -1031,6 +1069,10 @@ async function boot(sectors, song) {
   n.connect(ac.destination);
   return n;
 }
+// the device's 3.4 MB starts downloading with the page, so SWITCH ON doesn't wait for it (a failed fetch is tried again)
+const getWasm = () => fetch("felucca.wasm").then((r) => { if (!r.ok) throw new Error(`felucca.wasm: ${r.status}`); return r.arrayBuffer(); });
+let wasmEarly = getWasm();
+wasmEarly.catch(() => {});
 async function switchOn(withSong) {
   const go = $("go");
   go.disabled = true;
@@ -1039,7 +1081,7 @@ async function switchOn(withSong) {
   try {
     ac = new AudioContext({ sampleRate: 44100, latencyHint: "interactive" });
     [wasmBytes] = await Promise.all([
-      fetch("felucca.wasm").then((r) => { if (!r.ok) throw new Error(`felucca.wasm: ${r.status}`); return r.arrayBuffer(); }),
+      wasmEarly.catch(() => (wasmEarly = getWasm())),
       ac.audioWorklet.addModule("worklet.js")]);
     node = await boot(loadFlash(), withSong ? sharedSong : null);
     await ac.resume();
@@ -1233,8 +1275,9 @@ function smpSend(k, port = node && node.port) {
   const b = smpBuilt(s);
   port.postMessage({ type: "spk", k, data: b.data, meta: b.meta, name: s.name });
 }
-function smpChanged(k, now) {                       // an edit: drawn now, the device and the browser's copy soon after
-  smpShow();
+let smpShowF = 0;
+function smpChanged(k, now) {                       // an edit: drawn next frame, the device and the browser's copy soon after
+  if (!smpShowF) smpShowF = requestAnimationFrame(() => { smpShowF = 0; smpShow(); });   // (a drag: once a frame)
   clearTimeout(smpSendT); clearTimeout(smpSaveT);
   if (now) smpSend(k); else smpSendT = setTimeout(() => smpSend(k), 150);
   smpSaveT = setTimeout(() => idbPut(k, stored(smp[k])), 600);
@@ -1546,8 +1589,10 @@ const TIPS = {
   "#octdn": "OCT −: the keys an octave lower (the [ key).",
   "#octup": "OCT +: the keys an octave higher (the ] key).",
   "#octlab": "The notes the keys play now.",
-  "#pad0": "FILTER · GATE: hold and drag on the track. Left darker, right thinner; up chops fast, down chops slow. Let go: it snaps back.",
-  "#pad1": "ECHO · FLANGE: hold and drag on the track. Left echo, right ping-pong; up a jet, down hollow. Let go: it snaps back.",
+  "#pad0": "FILTER · GATE: hold and drag on the track. Left darker, right thinner; up chops fast, down chops slow. Let go: it snaps back (with LOCK on, it stays).",
+  "#pad1": "ECHO · FLANGE: hold and drag on the track. Left echo, right ping-pong; up a jet, down hollow. Let go: it snaps back (with LOCK on, it stays).",
+  "#lock0": "LOCK the FILTER · GATE pad: where you let go, it stays, on the selected track. Click again to let it snap back.",
+  "#lock1": "LOCK the ECHO · FLANGE pad: where you let go, it stays, on the selected track. Click again to let it snap back.",
   "#vapgo": "VAPORIZE: slowed, warbly and dusty in one tap. When it's on, CLEAN takes it all off.",
   "#smpfile": "",
   "label:has(#smpfile)": "LOAD A FILE: a WAV, MP3, OGG or FLAC into this slot (up to 30 seconds). You can also drop a file on the panel.",
