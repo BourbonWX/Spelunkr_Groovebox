@@ -14,6 +14,11 @@ saves in this browser, and a link shares it.
 
 - **NEW SONG** and **🎲 RANDOM**, first at the top: a blank song, or a whole random one to play with (lo-fi,
   chillwave, electro or chiptune). Both ask first.
+- **↶ UNDO** takes back the last thing you did to the music (a NEW SONG or RANDOM, a sound picked, a row's BEAT /
+  RANDOM / VARY / CLEAR); click it again to put it back.
+- **The song bar** under the top buttons: **TEMPO** (◀ ▶, hold to keep going, or **TAP** along 3 or 4 times),
+  **SWING** (0 % straight, 30–50 % a lo-fi bounce) and **KEY**: the home note and the scale; tick **keys stay in key**
+  and every key you play lands in the scale. RANDOM songs set the key they're in.
 - **The screen** in the middle is the groovebox itself. The buttons on its left are named for what they do on the
   screen you are on right now (a yellow name means it does something special here). The four controls on its right
   change the four things shown along the top of the screen: tap **◀** or **▶**, or hold one to keep going (the mouse
@@ -21,7 +26,8 @@ saves in this browser, and a link shares it.
 - **SOUNDS** picks another sound for the track, **TRACK** picks the track, **SCROLL** moves through lists and menus,
   **VOLUME** is the volume.
 - **The tracks** (the TV-guide grid under the screen): a row a track. Click a row to work on that track. **M** mutes
-  it, **S** plays it alone. The columns are your patterns, or, once the song has parts, the parts in order: click one
+  it, **S** plays it alone. **BEAT** (the drum rows), **RANDOM**, **VARY** and **CLEAR** work on that track's steps in
+  the pattern playing. The columns are your patterns, or, once the song has parts, the parts in order: click one
   to play that pattern next.
 - **The keys** along the bottom, or your computer keyboard: **Z** to **M** and **Q** to **O** (the rows above them are
   the black keys). **[** and **]** move an octave. A MIDI keyboard works too.
@@ -30,12 +36,13 @@ saves in this browser, and a link shares it.
 
 1. **Start**: **NEW SONG** (a blank page) or **RANDOM**.
 2. **A beat**: click the **DRUMS** row and pick a kit with **SOUNDS**: CRATE and BEDROOM (dusty lo-fi), VAPOR 808,
-   LINN and GATED (80s drum machines), NES, GAMEBOY and SNES (chiptune), and more. Hold **STEPS** and press **B**
-   (computer key M) for a beat, or **G** for a random one. Tap **STEPS** to see and change every step; **HOME** brings
-   you back.
+   LINN and GATED (80s drum machines), NES, GAMEBOY and SNES (chiptune), and more. Click **BEAT** on the row for a
+   beat, **RANDOM** for a random one, **VARY** to change it a little. Tap **STEPS** to see and change every step;
+   **HOME** brings you back. Set the **TEMPO** and **SWING** in the song bar.
 3. **A part**: click **SYNTH 1**, pick its sound, and tap **RECORD**: the music starts, and what you play on the keys
-   goes into the loop. Tap **RECORD** again to stop recording, **PLAY** to stop the music. To start over, hold
-   **STEPS** and press **C** (CLEAR). Do the same for a bass on **SYNTH 2**.
+   goes into the loop. Tap **RECORD** again to stop recording, **PLAY** to stop the music. To start over, **CLEAR**
+   on its row. Set the **KEY** and tick **keys stay in key** first, and nothing you play sounds wrong. Do the same for
+   a bass on **SYNTH 2**.
 4. **Shape it**: the four controls change the track's sound. **SOUND** shows more of its settings.
 5. **More patterns**: a pattern is a loop of every track. Tap **MIX**: patterns A to F are on the white keys C to A
    (computer keys Z to N). Press **D** (X) for pattern B: it starts as a copy of A. Change it: a fill, a chorus, a

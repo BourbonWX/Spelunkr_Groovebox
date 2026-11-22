@@ -187,6 +187,11 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "track") { ex.web_track(m.k);                      // the Spelunkr page's controls
       } else if (m.type === "mute") { ex.web_mute(m.k);
       } else if (m.type === "solo") { ex.web_solo_toggle(m.k);
+      } else if (m.type === "tool") { ex.web_tool(m.k, m.which);   // (the page's shortcuts: felucca_web.c)
+      } else if (m.type === "undo") { ex.web_undo();
+      } else if (m.type === "tempo") { ex.web_tempo(m.bpm);
+      } else if (m.type === "swing") { ex.web_swing(m.v);
+      } else if (m.type === "key") { ex.web_key(m.root, m.scale, m.snap ? 1 : 0);
       } else if (m.type === "cue") { ex.web_cue(m.p);
       } else if (m.type === "spk") { this.port.postMessage({ type: "spk", k: m.k, rc: spkPut(ex, m.k, m.data, m.meta, m.name) });
       } else if (m.type === "spkuse") { ex.web_spk_use(m.k, m.mode);

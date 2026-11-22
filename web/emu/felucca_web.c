@@ -585,6 +585,57 @@ EXPORT uint32_t web_spk_in_use(void)
     return m;
 }
 
+/* ------------------------------------------------------------------ the page's shortcuts (Ed, Nov 22: out of the menus)
+ * a track row's tools (SEQ held's: ui_tools.c tl_do, with its undo copy): 0 BEAT (a drum track), 1 RANDOM, 2 VARY
+ * (COOK), 3 CLEAR, on track k (selected first). 1 done (the screen says what), 0 not (it says why) */
+EXPORT uint32_t web_tool(uint32_t k, uint32_t which)
+{
+    static const uint8_t TL[4] = {TL_BEAT, TL_RANDOM, TL_COOK, TL_CLEAR};
+    const char *m;
+    if (k >= NTRK || which > 3u)
+        return 0;
+    if (k != song.sel)
+        track_select(k);
+    if (!tl_cell(&trk[k], TL[which])) {
+        ui_message("BEAT: A DRUM TRACK'S");
+        return 0;
+    }
+    if (!(m = tl_do(&trk[k], TL[which], 0)))
+        return 0;
+    ui_message(m);
+    ui.force = 1;
+    return 1;
+}
+/* UNDO (SAVE held's: a NEW / RANDOM just done, else the last load or tool, ui.c undo_swap; again: redo) */
+EXPORT uint32_t web_undo(void)
+{
+    if (chain_busy()) {
+        ui_message("STOP TO UNDO");
+        return 0;
+    }
+    if (!new_undo())
+        undo_swap();
+    ui.force = 1;
+    return 1;
+}
+/* the tempo (40..240) and the swing (0..100), from the page's header */
+EXPORT void web_tempo(uint32_t bpm) { song.g[G_BPM] = (int16_t)clamp((int32_t)bpm, GP[G_BPM].min, GP[G_BPM].max); ui.force = 1; }
+EXPORT void web_swing(uint32_t v) { song.g[G_SWING] = (int16_t)clamp((int32_t)v, 0, 100); ui.force = 1; }
+/* the key: ROOT (0..11), SCALE (params.c N_SCALE: 0 CHR = any note) and the keys kept in it (QNT SNAP) on the
+ * melodic tracks (the kits' keys are their drums); the steps as they are */
+EXPORT void web_key(uint32_t root, uint32_t scale, uint32_t snap)
+{
+    uint32_t k;
+    for (k = 0; k < NTRK; k++) {
+        if (trk_is_kit(k))
+            continue;
+        trk[k].p[P_ROOT] = (int16_t)(root % 12u);
+        trk[k].p[P_SCALE] = (int16_t)(scale % 16u);
+        trk[k].p[P_QUANT] = (int16_t)(snap && scale ? 1 : 0);   /* (seq.c QN_SNAP: every key onto the scale) */
+    }
+    ui.force = 1;
+}
+
 EXPORT uint32_t web_rs_style(void) { return rsg.sty; }   /* the last RANDOM SONG's style (boot_song.c ST_*): tests */
 
 /* NEW SONG (the page's button; the device's SAVE > TOOLS > NEW + DEFAULT SOUNDS): every track cleared, the power-on
@@ -1032,6 +1083,7 @@ EXPORT const char *web_guide(void)
     wj("{\"bpm\":%d,\"play\":%d,\"rec\":%d,\"sel\":%u,\"cur\":%u,\"queue\":%d,\"used\":%u,\"oct\":%d,", song.g[G_BPM],
        song.playing ? 1 : 0, song.rec != 0, (unsigned)song.sel, (unsigned)bank.cur, bank.queue < NBANK ? (int)bank.queue : -1,
        (unsigned)bank.used, song.octave);
+    wj("\"swing\":%d,\"key\":[%d,%d,%d],", song.g[G_SWING], trk[1].p[P_ROOT], trk[1].p[P_SCALE], trk[1].p[P_QUANT]);
     wj("\"song\":{\"running\":%d,\"row\":%u,\"rows\":[", chain.running ? 1 : 0, (unsigned)chain.row);
     for (r = 0; chain_valid(&chain_config) && r < chain_config.count && r < CHAIN_ROWS; r++) {
         wj(r ? ",[%u" : "[%u", (unsigned)chain_config.row[r].repeat);

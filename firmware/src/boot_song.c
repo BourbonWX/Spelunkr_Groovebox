@@ -841,6 +841,14 @@ static void random_song_make(uint32_t seed)
         rs_part(&trk[k], cls[k], seen[cls[k]]++, 1u);
     (void)sec; (void)f;
 #endif
+    for (k = 0; k < NTRK; k++) {                          /* Spelunkr: the song's key on the melodic tracks (ROOT, SCALE:
+                                                           * the page's KEY shows it, RANDOM's notes keep to it; the keys
+                                                           * stay free: QNT as it was) */
+        if (CLS_ROLE[cls[k]] == ROLE_DRUMS)
+            continue;
+        trk[k].p[P_ROOT] = (int16_t)(rsg.tonic % 12);
+        trk[k].p[P_SCALE] = (int16_t)(mode == 0u ? 2 : mode == 1u ? 3 : 1);   /* (N_SCALE: MIN, DOR, MAJ) */
+    }
     for (k = 0; k < NTRK; k++) {
         pat_sig[k] = steps_sig(&trk[k]);
         pat_last[k] = 0;

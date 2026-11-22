@@ -63,7 +63,19 @@ header nav .btn.on { background: var(--rec); color: var(--night); border-color: 
 .power { display: flex; align-items: center; gap: 8px; font: 22px var(--head); color: var(--soft); padding: 4px 12px; border: 2px solid var(--rule);
          background: var(--panel); min-height: 40px; cursor: pointer; }
 .power input { width: 20px; height: 20px; accent-color: var(--yellow); }
-.bpm { font: 30px/1 var(--head); min-width: 110px; text-align: right; }
+/* the song bar: tempo, swing, key (under the header) */
+.songbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 26px; padding: 8px 20px; background: var(--night); border-bottom: 3px solid var(--indigo); }
+.songbar .sb { display: inline-flex; align-items: center; gap: 6px; }
+.songbar b { font: 22px/1 var(--head); font-weight: normal; color: var(--yellow); margin-right: 4px; }
+.songbar small { font: 18px var(--mono); color: var(--soft); }
+.songbar .btn { min-height: 34px; padding: 2px 10px; font-size: 19px; background: var(--panel); }
+.songbar .sbarr { width: 34px; padding: 0; }
+.songbar .sbv { font: 28px/1 var(--head); min-width: 2.4em; text-align: center; color: #fff; }
+.songbar select { font: 20px var(--mono); background: var(--panel); color: #fff; border: 2px solid var(--rule2); padding: 2px 6px; min-height: 34px; }
+.songbar .sbchk { display: inline-flex; align-items: center; gap: 6px; color: var(--soft); font: 18px var(--mono); cursor: pointer; }
+.songbar .sbchk input { width: 18px; height: 18px; accent-color: var(--yellow); }
+.songbar .sbchk.off { opacity: .45; }
+#taptempo.hot { background: var(--yellow); color: var(--night); }
 
 main { max-width: 1480px; margin: 0 auto; padding: 16px 20px 16px; display: flex; flex-direction: column; gap: 16px; }
 .top { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
@@ -155,14 +167,14 @@ main { max-width: 1480px; margin: 0 auto; padding: 16px 20px 16px; display: flex
 .guide { overflow-x: auto; }
 .guide .inner { min-width: 980px; }
 .ghead { display: flex; align-items: stretch; }
-.ghead .c0 { width: 300px; flex: 0 0 300px; padding: 4px 12px; font: 24px var(--head); color: var(--yellow); display: flex; align-items: center; gap: 10px; }
+.ghead .c0 { width: 430px; flex: 0 0 430px; padding: 4px 12px; font: 24px var(--head); color: var(--yellow); display: flex; align-items: center; gap: 10px; }
 .ghead .c0 small { font: 18px var(--mono); color: var(--dim); }
 .ghead .col { flex: 1 1 0; min-width: 0; padding: 4px 10px; font: 24px var(--head); color: var(--yellow); border-left: 2px solid var(--rule); white-space: nowrap; overflow: hidden; }
 .ghead .col small { font: 18px var(--mono); color: var(--dim); }
 .ghead .col.now { background: #4A1C9A; }
 .grow { display: flex; align-items: stretch; height: 60px; border-bottom: 2px solid var(--rule); position: relative; }
 .grow.sel { outline: 3px solid var(--yellow); outline-offset: -3px; z-index: 1; }
-.ghd { width: 300px; flex: 0 0 300px; display: flex; align-items: center; gap: 10px; padding: 0 10px; background: var(--panel); cursor: pointer; border: 0; text-align: left; }
+.ghd { width: 430px; flex: 0 0 430px; display: flex; align-items: center; gap: 10px; padding: 0 10px; background: var(--panel); cursor: pointer; border: 0; text-align: left; }
 .grow.sel .ghd { background: linear-gradient(90deg, var(--orange), var(--rust)); }
 .ghd .n { font: 46px/.9 var(--head); width: 46px; color: var(--yellow); }
 .ghd .ic { width: 34px; height: 34px; border-radius: 6px; background: var(--indigo); border: 2px solid var(--yellow); color: var(--yellow);
@@ -172,6 +184,10 @@ main { max-width: 1480px; margin: 0 auto; padding: 16px 20px 16px; display: flex
 .ghd .nm span { font-size: 18px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ms { width: 32px; height: 32px; min-height: 0; padding: 0; font-size: 20px; background: var(--row); flex: none; }
 .ms.on { background: var(--yellow); color: var(--indigo); border-color: #FFE98A; }
+/* a row's tools (Ed, Nov 22): BEAT (a kit) RANDOM VARY CLEAR on that track, as SEQ held + a key does */
+.ghd .tools { display: grid; grid-template-columns: repeat(2, auto); gap: 3px; flex: none; }
+.ghd .tl { min-height: 0; height: 26px; padding: 0 6px; font-size: 15px; background: var(--row); }
+.ghd .tl[disabled] { visibility: hidden; }
 .blk { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 4px 10px; border: 0;
        border-left: 2px solid var(--rule); background: var(--row); color: #fff; cursor: pointer; text-align: left; position: relative; }
 .blk:hover { filter: brightness(1.15); }
@@ -285,7 +301,6 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   header nav { gap: 5px; }
   header nav .btn { font-size: 19px; padding: 3px 8px; min-height: 38px; }
   .power { font-size: 19px; }
-  .bpm { font-size: 26px; min-width: 0; }
 }
 @media (max-width: 1280px) and (min-width: 721px) {
   .logo { width: 150px; } .logo span { font-size: 20px; }
@@ -297,7 +312,8 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   .logo { width: auto; } .logo b { width: 36px; height: 36px; font-size: 32px; } .logo span { font-size: 21px; }
   header nav { order: 3; width: 100%; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   header nav .btn { font-size: 19px; padding: 4px 6px; justify-content: center; }
-  .bpm { font-size: 24px; min-width: 0; margin-left: auto; }
+  .songbar { padding: 6px 10px; gap: 6px 14px; }
+  .ghd, .ghead .c0 { width: 300px; flex-basis: 300px; } .ghd .tools { display: none; }
   main { padding: 10px 8px 12px; }
   .body { padding: 10px 6px; gap: 12px; }
   .face { order: 3; width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
@@ -328,6 +344,7 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   <nav aria-label="Song">
     <button class="btn orange" id="newsong" type="button">NEW SONG</button>
     <button class="btn" id="randsong" type="button">&#127922; RANDOM</button>
+    <button class="btn" id="undobtn" type="button">&#8630; UNDO</button>
     <button class="btn" id="recbtn" type="button" title="Record what you hear, live, to a WAV file">RECORD <span id="rectime"></span></button>
     <button class="btn" id="bounce" type="button" title="Render the song (or the pattern) to WAV, with stems if you like">EXPORT</button>
     <button class="btn" id="share" type="button" title="A link that plays this song in anyone's browser">SHARE</button>
@@ -339,8 +356,14 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   </nav>
   <button class="btn helpbtn" id="helpbtn" type="button" title="A quick tour of the groovebox" aria-label="Help: a quick tour">?</button>
   <label class="power" title="The device's own names (FX, SEQ, GLO, ...) instead of the plain ones"><input type="checkbox" id="power"> POWER USER</label>
-  <div class="bpm" id="bpm" aria-live="off">--- BPM</div>
 </header>
+<!-- the song bar (Ed, Nov 22: out of the menus): tempo, tap, swing, key -->
+<div class="songbar" id="songbar">
+  <span class="sb"><b>TEMPO</b><button class="btn sbarr" id="bpmdn" type="button" aria-label="Slower">&#9664;</button><span class="sbv" id="bpm" aria-live="off">---</span><button class="btn sbarr" id="bpmup" type="button" aria-label="Faster">&#9654;</button><small>BPM</small><button class="btn" id="taptempo" type="button">TAP</button></span>
+  <span class="sb"><b>SWING</b><button class="btn sbarr" id="swdn" type="button" aria-label="Less swing">&#9664;</button><span class="sbv" id="swing">--</span><button class="btn sbarr" id="swup" type="button" aria-label="More swing">&#9654;</button></span>
+  <span class="sb"><b>KEY</b><select id="keyroot" aria-label="The key's note"></select><select id="keyscale" aria-label="The scale"></select>
+    <label class="sbchk"><input type="checkbox" id="keysnap"> keys stay in key</label></span>
+</div>
 
 <main>
   <div class="top">
@@ -911,11 +934,60 @@ function drawLights([litB, litK, dimB, dimK, dimLo = 0, brB = 0, brK = 0]) {
 // ------------------------------------------------------------------ the guide (felucca_web.c web_guide)
 const dec = new TextDecoder(), phoneMQ = matchMedia("(max-width: 720px)");
 let guideSig = "";
+// ------------------------------------------------------------------ the song bar: tempo, tap, swing, key (felucca_web.c
+// web_tempo / web_swing / web_key; the device's values shown unless the page just changed one)
+const SCALES = [[0, "any note"], [1, "major"], [2, "minor"], [5, "pentatonic"], [6, "minor pentatonic"], [12, "blues"],
+                [3, "dorian"], [4, "mixolydian"], [7, "harmonic minor"], [11, "melodic minor"], [8, "phrygian"], [9, "lydian"],
+                [10, "locrian"], [13, "whole tone"], [14, "diminished H-W"], [15, "diminished W-H"]];
+const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+NOTES.forEach((n, i) => $("keyroot").add(new Option(n, i)));
+SCALES.forEach(([v, n]) => $("keyscale").add(new Option(n, v)));
+const sbTouched = { bpm: 0, swing: 0, key: 0 };
+let sbBpm = 120, sbSwing = 0;
+function songBar(g) {
+  const now = performance.now();
+  if (now - sbTouched.bpm > 800) { sbBpm = g.bpm; $("bpm").textContent = g.bpm; }
+  if (g.swing !== undefined && now - sbTouched.swing > 800) { sbSwing = g.swing; $("swing").textContent = g.swing + "%"; }
+  if (g.key && now - sbTouched.key > 800 && document.activeElement !== $("keyroot") && document.activeElement !== $("keyscale")) {
+    $("keyroot").value = g.key[0]; $("keyscale").value = g.key[1];
+    $("keysnap").checked = g.key[2] === 1; $("keysnap").disabled = !g.key[1];
+    $("keysnap").parentElement.classList.toggle("off", !g.key[1]);
+  }
+}
+function setBpm(v) { sbBpm = Math.max(40, Math.min(240, Math.round(v))); sbTouched.bpm = performance.now(); $("bpm").textContent = sbBpm; send({ type: "tempo", bpm: sbBpm }); }
+function setSwing(v) { sbSwing = Math.max(0, Math.min(100, Math.round(v))); sbTouched.swing = performance.now(); $("swing").textContent = sbSwing + "%"; send({ type: "swing", v: sbSwing }); }
+function sendKey() { sbTouched.key = performance.now(); const sc = +$("keyscale").value; $("keysnap").disabled = !sc; $("keysnap").parentElement.classList.toggle("off", !sc);
+  send({ type: "key", root: +$("keyroot").value, scale: sc, snap: $("keysnap").checked }); }
+// an arrow: a step; held, it keeps going (faster)
+function repeater(el, step) {
+  let t = 0, n = 0;
+  const stop = () => { clearTimeout(t); t = 0; };
+  const go = () => { step(n < 10 ? 1 : 2); n++; t = setTimeout(go, n < 3 ? 260 : n < 10 ? 120 : 60); };
+  el.addEventListener("pointerdown", (e) => { e.preventDefault(); n = 0; step(1); t = setTimeout(go, 380); });
+  for (const ev of ["pointerup", "pointerleave", "pointercancel"]) el.addEventListener(ev, stop);
+  el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); step(1); } });
+}
+repeater($("bpmdn"), (d) => setBpm(sbBpm - d)); repeater($("bpmup"), (d) => setBpm(sbBpm + d));
+repeater($("swdn"), (d) => setSwing(sbSwing - 5 * d)); repeater($("swup"), (d) => setSwing(sbSwing + 5 * d));
+for (const el of [$("bpm"), $("swing")]) el.addEventListener("wheel", (e) => { e.preventDefault(); const d = e.deltaY < 0 ? 1 : -1;
+  if (el.id === "bpm") setBpm(sbBpm + d); else setSwing(sbSwing + 5 * d); }, { passive: false });
+let taps = [];
+$("taptempo").addEventListener("pointerdown", (e) => {   // TAP: the tempo of the last taps (a pause over 2 s starts again)
+  e.preventDefault();
+  const t = performance.now();
+  if (taps.length && t - taps[taps.length - 1] > 2000) taps = [];
+  taps.push(t); taps = taps.slice(-6);
+  $("taptempo").classList.add("hot"); setTimeout(() => $("taptempo").classList.remove("hot"), 90);
+  if (taps.length >= 2) setBpm(60000 * (taps.length - 1) / (taps[taps.length - 1] - taps[0]));
+});
+for (const id of ["keyroot", "keyscale", "keysnap"]) $(id).addEventListener("change", sendKey);
+$("undobtn").addEventListener("click", () => { send({ type: "undo" }); studioSay("Undone (the screen says what). UNDO again puts it back."); });
+
 function showGuide(g) {
   G = g;
   const pos = (k) => g.tracks[k].pos, order = [...g.tracks.keys()].sort((a, b) => pos(a) - pos(b));
   const sel = g.tracks[g.sel], letter = (p) => "ABCDEF"[p] ?? "-";
-  $("bpm").textContent = g.bpm + " BPM";
+  songBar(g);
   $("tnum").textContent = "TRACK " + String(pos(g.sel) + 1).padStart(2, "0");
   $("twho").textContent = ROLE[g.sel] + (sel.b ? " +B" : "");
   $("twhat").textContent = sel.sound ? `${sel.sound} · ${sel.engine}` : sel.engine;
@@ -990,7 +1062,18 @@ function showGuide(g) {
       s.className = "btn ms" + (t.solo ? " on" : ""); s.textContent = "S"; s.setAttribute("aria-label", "Solo " + ROLE[k]); s.setAttribute("aria-pressed", !!t.solo);
       m.addEventListener("click", (e) => { e.stopPropagation(); send({ type: "mute", k }); });
       s.addEventListener("click", (e) => { e.stopPropagation(); send({ type: "solo", k }); });
-      hd.append(m, s);
+      const tools = document.createElement("span");
+      tools.className = "tools";
+      const kit = k === 0 || k === 4;                     // (DRUMS, PERC: the kits; BEAT is a kit's)
+      [["BEAT", 0, `BEAT: a basic beat on ${ROLE[k]} (kick, snare, hats).`], ["RANDOM", 1, `RANDOM: new random steps on ${ROLE[k]}` + (kit ? "." : ", in the song's key.")],
+       ["VARY", 2, `VARY: a few of ${ROLE[k]}'s steps changed, the rest kept (again: more).`], ["CLEAR", 3, `CLEAR: every step of ${ROLE[k]} in this pattern gone.`]].forEach(([t, w, tip]) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "btn tl"; b.textContent = t; b.title = tip + " UNDO takes it back.";
+        if (w === 0 && !kit) b.disabled = true;
+        b.addEventListener("click", (e) => { e.stopPropagation(); send({ type: "tool", k, which: w }); });
+        tools.append(b);
+      });
+      hd.append(m, s, tools);
       row.append(hd);
       cols.forEach((c, i) => {
         const p = c.pats[k], dens = p >= 0 ? t.pats[p] : -1, b = document.createElement("button");
@@ -1719,6 +1802,17 @@ const TIPS = {
   "#bounce": "EXPORT: make a WAV of the song or the pattern, faster than real time, with a WAV for each track if you like.",
   "#share": "SHARE: a short code and a link that play this song in anyone's groovebox, with the samples it uses.",
   "#codebtn": "CODE: open a song someone shared, by its code (SPGB_…) or its link.",
+  "#undobtn": "UNDO: take back the last thing you did to the music: a NEW SONG or RANDOM, a sound you picked, BEAT / RANDOM / VARY / CLEAR on a track. Click again to put it back.",
+  "#bpmdn": "Slower (hold to keep going; the mouse wheel over the number too).",
+  "#bpmup": "Faster (hold to keep going; the mouse wheel over the number too).",
+  "#bpm": "The tempo, in beats a minute.",
+  "#taptempo": "TAP: tap along with the beat you want, 3 or 4 times: the tempo follows.",
+  "#swdn": "Less swing.",
+  "#swup": "More swing: the off-beat 16ths later, for a lazier, bouncier groove.",
+  "#swing": "SWING: 0% straight; 30–50% a hip-hop or lo-fi bounce.",
+  "#keyroot": "The song's key: its home note.",
+  "#keyscale": "The scale: which notes belong. RANDOM on a synth track keeps to it.",
+  "label:has(#keysnap)": "Keys stay in key: every key you play lands on a note of the scale, so nothing sounds wrong (the synth tracks; the drums keep their keys).",
   "#codein": "The code (SPGB_ and 7 letters or numbers), or the whole share link.",
   "#codego": "Open that song (it asks first if you have music open).",
   "#codedlg button[value='close']": "Close.",
@@ -1857,15 +1951,16 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "the keys, the screen and the controls follow. Start with <kbd>DRUMS</kbd>." },
   { t: "4 · PICK ITS SOUND", el: "#wheels", x: () => "<kbd>SOUNDS</kbd> ◀ ▶ steps through the sounds for that track: dusty lo-fi kits (CRATE, BEDROOM), "
       + "80s drum machines (VAPOR 808, LINN, GATED), chiptune kits (NES, GAMEBOY, SNES); on the synths pianos, vibes, sax, chip sounds and more." },
-  { t: "5 · MAKE A BEAT", el: btnSel("SEQ"), x: () => "Hold <kbd>STEPS</kbd>: the screen shows a tool on each key. Still holding it, press "
-      + (phoneMQ.matches ? "the B key" : "<kbd>B</kbd> (computer key M)") + " for a BEAT, or G for a RANDOM one; let go. "
-      + "Tap <kbd>STEPS</kbd> to see every step: <kbd>ROW</kbd> picks a step, <kbd>COLUMN</kbd> a drum, the third control turns it on or off." },
+  { t: "5 · MAKE A BEAT", el: "#grows .grow:first-child .tools", x: () => "Click <kbd>BEAT</kbd> on the DRUMS row for a basic beat, <kbd>RANDOM</kbd> for a random one, "
+      + "<kbd>VARY</kbd> to change a few steps, <kbd>CLEAR</kbd> to start over (every row has them; <kbd>UNDO</kbd> at the top takes any of it back). "
+      + "Tap <kbd>STEPS</kbd> to see every step: <kbd>ROW</kbd> picks a step, <kbd>COLUMN</kbd> a drum, the third control turns it on or off. "
+      + "The tempo and the swing are in the bar under the top buttons." },
   { t: "6 · PLAY THE KEYS", el: ".keybar", x: () => (phoneMQ.matches ? "Play on these keys. "
       : "Play on these keys, or on your computer keyboard: <kbd>Z</kbd> to <kbd>M</kbd> and <kbd>Q</kbd> to <kbd>O</kbd>. ")
       + "<kbd>OCT −</kbd> and <kbd>OCT +</kbd> move up and down. On a drum track each key is a drum. A MIDI keyboard works too." },
   { t: "7 · RECORD A PART", el: btnSel("REC"), x: () => "Click a synth row (SYNTH 1) and pick its sound. Tap <kbd>RECORD</kbd>: the music starts, "
       + "and what you play on the keys goes into the loop. Tap <kbd>RECORD</kbd> again to stop recording (the music keeps going), <kbd>PLAY</kbd> to stop. "
-      + "Start over: hold <kbd>STEPS</kbd> and press C (CLEAR). Do the same for a bass on SYNTH 2." },
+      + "Start over: <kbd>CLEAR</kbd> on its row. Set the song's <kbd>KEY</kbd> in the bar at the top and tick <i>keys stay in key</i>: nothing you play sounds wrong. Do the same for a bass on SYNTH 2." },
   { t: "8 · SHAPE THE SOUND", el: "#knobs", x: () => "These four controls change the selected track's sound: its tone, its decay, WOW and AGE on the sampled ones. "
       + "<kbd>SOUND</kbd> shows more of its settings; <kbd>POWER USER</kbd> shows everything (envelope, wobble, arpeggio, scale, effects)." },
   { t: "9 · MORE PATTERNS", el: btnSel("GLO"), x: () => "A pattern is a loop of every track. Tap <kbd>MIX</kbd>: patterns A to F on the white keys "
