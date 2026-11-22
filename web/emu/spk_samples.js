@@ -128,3 +128,82 @@ export function fromStored(o) {
 }
 export function b64of(u8) { let s = ""; for (let i = 0; i < u8.length; i += 4096) s += String.fromCharCode.apply(null, u8.subarray(i, i + 4096)); return btoa(s); }
 export function u8of(b64) { return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)); }
+
+/* ---- WAV files read here, not by the browser (Ed, Nov 22: a 100 MB+ file came out as static): a browser decodes the
+ * whole file before the first 30 seconds are taken (seconds of waiting, hundreds of MB), and some WAVs it gets wrong
+ * (64-bit float: Firefox plays noise, Chrome refuses it). Here only the header and the first maxSec seconds are read
+ * (File.slice), any PCM (8, 16, 24, 32-bit) or float (32, 64-bit), plain, WAVE_FORMAT_EXTENSIBLE or RF64; mixed to
+ * mono. Returns { rate, frames (Float32Array, mono), seconds (the whole file's) } or throws Error(what's wrong). */
+const ascii = (u8, o, n) => String.fromCharCode(...u8.subarray(o, o + n));
+export async function readWav(file, maxSec = MAX_SECONDS) {
+  let head = new Uint8Array(await file.slice(0, Math.min(file.size, 1 << 16)).arrayBuffer());
+  const riff = ascii(head, 0, 4);
+  if (head.length < 12 || (riff !== "RIFF" && riff !== "RF64") || ascii(head, 8, 4) !== "WAVE") throw new Error("not a WAV file");
+  let fmt = null, dataAt = -1, dataLen = 0, ds64 = 0;
+  for (let o = 12; ;) {
+    if (o + 8 > head.length) {                                   // (a big chunk before the data: read further)
+      if (o + 8 > file.size || head.length >= 1 << 24) break;
+      head = new Uint8Array(await file.slice(0, Math.min(file.size, Math.max(o + 4096, head.length * 4))).arrayBuffer());
+      continue;
+    }
+    const dv = new DataView(head.buffer), id = ascii(head, o, 4), sz = dv.getUint32(o + 4, true);
+    if (id === "ds64" && o + 8 + 16 <= head.length) ds64 = dv.getUint32(o + 8 + 8, true) + dv.getUint32(o + 8 + 12, true) * 2 ** 32;
+    if (id === "fmt " && o + 8 + 16 <= head.length) {
+      let tag = dv.getUint16(o + 8, true);
+      const bits = dv.getUint16(o + 22, true);
+      if (tag === 0xFFFE && sz >= 40 && o + 8 + 26 <= head.length) tag = dv.getUint16(o + 8 + 24, true);   // (the subformat)
+      fmt = { tag, ch: dv.getUint16(o + 10, true), rate: dv.getUint32(o + 12, true), align: dv.getUint16(o + 20, true), bits };
+    }
+    if (id === "data") {
+      dataAt = o + 8;
+      dataLen = sz === 0xFFFFFFFF && ds64 ? ds64 : sz;
+      if (!dataLen || dataAt + dataLen > file.size) dataLen = file.size - dataAt;   // (a size left 0 or too big: to the end)
+      break;
+    }
+    o += 8 + sz + (sz & 1);
+  }
+  if (!fmt) throw new Error("its header has no format");
+  if (dataAt < 0) throw new Error("it has no sound in it");
+  const { tag, ch, rate, bits } = fmt, bps = bits >> 3, align = fmt.align || ch * bps;
+  const ok = (tag === 1 && [8, 16, 24, 32].includes(bits)) || (tag === 3 && (bits === 32 || bits === 64));
+  if (!ok || !ch || !rate || rate < 1000 || rate > 768000) throw new Error(`its kind of WAV (format ${tag}, ${bits}-bit) can't be read: save it as a 16 or 24-bit WAV`);
+  const total = Math.floor(dataLen / align), n = Math.min(total, Math.ceil(rate * maxSec));
+  const raw = new Uint8Array(await file.slice(dataAt, dataAt + n * align).arrayBuffer()), dv = new DataView(raw.buffer);
+  const frames = new Float32Array(Math.floor(raw.length / align)), g = 1 / ch;
+  for (let i = 0; i < frames.length; i++) {
+    let sum = 0;
+    for (let c = 0, o = i * align; c < ch; c++, o += bps) {
+      let v;
+      if (tag === 3) v = bits === 32 ? dv.getFloat32(o, true) : dv.getFloat64(o, true);
+      else if (bits === 8) v = (raw[o] - 128) / 128;
+      else if (bits === 16) v = dv.getInt16(o, true) / 32768;
+      else if (bits === 24) v = ((raw[o] | raw[o + 1] << 8 | raw[o + 2] << 16) << 8 >> 8) / 8388608;
+      else v = dv.getInt32(o, true) / 2147483648;
+      sum += Number.isFinite(v) ? v : 0;
+    }
+    frames[i] = sum * g;
+  }
+  return { rate, frames, seconds: total / rate };
+}
+/* mono frames at `rate` -> RATE: the browser's own resampler (an OfflineAudioContext), else linear */
+export async function resample(frames, rate) {
+  if (rate === RATE || !frames.length) return frames.slice();
+  const n = Math.max(1, Math.round(frames.length * RATE / rate));
+  try {
+    const off = new OfflineAudioContext(1, n, RATE), buf = off.createBuffer(1, frames.length, rate);
+    buf.copyToChannel(frames, 0);
+    const src = off.createBufferSource();
+    src.buffer = buf; src.connect(off.destination); src.start();
+    return (await off.startRendering()).getChannelData(0).slice();
+  } catch {
+    const out = new Float32Array(n), k = rate / RATE;
+    for (let i = 0; i < n; i++) { const x = i * k, j = Math.floor(x), f = x - j; out[i] = (frames[j] || 0) * (1 - f) + (frames[j + 1] ?? frames[j] ?? 0) * f; }
+    return out;
+  }
+}
+/* the share of samples that aren't numbers, and those set to 0 (a file the browser got wrong) */
+export function cleanPcm(pcm) {
+  let bad = 0;
+  for (let i = 0; i < pcm.length; i++) if (!Number.isFinite(pcm[i])) { pcm[i] = 0; bad++; }
+  return pcm.length ? bad / pcm.length : 0;
+}

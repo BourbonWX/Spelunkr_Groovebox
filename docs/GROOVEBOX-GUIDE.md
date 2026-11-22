@@ -59,10 +59,11 @@ saves in this browser, and a link shares it.
 
 Press **SAMPLES** at the top (or scroll down to the SAMPLES panel). There are 8 slots.
 
-1. Pick a slot, then **LOAD A FILE** (or drop one on the panel): WAV, MP3, OGG, FLAC, up to 30 seconds.
+1. Pick a slot, then **LOAD A FILE** (or drop one on the panel): WAV, MP3, OGG or FLAC. A longer file keeps its
+   first 30 seconds, however big it is. **▶ ALL** and the numbered buttons let you hear it; **■ STOP** (or Esc, or the
+   same button again) stops it.
 2. **Trim**: drag the orange edges. **Slice**: it slices at the hits by itself; **AUTO**, **4**, **8**, **16** or
-   **NONE** slice it again; click the wave to add a slice, drag one to move it, double-click one to remove it. The
-   numbered buttons let you hear each slice.
+   **NONE** slice it again; click the wave to add a slice, drag one to move it, double-click one to remove it.
 3. Pick a track, then put the sample on it:
    - **AS A SYNTH**: the whole sample, played at the pitch of each key (**ROOT** is the key where it plays as
      recorded);
