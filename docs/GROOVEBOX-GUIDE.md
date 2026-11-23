@@ -12,6 +12,15 @@ saves in this browser, and a link shares it.
 
 ## The page
 
+**Two scenes**, switched at the top left:
+
+- **CREATE** is for writing the song: the groovebox, **VAPOR** beside it, your **SAMPLES** under it and the tracks
+  along the bottom.
+- **JAM** is for playing over it: the screen goes straight to the **FX keys** (stutter, tunnel, jumps, crush on the
+  keys), the two **FX PADs** come out, and the tracks stay live below: mute, solo, click a pattern to play it next.
+  The row tools (BEAT, RANDOM, VARY, CLEAR) are hidden there, so nothing gets wiped mid-jam. Back on CREATE the keys
+  play notes again. The page remembers which scene you were on.
+
 The buttons at the top are menus: **SONG** (new, random), **AUDIO** (record live, export), **SHARE** (make a code,
 open one), **FILE** (save and open a project) and **HELP** (the tour, this guide, the manual). **UNDO** and
 **SAMPLES** are plain buttons.

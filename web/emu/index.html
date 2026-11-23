@@ -99,13 +99,35 @@ main { max-width: 1480px; margin: 0 auto; padding: 16px 20px 16px; display: flex
  * the bottom"): wide, the device and the SAMPLES under it on the left, the FX PAD + VAPOR on the right, the tracks
  * across the whole width under them; narrower, one under another: device, FX PAD, tracks, SAMPLES */
 .top { display: contents; }
-.device { order: 1; } .fxpad { order: 2; } #studiomsg { order: 3; } .guide { order: 4; } .samples { order: 5; }
+/* The two scenes (Ed, Nov 23): CREATE (body.create): the device, VAPOR beside it, SAMPLES under it, the tracks;
+ * JAM (body.jam): the device on the FX keys, the FX PAD beside it, the tracks (no row tools: nothing wiped mid-jam) */
+.device { order: 1; } .fxpad, .vappanel { order: 2; } #studiomsg { order: 3; } .guide { order: 4; } .samples { order: 5; }
+body.jam .samples, body.jam .vappanel { display: none; }
+body:not(.jam) .fxpad { display: none; }
+body.jam .ghd .tools { display: none; }
 @media (min-width: 1420px) {                    /* (narrower, the device's controls go under its screen) */
-  main { display: grid; grid-template-columns: minmax(0, 1fr) 280px; align-items: start;
-         grid-template-areas: "dev fx" "smp fx" "msg msg" "guide guide"; }
-  .device { grid-area: dev; } .fxpad { grid-area: fx; } .samples { grid-area: smp; } #studiomsg { grid-area: msg; margin: 0; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: start;
+         grid-template-areas: "dev side" "smp side" "msg msg" "guide guide"; }
+  body.jam main { grid-template-areas: "dev side" "msg msg" "guide guide"; }
+  .device { grid-area: dev; } .fxpad, .vappanel { grid-area: side; } .samples { grid-area: smp; } #studiomsg { grid-area: msg; margin: 0; }
   .guide { grid-area: guide; }
+  body.jam .pads { flex-direction: column; align-items: center; padding: 10px 14px; gap: 8px; }
+  body.jam .pad { width: 218px; height: 218px; }
+  body.jam .fxpad .hint { display: none; }
 }
+/* the scene switch */
+.scenes { display: flex; border: 3px solid var(--yellow); background: var(--night); }
+.scenes button { font: 24px/1 var(--head); padding: 5px 16px; min-height: 40px; background: transparent; color: var(--soft); border: 0; cursor: pointer; }
+.scenes button[aria-selected="true"] { background: var(--yellow); color: var(--indigo); }
+.scenes button:not([aria-selected="true"]):hover { background: var(--rowhot); color: #fff; }
+.scenes button small { display: block; font: 14px/1 var(--mono); opacity: .85; margin-top: 2px; }
+.vappanel { display: flex; flex-direction: column; }
+.vappanel .vapor { border-top: 0; }
+.vappanel .title { display: flex; align-items: baseline; gap: 10px; padding: 6px 14px; }
+.vappanel .title b { font: 28px/1 var(--head); color: var(--yellow); }
+.vappanel .title span { color: var(--soft); }
+.vappanel .title .btn { margin-left: auto; }
+.vappanel .hint { padding: 0 14px 14px; color: var(--soft); }
 
 /* the device */
 .device { display: flex; flex-direction: column; }
@@ -338,6 +360,8 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
 @media (max-width: 720px) {
   header { padding: 8px 10px; background: linear-gradient(105deg, var(--orange) 0, var(--orange) 140px, var(--indigo) 141px); }
   .logo { width: auto; } .logo b { width: 36px; height: 36px; font-size: 32px; } .logo span { font-size: 21px; }
+  .scenes { order: 2; margin-left: auto; } .scenes button { font-size: 20px; padding: 3px 10px; } .scenes button small { display: none; }
+  .power { order: 4; }
   header nav { order: 3; width: 100%; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   header nav .btn { font-size: 19px; padding: 4px 6px; justify-content: center; }
   .songbar { padding: 6px 10px; gap: 6px 14px; }
@@ -370,6 +394,11 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
 <body>
 <header>
   <a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr" title="spelunkr.tv: the channel this groovebox is made for (leaves this page; your song stays saved here)."><b aria-hidden="true">S</b><span>Spelunkr<br>Groovebox</span></a>
+  <!-- the two scenes (Ed, Nov 23): CREATE writes the song (VAPOR, SAMPLES), JAM plays over it (the FX PAD, the FX keys) -->
+  <div class="scenes" role="tablist" aria-label="Scene">
+    <button type="button" role="tab" id="sccreate" aria-selected="true">CREATE<small>write the song</small></button>
+    <button type="button" role="tab" id="scjam" aria-selected="false">JAM<small>play over it</small></button>
+  </div>
   <!-- the top buttons in menus (Ed, Nov 23: "grouped together and collapsed into drop down options"); every item keeps
        its old id, so the code, the tour and the hover help find them as before -->
   <nav aria-label="Song">
@@ -467,6 +496,8 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
           <span class="padfoot"><span class="name">ECHO · FLANGE</span><button class="btn lock" type="button" id="lock1" aria-pressed="false">LOCK</button></span></div>
       </div>
       <div class="hint">Hold and drag to bend the track. Let go and it snaps back, unless <b>LOCK</b> is on: then it stays where you leave it. The middle is off.</div>
+    </section>
+    <section class="panel vappanel" aria-label="VAPOR">
       <div class="vapor">
         <div class="title strip"><b>VAPOR</b><span>on the song</span>
           <button class="btn" type="button" id="vapgo" title="One tap: slowed, warbly, dusty. Tap again for clean">VAPORIZE</button></div>
@@ -1896,7 +1927,42 @@ for (const b of document.querySelectorAll("[data-use]")) b.addEventListener("cli
   const t = G ? ROLE[G.sel] : "the track";
   $("smpinfo").textContent = `${t} plays ${s.name} ${USE[mode].replace("A3", noteName(s.root))}.`;
 });
-$("smpgo").addEventListener("click", () => $("samples").scrollIntoView({ behavior: "smooth", block: "start" }));
+$("smpgo").addEventListener("click", () => { setScene("create"); $("samples").scrollIntoView({ behavior: "smooth", block: "start" }); });
+// ------------------------------------------------------------------ the two scenes (Ed, Nov 23 2026: "one for creating
+// the song and the second would be for jamming to the song"). JAM puts the screen on the FX keys (FX KEYS tapped, if it
+// isn't on already); back to CREATE lets them go only if JAM turned them on. Remembered in this browser.
+const SCENEKEY = "spelunkr-groovebox-scene";
+let sceneNow = "create", jamFx = false;
+function fxCtx() { const f = faceEls.find((f) => f.el.dataset.dev === "FX"); return [f, f && btnCtx && btnCtx[f.bit] && btnCtx[f.bit][0]]; }
+function fxTap() {
+  const [f] = fxCtx();
+  if (!node || !f) return;
+  btnBy.set("scene", f.bit); syncButtons();
+  setTimeout(() => { btnBy.delete("scene"); syncButtons(); }, 90);
+}
+function setScene(sc, quiet) {
+  sc = sc === "jam" ? "jam" : "create";
+  const was = sceneNow;
+  sceneNow = sc;
+  document.body.classList.toggle("jam", sc === "jam");
+  $("sccreate").setAttribute("aria-selected", String(sc === "create"));
+  $("scjam").setAttribute("aria-selected", String(sc === "jam"));
+  try { localStorage.setItem(SCENEKEY, sc); } catch {}
+  if (quiet || was === sc) return;
+  const [, act] = fxCtx();
+  if (sc === "jam") { jamFx = act === "FX KEYS"; if (jamFx) fxTap(); }
+  else { if (jamFx && act === "FX KEYS OFF") fxTap(); jamFx = false; }
+}
+$("sccreate").addEventListener("click", () => setScene("create"));
+$("scjam").addEventListener("click", () => setScene("jam"));
+try { setScene(localStorage.getItem(SCENEKEY) || "create", true); } catch { setScene("create", true); }
+let sceneBooted = false;                                 // (a page opened on JAM: the FX keys once the device is up)
+setInterval(() => {
+  if (sceneBooted || !node || !btnCtx) return;
+  sceneBooted = true;
+  if (sceneNow === "jam") { sceneNow = "create"; setScene("jam"); }
+}, 500);
+
 function smpTrack(g) {                                   // (showGuide) which track the buttons put it on
   const t = `PUT IT ON TRACK ${String(g.tracks[g.sel].pos + 1).padStart(2, "0")} (${ROLE[g.sel]})`;
   if ($("smpfor").textContent !== t) $("smpfor").textContent = t;
@@ -2060,7 +2126,9 @@ const TIPS = {
   "#sharecopycode": "Copy the code, to paste in chat or say on stream.",
   "#saveproj": "SAVE: download everything as a project file (.phantom), your samples too. OPEN brings it back.",
   "label:has(#openproj)": "OPEN: load a project file (.phantom) you saved before. It replaces what's here.",
-  "#smpgo": "SAMPLES: your own sounds. Load a file, trim it, slice it, put it on a track.",
+  "#smpgo": "SAMPLES: your own sounds (on CREATE). Load a file, trim it, slice it, put it on a track.",
+  "#sccreate": "CREATE: write the song. The device, VAPOR, your SAMPLES and the tracks.",
+  "#scjam": "JAM: play over the song. The screen goes to the FX keys, the FX PADs come out, and the tracks stay live (mute, solo, cue the next pattern).",
   "#guidebtn": "GUIDE: how to use the groovebox, from the first beat to sharing it, in a new tab.",
   "#helpbtn": "The tour: a walk through making a whole song, from NEW SONG to EXPORT.",
   "#manualbtn": "MANUAL: the device under the hood, every page and setting (for POWER USERs), in a new tab.",
@@ -2232,7 +2300,8 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "What you played becomes the song's parts, and the columns show them. <kbd>PLAY</kbd> on the SONG screen plays the song." },
   { t: "12 · MIX IT", el: btnSel("HOME"), x: () => "On the home screen, tap <kbd>HOME</kbd> (its button says MIXER): each track's level, pan and reverb, "
       + "on the four controls. <kbd>VOLUME</kbd> on the right is everything." },
-  { t: "13 · FX PADS", el: ".pads", x: () => "Hold a pad and drag to bend the selected track: FILTER · GATE darkens, thins and chops it; "
+  { t: "13 · FX PADS", el: ".pads", x: () => "This is the <kbd>JAM</kbd> scene (the switch at the top): for playing over your song. "
+      + "The screen goes to the FX keys, and the tracks below stay live: mute, solo, click a pattern to play it next. <kbd>CREATE</kbd> takes you back. Hold a pad and drag to bend the selected track: FILTER · GATE darkens, thins and chops it; "
       + "ECHO · FLANGE throws echoes and jets. Let go and it snaps back, unless <kbd>LOCK</kbd> is on: then it stays where you leave it, "
       + "on that track, and it's saved with the song." },
   { t: "14 · FX KEYS", el: btnSel("FX"), x: () => "Tap <kbd>FX KEYS</kbd> and the keys glitch the whole mix while you hold them: stutter, tunnel, jumps, crush "
@@ -2269,6 +2338,8 @@ function tourShow(i) {
   $("tourskip").hidden = i === TOUR.length - 1;
   tourEl = typeof st.el === "function" ? st.el() : st.el ? document.querySelector(st.el) : null;
   ddClose();
+  if (tourEl && tourEl.closest(".fxpad")) setScene("jam");
+  else if (tourEl && tourEl.closest(".vappanel, .samples")) setScene("create");
   const dd = tourEl && tourEl.closest(".dd");            // (an item in a top menu: the menu opened, all of it lit)
   if (dd) { ddOpen(dd); tourEl = dd.querySelector(".ddm"); }
   if (tourEl) {
