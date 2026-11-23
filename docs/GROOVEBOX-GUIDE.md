@@ -23,6 +23,11 @@ saves in this browser, and a link shares it.
   screen you are on right now (a yellow name means it does something special here). The four controls on its right
   change the four things shown along the top of the screen: tap **◀** or **▶**, or hold one to keep going (the mouse
   wheel over a control works too).
+- **The screen is a touch screen**: click it with the mouse or touch it on a phone or tablet. Drag one of the four
+  boxes along its top up or down to turn that control. Click a key hint, such as **OCT+ CLEAR** or **OCT- BACK**, to
+  press that button. On the tracker (STEPS), click a step to go to it, and click it again to turn a drum hit on or
+  off; drag the tracker up or down to scroll it. In the MENU (POWER USER: hold HOME), click a row to pick it and click
+  it again to change it.
 - **SOUNDS** picks another sound for the track, **TRACK** picks the track, **SCROLL** moves through lists and menus,
   **VOLUME** is the volume.
 - **The tracks** (the TV-guide grid under the screen): a row a track. Click a row to work on that track. **M** mutes
@@ -44,8 +49,9 @@ saves in this browser, and a link shares it.
 2. **A beat**: click the **DRUMS** row and pick a kit with **SOUNDS**: CRATE and BEDROOM (dusty lo-fi), VAPOR 808,
    LINN and GATED (80s drum machines), NES, GAMEBOY and SNES (chiptune), and more. Click **BEAT** on the row for a
    beat, **RANDOM** for a random one, **VARY** to change it a little. Tap **STEPS** to see and change every step
-   (a tracker: one line a step). Move through it with the mouse wheel over the screen, the arrow keys, or a finger
-   dragged on a phone: up and down for the steps, left and right (or shift + wheel) for the columns. **ROW** and
+   (a tracker: one line a step). Click a step on the screen to go to it, and click it again to turn the hit on or off.
+   Move through it with the mouse wheel over the screen, the arrow keys, or by dragging it (a finger on a phone): up
+   and down for the steps, left and right (or shift + wheel) for the columns. **ROW** and
    **COLUMN** under the screen do the same. **HOME** brings you back. Set the **TEMPO** and **SWING** in the song bar.
 3. **A part**: click **SYNTH 1**, pick its sound, and tap **RECORD**. It asks whether you want a metronome (a bar of
    clicks counts you in, then the clicks keep time); then the music starts, and what you play on the keys goes into

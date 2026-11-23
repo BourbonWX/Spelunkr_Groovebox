@@ -3088,6 +3088,9 @@ static void graph_tracker(const track_t *t, uint16_t c)
         }
         if (song.playing && (uint32_t)si == (t->pr_on ? t->pr_row : t->seq_idx))
             cv_rect(3, y + 2, 3, TK_ROW - 4, T_ACCENT);
+        tz_add(3, y, X[0] - 6, TK_ROW, TZ_CELL, 255, si);          /* (touch: the step's number: its row) */
+        for (k = 0; k < n; k++)                                     /* .. a cell: that row and column */
+            tz_add(X[k] - 3, y, (k + 1u < n ? X[k + 1] : 236) - X[k], TK_ROW, TZ_CELL, k, si);
         fmt_int(b, si);
         if (si < 10) {
             b[1] = b[0];

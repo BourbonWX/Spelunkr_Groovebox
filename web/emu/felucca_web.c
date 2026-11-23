@@ -33,6 +33,7 @@ static unsigned char web_pad_k;          /* the track the page's pads are on (Ed
 #define WEB_FX_LOCK 1                    /* (ui_layer.c layer_tap: FX tapped locks its keys open) */
 static unsigned char web_rec_ask;        /* REC tapped while stopped: the page asks about the metronome (web_rec_go) */
 #define WEB_REC_ASK web_rec_ask
+static int16_t web_route_was = -1;     /* the song's ROUT before a keyboard's note set it to SEL (web_midi) */
 static unsigned char web_midi_sel = 1;   /* a MIDI keyboard plays the picked track (ROUT SEL), whatever its channel; 0:
                                          * the song's own ROUT (by channel: CH1-4 ..), the page's MIDI choice */
 static unsigned char web_click_held, web_click_mode, web_cin_bars, web_rec_ran;   /* (ui.c rp_apply: over the settings) */
@@ -230,6 +231,9 @@ static void lcd_init(void) {}
 #include "../../firmware/src/ui_menu.c"
 #include "../../firmware/src/ui_input.c"
 #include "../../firmware/src/ui_layer.c"
+static void web_touch_btn(uint32_t b, int on);
+#define TOUCH_BTN(b, on) web_touch_btn((b), (on))
+#include "../../firmware/src/ui_touch.c"            /* the screen as a touch surface (web_touch) */
 
 /* ------------------------------------------------------------ the flash --- */
 static uint32_t web_flash_writes;
@@ -400,9 +404,11 @@ static float ring[RING * 2];
 static uint32_t ring_w, ring_r, web_samples_due;
 
 /* one millisecond of the device: the clock, the audio halves due by now, the main loop */
+static void web_touch_tick(void);
 static void web_ms(void)
 {
     fm1_ms++;
+    web_touch_tick();
     web_ticks += 1000u * FM1_TICKS_PER_US;
     web_samples_due += FS;
     while (web_samples_due >= 1000u * HALF_FRAMES) {      /* an I2S half: the audio ISR renders it */
@@ -425,8 +431,6 @@ static void web_ms(void)
         lcd_fill(0, 0, 240, 240, T_BG);
         web_last_frame = fm1_ms - 15u;
     }
-    if (web_midi_sel && song.g[G_ROUTE] != ROUTE_SEL)
-        song.g[G_ROUTE] = ROUTE_SEL;                      /* (seq.c lets the other channels go on the change) */
     if (web_rec_ask && (song.playing || seq_counting() || !song.rec))
         web_rec_ask = 0;                                  /* (started or disarmed some other way: no question) */
     if (web_click_held) {                                 /* web_rec_go's metronome: the settings' again once the take is
@@ -662,7 +666,13 @@ EXPORT void web_rec_go(uint32_t c)
     ui.force = 1;
 }
 /* MIDI: 1 a keyboard plays the picked track (any channel), 0 the song's ROUT (POWER USER's MENU > MIDI) */
-EXPORT void web_midi_sel_set(uint32_t on) { web_midi_sel = (unsigned char)(on != 0); }
+EXPORT void web_midi_sel_set(uint32_t on)
+{
+    web_midi_sel = (unsigned char)(on != 0);
+    if (!on && web_route_was >= 0 && song.g[G_ROUTE] == ROUTE_SEL)
+        song.g[G_ROUTE] = web_route_was;                 /* (by channel: the song's own ROUT again) */
+    web_route_was = -1;
+}
 /* the tempo (40..240) and the swing (0..100), from the page's header */
 EXPORT void web_tempo(uint32_t bpm) { song.g[G_BPM] = (int16_t)clamp((int32_t)bpm, GP[G_BPM].min, GP[G_BPM].max); ui.force = 1; }
 EXPORT void web_swing(uint32_t v) { song.g[G_SWING] = (int16_t)clamp((int32_t)v, 0, 100); ui.force = 1; }
@@ -787,10 +797,12 @@ EXPORT void web_boot(void)
 /* input, by the printed labels: buttons bit b = B_FX .. B_OCTUP (panel.c), keys bit k = key k (F3 .. G5),
  * encoders by role (EN_SELECT .. EN_K4), MASTER 0..1023 */
 static uint32_t web_btn_labels, web_key_mask;
-EXPORT void web_buttons(uint32_t labels)
+/* the buttons the screen's touch holds (ui_touch.c TOUCH_BTN), by label; a tap's release waits web_touch_rel_ms so the
+ * UI sees it pressed for a frame or more */
+static uint32_t web_touch_lab, web_touch_rel, web_touch_rel_ms;
+static void web_btn_apply(void)
 {
-    uint32_t m = 0, b, old = fm1_in.buttons;
-    web_btn_labels = labels;
+    uint32_t m = 0, b, old = fm1_in.buttons, labels = web_btn_labels | web_touch_lab;
     for (b = 0; b < NB; b++)
         if ((labels >> b) & 1u)
             m |= 1u << panel.btn[b];
@@ -798,6 +810,37 @@ EXPORT void web_buttons(uint32_t labels)
     web_released |= old & ~m;
     fm1_in.buttons = m;
 }
+EXPORT void web_buttons(uint32_t labels)
+{
+    web_btn_labels = labels;
+    web_btn_apply();
+}
+static uint32_t web_touch_down_ms[NB];
+static void web_touch_btn(uint32_t b, int on)
+{
+    if (b >= NB)
+        return;
+    if (on) {
+        web_touch_lab |= 1u << b;
+        web_touch_rel &= ~(1u << b);
+        web_touch_down_ms[b] = fm1_ms;
+        web_btn_apply();
+    } else if (web_touch_lab >> b & 1u) {
+        web_touch_rel |= 1u << b;                       /* (let go in web_touch_tick, a frame on at least) */
+        if (web_touch_rel_ms < web_touch_down_ms[b] + 60u)
+            web_touch_rel_ms = web_touch_down_ms[b] + 60u;
+    }
+}
+static void web_touch_tick(void)
+{
+    if (web_touch_rel && (int32_t)(fm1_ms - web_touch_rel_ms) >= 0) {
+        web_touch_lab &= ~web_touch_rel;
+        web_touch_rel = 0;
+        web_btn_apply();
+    }
+}
+/* the screen touched (the page's pointer on the canvas): phase 0 down, 1 move, 2 up; x y in the screen's layout pixels */
+EXPORT void web_touch(uint32_t phase, int32_t x, int32_t y) { ui_touch(phase, x, y); }
 EXPORT void web_keys(uint32_t mask)
 {
     uint32_t old = fm1_in.notes;
@@ -817,6 +860,13 @@ EXPORT uint32_t web_midi(uint32_t status, uint32_t d1, uint32_t d2)
 {
     if (status < 0x80u || status >= 0xF0u)
         return 1;
+    if (web_midi_sel && (status & 0xF0u) != 0xB0u) {     /* a keyboard's notes (not its knobs' CCs) on the picked track:
+                                                         * ROUT SEL while they arrive, the song's own ROUT back after */
+        if (song.g[G_ROUTE] != ROUTE_SEL) {
+            web_route_was = (int16_t)song.g[G_ROUTE];
+            song.g[G_ROUTE] = ROUTE_SEL;
+        }
+    }
     return (uint32_t)midi_enqueue((status >> 4) | status << 8 | (d1 & 127u) << 16 | (d2 & 127u) << 24, 1);
 }
 

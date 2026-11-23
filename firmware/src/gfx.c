@@ -197,6 +197,54 @@ static int palette_stored_ok(uint32_t v) { return v < 20u || (v >= UI_PAL_TAG &&
 
 static inline uint16_t swap16(uint32_t c) { return (uint16_t)(((c >> 8) & 0xFFu) | ((c & 0xFFu) << 8)); }
 
+/* ------------------------------------------------------------ touch zones --- */
+/* What on the screen can be touched (ui_touch.c): whatever draws a touchable thing (a card, a keycap, a tracker cell,
+ * a menu row) adds a zone in its canvas's coordinates (tz_add); the canvas's blit puts its zones on the screen, in place
+ * of those wholly under it (a redrawn region's old zones go with its old pixels; what is not redrawn keeps its own).
+ * A full redraw (ui.force) starts from none (tz_reset). Layout pixels. Newest first when they overlap. */
+enum { TZ_NONE, TZ_CARD, TZ_KEY, TZ_CELL, TZ_ROW, TZ_LIST };
+typedef struct { int16_t x, y, w, h; uint8_t kind; uint8_t a; int16_t b; } tzone_t;
+#define TZ_MAX 192
+#define TZ_PEND 128                                    /* (the tracker: 8 rows of up to 10) */
+static tzone_t tz[TZ_MAX], tz_pend[TZ_PEND];
+static uint32_t tz_n, tz_np;
+static void tz_reset(void) { tz_n = tz_np = 0; }
+static void tz_add(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t kind, uint32_t a, int32_t b)
+{
+    if (tz_np < TZ_PEND)
+        tz_pend[tz_np++] = (tzone_t){(int16_t)x, (int16_t)(y + cv_oy), (int16_t)w, (int16_t)h, (uint8_t)kind, (uint8_t)a,
+                                     (int16_t)b};
+}
+static void tz_commit(int32_t x, int32_t y, int32_t w, int32_t h, int32_t r0)   /* a blit of w x h at x y (rows r0 ..) */
+{
+    uint32_t i, j;
+    for (i = j = 0; i < tz_n; i++) {                    /* the zones wholly under it go */
+        const tzone_t *z = &tz[i];
+        if (!(z->x >= x && z->y >= y + r0 && z->x + z->w <= x + w && z->y + z->h <= y + h))
+            tz[j++] = *z;
+    }
+    tz_n = j;
+    for (i = 0; i < tz_np; i++) {
+        tzone_t z = tz_pend[i];
+        if (z.y + z.h <= r0)
+            continue;
+        z.x = (int16_t)(z.x + x);
+        z.y = (int16_t)(z.y + y);
+        if (tz_n == TZ_MAX)                               /* (full: the oldest goes) */
+            memmove(tz, tz + 1, --tz_n * sizeof tz[0]);
+        tz[tz_n++] = z;
+    }
+    tz_np = 0;
+}
+static const tzone_t *tz_at(int32_t x, int32_t y)
+{
+    uint32_t i = tz_n;
+    while (i--)
+        if (x >= tz[i].x && y >= tz[i].y && x < tz[i].x + tz[i].w && y < tz[i].y + tz[i].h)
+            return &tz[i];
+    return 0;
+}
+
 /* ------------------------------------------------------------ canvas --- */
 static void cv_begin(uint32_t w, uint32_t h, uint16_t bg)
 {
@@ -212,6 +260,7 @@ static void cv_begin(uint32_t w, uint32_t h, uint16_t bg)
     cv_cy0 = 0;
     cv_cy1 = (int16_t)h;
     cv_bg = bg;
+    tz_np = 0;
     n = w * h * GFX_SCALE * GFX_SCALE;
     for (i = 0; i < n; i++)
         cv_px[i] = s;
@@ -259,6 +308,7 @@ static void cv_jitter(uint32_t y0, uint32_t r0)
 static void cv_blit(uint32_t x, uint32_t y)
 {
     GFX_HOOK_BLIT(x, y, 0u);
+    tz_commit((int32_t)x, (int32_t)y, (int32_t)cv_w, (int32_t)cv_h, 0);
     if (jit_amp)
         cv_jitter(y, 0u);
     lcd_blit(x, y, cv_w, cv_h, cv_px);
@@ -268,6 +318,7 @@ static void cv_blit(uint32_t x, uint32_t y)
 static void cv_blit_from(uint32_t x, uint32_t y, uint32_t r0)
 {
     GFX_HOOK_BLIT(x, y, r0);
+    tz_commit((int32_t)x, (int32_t)y, (int32_t)cv_w, (int32_t)cv_h, (int32_t)r0);
     if (jit_amp && r0 < cv_h)
         cv_jitter(y, r0);
     if (r0 < cv_h)
@@ -930,6 +981,7 @@ static int32_t cv_keycap(int32_t x, int32_t y, uint32_t id, uint16_t fill, uint1
 {
     const kc_t *k = &KC[id < KC_COUNT ? id : 0u];
     const uint16_t *rv = kc_ramp(under, fill, ink);
+    tz_add(x - 2, y - 3, k->w + 4, KC_H + 6, TZ_KEY, id, 0);   /* (a finger's margin round it) */
 #if KC_SCALE > 1                                     /* (Spelunkr: the pill made at the drawn size: 1:1) */
     cv_phys = 1;
     cv_alpha(x * KC_SCALE, y * KC_SCALE, k->w * KC_SCALE, KC_H * KC_SCALE, KC_DATA + k->off, rv);
@@ -959,8 +1011,10 @@ static int32_t kh_ink(uint32_t id, const char *act)
 }
 static int32_t cv_key_hint(int32_t x, int32_t y, uint32_t id, const char *act, int on, uint16_t under)
 {
+    int32_t x0 = x;
     x = cv_keycap(x, y, id, on ? T_KEY : T_DIM, T_INK, under);
     if (act && act[0]) {
+        tz_add(x0 - 2, y - 3, kh_w(id, act) + 6, KC_H + 6, TZ_KEY, id, 0);   /* (the word too) */
         GFX_HOOK_ALIGN(0, y, 0, y + KC_H, AL_V | AL_PASS, "key hint word on its keycap's line");
         x = cv_text_on(x + KH_GAP, y - 1, &AF_S, act, on ? T_TEXT : T_DIM, under);
     }

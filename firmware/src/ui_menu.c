@@ -306,6 +306,7 @@ static void menu_row(uint32_t k, uint32_t row)
     int32_t y = mr_y(k), h = mr_h(), vy = y + CAP_IN(M, h);   /* the label and its value: M (a list's rows) */
     int sel = row == ui.menu_sel;
     uint16_t bg = sel ? T_THEME : T_SURF, fg = sel ? T_INK : T_TEXT, val = sel ? T_INK : T_THEME;
+    tz_add(4, y, 232, h, TZ_ROW, k, (int32_t)row);      /* (touch: pick it; picked, its value or OCT+) */
     const char *v;
     if (!sel && MI_TCH(row) && song.g[G_ROUTE] != ROUTE_TRACK)
         val = T_MID;                                   /* (1.5.5: T1..T4 CHANNEL, unused but with MIDI IN TRACK) */

@@ -597,6 +597,7 @@ static void draw_column_tall(uint32_t c, const char *label, const char *val, con
         GFX_HOOK_ALIGN(5, LG_MY, 5 + mw, LG_MY + LG_MH, AL_HV, "large card knob pill");
         cv_text_in(5, LG_MY + CAP_IN(M, LG_MH), mw, &AF_M, k, T_INK, fill);
     }
+    tz_add(0, 0, COL_W, LG_CARD_H, TZ_CARD, c, 0);       /* (touch: drag it to turn its knob) */
     if (!label[0] && !val[0]) {                         /* a knob that does nothing on this page */
         cv_blit((uint32_t)CARD_X(c), Y_LABEL);
         return;
@@ -791,6 +792,8 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
         }
     }
     cv_oy = 0;
+    if (!strip)
+        tz_add(0, 0, COL_W, COL_H, TZ_CARD, c, 0);      /* (touch: drag it to turn its knob) */
     cv_blit((uint32_t)CARD_X(c), Y_LABEL + (strip ? ROLL_Y : 0));
 }
 
@@ -1874,6 +1877,8 @@ static void ui_draw(void)
     }
     if (!scr_frame())                                   /* MENU > SCREEN OFF: dark (or waking), nothing drawn */
         return;
+    if (ui.force)
+        tz_reset();                                     /* (a full redraw: its touch zones anew, gfx.c) */
     ui_draw_page(counting);
     scr_shown();
 }
