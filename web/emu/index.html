@@ -721,7 +721,7 @@ function makeKnob(parent, role, wheel) {
   let wheelAcc = 0;
   el.addEventListener("wheel", (e) => {
     e.preventDefault();
-    const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
+    const dy = (e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY) * (k.role === 3 && gridMode() ? -1 : 1);  // (ROW: down = on)
     if (Math.abs(dy) >= 50) { turn(k, dy < 0 ? 1 : -1); wheelAcc = 0; return; }
     wheelAcc -= dy;
     const n = Math.trunc(wheelAcc / 25);
@@ -846,9 +846,13 @@ const KMAP = {};
 KEYCODE.forEach((c, k) => { KMAP[c] = { key: k }; });
 Object.assign(KMAP, { Space: { btn: B.PLAY }, BracketLeft: { btn: B["OCT-"] }, BracketRight: { btn: B["OCT+"] }, Escape: { btn: B.HOME } });
 const ARROWS = { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowRight: [1, 1], ArrowLeft: [1, -1] };
+// on the tracker (STEPS: the cards ROW and COLUMN) the arrows move through it: up / down the steps, left / right the
+// columns (Ed, Nov 23: "on the tracker page I can't scroll through the steps or the columns")
+const GRID_ARROWS = { ArrowUp: [3, -1], ArrowDown: [3, 1], ArrowLeft: [4, -1], ArrowRight: [4, 1] };
+function gridMode() { return !!(G && G.knobs && G.knobs[0]?.label === "ROW" && (G.knobs[1]?.label === "COL" || G.knobs[1]?.label === "COLUMN")); }
 addEventListener("keydown", (e) => {
   if (!node || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.("input, select, .knob, dialog, .tour")) return;
-  if (ARROWS[e.code]) { const [r, n] = ARROWS[e.code]; send({ type: "enc", role: r, n }); e.preventDefault(); return; }
+  if (ARROWS[e.code]) { const [r, n] = (gridMode() ? GRID_ARROWS : ARROWS)[e.code]; send({ type: "enc", role: r, n }); e.preventDefault(); return; }
   const m = KMAP[e.code];
   if (!m) return;
   e.preventDefault();
@@ -952,6 +956,40 @@ for (const j of [0, 1]) {
 
 // ------------------------------------------------------------------ screen and lights
 const canvas = $("screen"), ctx = canvas.getContext("2d");
+// the tracker on the screen itself: the mouse wheel scrolls the steps (shift, or a sideways swipe: the columns); on a
+// touch screen a drag up / down / sideways does the same. Elsewhere the screen leaves the page's scrolling alone.
+{
+  let acc = [0, 0];
+  const step = (role, n) => { if (n) send({ type: "enc", role, n }); };
+  canvas.addEventListener("wheel", (e) => {
+    if (!gridMode()) return;
+    e.preventDefault();
+    const f = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1;
+    let dx = e.deltaX * f, dy = e.deltaY * f;
+    if (e.shiftKey && !dx) { dx = dy; dy = 0; }
+    for (const [i, d, role] of [[0, dy, 3], [1, dx, 4]]) {
+      if (!d) continue;
+      if (Math.abs(d) >= 50) { step(role, Math.sign(d)); acc[i] = 0; continue; }
+      acc[i] += d;
+      const n = Math.trunc(acc[i] / 25);
+      if (n) { acc[i] -= n * 25; step(role, n); }
+    }
+  }, { passive: false });
+  let drag = null;
+  canvas.addEventListener("pointerdown", (e) => {
+    if (!gridMode() || e.pointerType === "mouse") return;
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    try { canvas.setPointerCapture(e.pointerId); } catch {}
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const px = 28 * canvas.getBoundingClientRect().width / 480;   // about a row of the screen
+    const ny = Math.trunc((drag.y - e.clientY) / px), nx = Math.trunc((drag.x - e.clientX) / px);
+    if (ny) { step(3, ny); drag.y -= ny * px; }                    // (the finger pushes the list: up = on)
+    if (nx) { step(4, nx); drag.x -= nx * px; }
+  });
+  for (const t of ["pointerup", "pointercancel"]) canvas.addEventListener(t, () => { drag = null; });
+}
 let img = ctx.createImageData(480, 480), img32 = new Uint32Array(img.data.buffer);
 // RGB565 as the panel gets it (high byte first) -> RGBA, once for all 65536 values (little-endian ABGR words)
 const RGB565 = new Uint32Array(65536);
@@ -1051,6 +1089,7 @@ function recAsk(g) {
 
 function showGuide(g) {
   G = g;
+  canvas.style.touchAction = gridMode() ? "none" : "";
   const pos = (k) => g.tracks[k].pos, order = [...g.tracks.keys()].sort((a, b) => pos(a) - pos(b));
   const sel = g.tracks[g.sel], letter = (p) => "ABCDEF"[p] ?? "-";
   songBar(g);
@@ -1984,7 +2023,7 @@ const TIPS = {
   "#tail": "How long to let the sound ring out after the end.",
   ".logo": "spelunkr.tv: like cable TV, but weirder.",
   "footer a[href='guide.html']": "The guide: how everything works, in plain words.",
-  "#screen": "The groovebox's screen. The buttons on the left and the controls on the right work it.",
+  "#screen": "The groovebox's screen. The buttons on the left and the controls under it work it. On the tracker (STEPS) the mouse wheel, the arrow keys or a finger drag scroll the steps; shift + wheel, or left / right, the columns.",
 };
 function tipsInit() {
   for (const [sel, t] of Object.entries(TIPS)) if (t) document.querySelectorAll(sel).forEach((e) => { if (!e.title && !e.dataset.tip) e.title = t; });
@@ -2086,7 +2125,8 @@ const TOUR = [                                           // (Ed: "cover every pa
     x: () => (phoneMQ.matches ? "Hold <kbd>STEPS</kbd> and press B for a beat, G for a random one, C to clear. "
       : "Click <kbd>BEAT</kbd> on the DRUMS row for a basic beat, <kbd>RANDOM</kbd> for a random one, <kbd>VARY</kbd> to change a few steps, "
       + "<kbd>CLEAR</kbd> to start over. Every row has them (BEAT on the drum rows). ")
-      + "Tap <kbd>STEPS</kbd> to see every step: <kbd>ROW</kbd> picks a step, <kbd>COLUMN</kbd> a drum, the third control turns it on or off." },
+      + "Tap <kbd>STEPS</kbd> to see every step: <kbd>ROW</kbd> picks a step, <kbd>COLUMN</kbd> a drum, the third control turns it on or off. "
+      + "The mouse wheel over the screen and the arrow keys move through it too." },
   { t: "7 · PLAY THE KEYS", el: ".keybar", x: () => (phoneMQ.matches ? "Play on these keys. "
       : "Play on these keys, or on your computer keyboard: <kbd>Z</kbd> to <kbd>M</kbd> and <kbd>Q</kbd> to <kbd>O</kbd>. ")
       + "<kbd>OCT −</kbd> and <kbd>OCT +</kbd> move up and down. On a drum track each key is a drum. A MIDI keyboard works too." },
