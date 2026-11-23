@@ -60,6 +60,21 @@ header nav { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
 header nav .btn { background: var(--panel); min-height: 40px; }
 header nav a.btn, header nav label.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: #fff; }
 header nav .btn.on { background: var(--rec); color: var(--night); border-color: #FFB0A6; }
+/* the top menus */
+header { position: relative; z-index: 30; }
+.dd { position: relative; display: flex; }
+.ddbtn i { font-style: normal; font-size: .8em; margin-left: 2px; }
+.ddbtn[aria-expanded="true"] { outline: 3px solid var(--yellow); outline-offset: -3px; }
+#rectime:empty { display: none; }
+.ddm { position: absolute; top: calc(100% + 6px); left: 0; z-index: 31; min-width: 250px; display: flex; flex-direction: column; gap: 6px;
+       padding: 8px; background: var(--night); border: 3px solid var(--rule2); box-shadow: 0 8px 24px rgba(0, 0, 0, .55); }
+.ddm[hidden] { display: none; }
+.ddm.right { left: auto; right: 0; }
+header nav .ddm .ddi { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; text-align: left; width: 100%;
+       min-height: 48px; padding: 4px 12px; color: #fff; text-decoration: none; cursor: pointer; }
+.ddi small { font: 17px/1.1 var(--mono); color: var(--soft); }
+header nav .ddm .ddi:hover, header nav .ddm .ddi:focus-visible { background: var(--rowhot); }
+header nav .ddm .ddi.on { background: var(--rec); color: var(--night); } .ddi.on small { color: var(--night); }
 .power { display: flex; align-items: center; gap: 8px; font: 22px var(--head); color: var(--soft); padding: 4px 12px; border: 2px solid var(--rule);
          background: var(--panel); min-height: 40px; cursor: pointer; }
 .power input { width: 20px; height: 20px; accent-color: var(--yellow); }
@@ -307,9 +322,8 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
 .tour-hi { outline: 4px solid var(--yellow) !important; outline-offset: 4px; animation: tourhi 1.1s ease-in-out infinite; }
 @keyframes tourhi { 50% { outline-color: var(--orange); } }
 @media (prefers-reduced-motion: reduce) { .tour-hi { animation: none; } }
-.helpbtn { min-width: 44px; }
 
-/* a laptop's width: the header's eleven buttons, POWER USER and the tempo stay on one row */
+/* a laptop's width: the header's menus, POWER USER and the tempo stay on one row */
 @media (max-width: 1700px) and (min-width: 721px) {
   header { gap: 8px 10px; padding: 10px 14px; }
   header nav { gap: 5px; }
@@ -347,6 +361,7 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   footer { margin-bottom: 170px; }
   .tour { bottom: 186px; } .tour p { font-size: 20px; }
   header nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .dd > .ddbtn { flex: 1; }
   .slots { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sbar .hint { display: none; }
 }
@@ -355,20 +370,48 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
 <body>
 <header>
   <a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr" title="spelunkr.tv: the channel this groovebox is made for (leaves this page; your song stays saved here)."><b aria-hidden="true">S</b><span>Spelunkr<br>Groovebox</span></a>
+  <!-- the top buttons in menus (Ed, Nov 23: "grouped together and collapsed into drop down options"); every item keeps
+       its old id, so the code, the tour and the hover help find them as before -->
   <nav aria-label="Song">
-    <button class="btn orange" id="newsong" type="button">NEW SONG</button>
-    <button class="btn" id="randsong" type="button">&#127922; RANDOM</button>
+    <div class="dd">
+      <button class="btn orange ddbtn" id="ddsong" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="ddsongm">SONG <i aria-hidden="true">&#9662;</i></button>
+      <div class="ddm" id="ddsongm" role="menu" aria-label="Song" hidden>
+        <button class="btn ddi" id="newsong" type="button" role="menuitem">NEW SONG<small>start from nothing</small></button>
+        <button class="btn ddi" id="randsong" type="button" role="menuitem">&#127922; RANDOM SONG<small>roll a whole song</small></button>
+      </div>
+    </div>
     <button class="btn" id="undobtn" type="button">&#8630; UNDO</button>
-    <button class="btn" id="recbtn" type="button" title="Record what you hear, live, to a WAV file">RECORD <span id="rectime"></span></button>
-    <button class="btn" id="bounce" type="button" title="Render the song (or the pattern) to WAV, with stems if you like">EXPORT</button>
-    <button class="btn" id="share" type="button" title="A link that plays this song in anyone's browser">SHARE</button>
-    <button class="btn" id="codebtn" type="button" title="Open a song someone shared with a code">CODE</button>
-    <button class="btn" id="saveproj" type="button" title="Download everything saved here as a .phantom file">SAVE</button>
-    <label class="btn" style="display:inline-flex;align-items:center" title="Open a .phantom project file"><input type="file" id="openproj" accept=".phantom,.json,application/json" hidden>OPEN</label>
+    <div class="dd">
+      <button class="btn ddbtn" id="ddaudio" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="ddaudiom">AUDIO <span id="rectime"></span> <i aria-hidden="true">&#9662;</i></button>
+      <div class="ddm" id="ddaudiom" role="menu" aria-label="Audio" hidden>
+        <button class="btn ddi" id="recbtn" type="button" role="menuitem" title="Record what you hear, live, to a WAV file"><span id="reclab">&#9679; RECORD LIVE</span><small>what you hear, to a WAV</small></button>
+        <button class="btn ddi" id="bounce" type="button" role="menuitem" title="Render the song (or the pattern) to WAV, with stems if you like">EXPORT WAV<small>the song, with stems if you like</small></button>
+      </div>
+    </div>
+    <div class="dd">
+      <button class="btn ddbtn" id="ddshare" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="ddsharem">SHARE <i aria-hidden="true">&#9662;</i></button>
+      <div class="ddm" id="ddsharem" role="menu" aria-label="Share" hidden>
+        <button class="btn ddi" id="share" type="button" role="menuitem" title="A link that plays this song in anyone's browser">SHARE THIS SONG<small>a code and a link, for a month</small></button>
+        <button class="btn ddi" id="codebtn" type="button" role="menuitem" title="Open a song someone shared with a code">OPEN A CODE<small>a song someone shared</small></button>
+      </div>
+    </div>
+    <div class="dd">
+      <button class="btn ddbtn" id="ddfile" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="ddfilem">FILE <i aria-hidden="true">&#9662;</i></button>
+      <div class="ddm" id="ddfilem" role="menu" aria-label="File" hidden>
+        <button class="btn ddi" id="saveproj" type="button" role="menuitem" title="Download everything saved here as a .phantom file">SAVE PROJECT<small>download a .phantom file</small></button>
+        <label class="btn ddi" role="menuitem" tabindex="0" title="Open a .phantom project file"><input type="file" id="openproj" accept=".phantom,.json,application/json" hidden>OPEN PROJECT<small>a .phantom file you saved</small></label>
+      </div>
+    </div>
     <button class="btn" id="smpgo" type="button" title="Load your own samples, slice them, put them on a track">SAMPLES</button>
-    <a class="btn" id="guidebtn" href="guide.html" target="_blank" rel="noopener" title="The guide, in a new tab">GUIDE</a>
+    <div class="dd">
+      <button class="btn ddbtn" id="ddhelp" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="ddhelpm">HELP <i aria-hidden="true">&#9662;</i></button>
+      <div class="ddm" id="ddhelpm" role="menu" aria-label="Help" hidden>
+        <button class="btn ddi" id="helpbtn" type="button" role="menuitem" title="A quick tour of the groovebox">TOUR<small>a walk through a whole song</small></button>
+        <a class="btn ddi" id="guidebtn" href="guide.html" target="_blank" rel="noopener" role="menuitem" title="The guide, in a new tab">GUIDE<small>the written guide, new tab</small></a>
+        <a class="btn ddi" id="manualbtn" href="manual.html" target="_blank" rel="noopener" role="menuitem" title="The manual: the device under the hood">MANUAL<small>every page and setting</small></a>
+      </div>
+    </div>
   </nav>
-  <button class="btn helpbtn" id="helpbtn" type="button" title="A quick tour of the groovebox" aria-label="Help: a quick tour">?</button>
   <label class="power" title="The device's own names (FX, SEQ, GLO, ...) instead of the plain ones"><input type="checkbox" id="power"> POWER USER</label>
 </header>
 <!-- the song bar (Ed, Nov 22: out of the menus): tempo, tap, swing, key -->
@@ -861,7 +904,7 @@ const ARROWS = { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowRight: [1, 1], ArrowL
 const GRID_ARROWS = { ArrowUp: [3, -1], ArrowDown: [3, 1], ArrowLeft: [4, -1], ArrowRight: [4, 1] };
 function gridMode() { return !!(G && G.knobs && G.knobs[0]?.label === "ROW" && (G.knobs[1]?.label === "COL" || G.knobs[1]?.label === "COLUMN")); }
 addEventListener("keydown", (e) => {
-  if (!node || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.("input, select, .knob, dialog, .tour")) return;
+  if (!node || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.("input, select, .knob, dialog, .tour, .ddm")) return;
   if (ARROWS[e.code]) { const [r, n] = (gridMode() ? GRID_ARROWS : ARROWS)[e.code]; send({ type: "enc", role: r, n }); e.preventDefault(); return; }
   const m = KMAP[e.code];
   if (!m) return;
@@ -1455,7 +1498,8 @@ function recStop() { if (rec && !rec.stopping) { rec.stopping = true; send({ typ
 function recDone() {
   const r = rec;
   rec = null;
-  $("recbtn").classList.remove("on");
+  $("recbtn").classList.remove("on"); $("ddaudio").classList.remove("on");
+  $("reclab").textContent = "\u25CF RECORD LIVE";
   $("rectime").textContent = "";
   if (!r || !r.n) return;
   const join = (parts) => { const out = new Float32Array(r.n); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out; };
@@ -1466,10 +1510,11 @@ $("recbtn").addEventListener("click", () => {
   if (!node) return;
   if (rec) { recStop(); return; }
   rec = { l: [], r: [], n: 0 };
-  $("recbtn").classList.add("on");
+  $("recbtn").classList.add("on"); $("ddaudio").classList.add("on");
+  $("reclab").textContent = "\u25A0 STOP RECORDING";
   $("rectime").textContent = "0:00";
   send({ type: "rec", on: true });
-  studioSay("Recording what you hear. Press RECORD again to save it.", true);
+  studioSay("Recording what you hear. AUDIO \u25B8 STOP RECORDING saves it.", true);
 });
 onPort = recPort;
 
@@ -1989,7 +2034,7 @@ async function shareUpload(packed, samples) {
 const TIPS = {
   "#newsong": "NEW SONG: start from nothing. Clears every track's steps and patterns A–F, and puts the starting sounds back. It asks first.",
   "#randsong": "RANDOM: roll a whole song for you (lo-fi, chillwave, electro or chiptune): sounds, beat, chords, bass, tune and parts. It asks first.",
-  "#recbtn": "RECORD: record what you hear, live, to a WAV file (everything you play and turn). Click again to stop and download it.",
+  "#recbtn": "RECORD LIVE: record what you hear, live, to a WAV file (everything you play and turn). STOP RECORDING (same place) downloads it.",
   "#bounce": "EXPORT: make a WAV of the song or the pattern, faster than real time, with a WAV for each track if you like.",
   "#share": "SHARE: a short code and a link that play this song in anyone's groovebox, with the samples it uses.",
   "#codebtn": "CODE: open a song someone shared, by its code (SPGB_…) or its link.",
@@ -2018,6 +2063,12 @@ const TIPS = {
   "#smpgo": "SAMPLES: your own sounds. Load a file, trim it, slice it, put it on a track.",
   "#guidebtn": "GUIDE: how to use the groovebox, from the first beat to sharing it, in a new tab.",
   "#helpbtn": "The tour: a walk through making a whole song, from NEW SONG to EXPORT.",
+  "#manualbtn": "MANUAL: the device under the hood, every page and setting (for POWER USERs), in a new tab.",
+  "#ddsong": "SONG: start a new song, or roll a random one.",
+  "#ddaudio": "AUDIO: record live, or export the song as WAV files.",
+  "#ddshare": "SHARE: give your song a code, or open someone else's.",
+  "#ddfile": "FILE: save everything as a project file, or open one.",
+  "#ddhelp": "HELP: the tour, the guide and the manual.",
   ".power": "POWER USER: every button and setting, and the device's own names (FX, SEQ, GLO …). Off: the simple set, in plain words.",
   "#tprev": "The track before (TRACK ◀).",
   "#tnext": "The next track (TRACK ▶).",
@@ -2144,9 +2195,9 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "The groovebox's screen is a touch screen too: drag its boxes, click its key hints and steps. "
       + "Each step lights up what to use: try it, then press <kbd>NEXT</kbd>. "
       + (phoneMQ.matches ? "" : "Hover over anything on the page to see what it does. ")
-      + "<kbd>?</kbd> at the top brings this tour back, <kbd>GUIDE</kbd> opens the written guide." },
-  { t: "1 · START A SONG", el: "#newsong", x: () => "<kbd>NEW SONG</kbd> starts from nothing: no steps, the starting sounds. "
-      + "<kbd>🎲 RANDOM</kbd> writes a whole song for you to play with: lo-fi, chillwave, electro or chiptune, with its own beat, chords, "
+      + "<kbd>HELP</kbd> at the top brings this tour back and opens the written guide." },
+  { t: "1 · START A SONG", el: "#newsong", x: () => "The <kbd>SONG</kbd> menu at the top: <kbd>NEW SONG</kbd> starts from nothing: no steps, the starting sounds. "
+      + "<kbd>🎲 RANDOM SONG</kbd> writes a whole song for you to play with: lo-fi, chillwave, electro or chiptune, with its own beat, chords, "
       + "bass, tune and parts. Both ask first, and <kbd>UNDO</kbd> next to them takes back the last thing you did (click it again to put it back)." },
   { t: "2 · PLAY AND STOP", el: btnSel("PLAY"), x: () => `<kbd>PLAY</kbd>${phoneMQ.matches ? "" : " (or the space bar)"} starts and stops the music. `
       + "Leave it playing while you work: every change is heard on the next loop." },
@@ -2190,12 +2241,12 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "It's saved with the song." },
   { t: "16 · YOUR OWN SAMPLES", el: "#smpgo", x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file (a long one keeps its first 30 seconds), "
       + "trim it, slice it, hear it (<kbd>■ STOP</kbd> stops it), and put it on a track as a synth, as chops on the keys, or as a drum kit." },
-  { t: "17 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>SAVE</kbd> downloads a project file (your samples too) "
-      + "and <kbd>OPEN</kbd> brings it back. <kbd>SHARE</kbd> gives a short code (SPGB_…) and a link, carrying the samples your song uses: "
-      + "whoever opens the link, or types the code into <kbd>CODE</kbd>, hears your song and can carry on from it. "
+  { t: "17 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>FILE</kbd> \u25B8 SAVE PROJECT downloads a project file (your samples too) "
+      + "and OPEN PROJECT brings it back. <kbd>SHARE</kbd> \u25B8 SHARE THIS SONG gives a short code (SPGB_…) and a link, carrying the samples your song uses: "
+      + "whoever opens the link, or types the code into SHARE \u25B8 OPEN A CODE, hears your song and can carry on from it. "
       + "A code lasts a month from when it was made; each SHARE makes a new one." },
-  { t: "18 · EXPORT", el: "#bounce", x: () => "<kbd>EXPORT</kbd> makes the WAV: the song once through (or the pattern looped), with a WAV for each track if you like. "
-      + "<kbd>RECORD</kbd> at the top records you playing live instead. That's a whole song: have fun!" },
+  { t: "18 · EXPORT", el: "#bounce", x: () => "<kbd>AUDIO</kbd> \u25B8 EXPORT WAV makes the WAV: the song once through (or the pattern looped), with a WAV for each track if you like. "
+      + "RECORD LIVE, in the same menu, records you playing live instead. That's a whole song: have fun!" },
 ];
 let tourAt = -1, tourEl = null;
 function tourShow(i) {
@@ -2203,6 +2254,7 @@ function tourShow(i) {
   tourEl = null;
   tourAt = i;
   if (i < 0 || i >= TOUR.length) {
+    ddClose();
     $("tour").hidden = true;
     try { localStorage.setItem(TOURKEY, "done"); } catch {}
     return;
@@ -2216,6 +2268,9 @@ function tourShow(i) {
   $("tournext").textContent = i === TOUR.length - 1 ? "DONE" : "NEXT";
   $("tourskip").hidden = i === TOUR.length - 1;
   tourEl = typeof st.el === "function" ? st.el() : st.el ? document.querySelector(st.el) : null;
+  ddClose();
+  const dd = tourEl && tourEl.closest(".dd");            // (an item in a top menu: the menu opened, all of it lit)
+  if (dd) { ddOpen(dd); tourEl = dd.querySelector(".ddm"); }
   if (tourEl) {
     tourEl.classList.add("tour-hi");
     if (!tourEl.closest(".keybar")) tourEl.scrollIntoView({ block: "center", behavior: "auto" });
@@ -2245,6 +2300,40 @@ $("tournext").addEventListener("click", () => tourShow(tourAt + 1));
 $("tourback").addEventListener("click", () => tourShow(tourAt - 1));
 $("tourskip").addEventListener("click", () => tourShow(-1));
 $("helpbtn").addEventListener("click", () => tourShow(0));
+// ------------------------------------------------------------------ the top menus: click opens one (hovering another
+// while one is open moves to it), an item or a click outside closes it, arrows and Esc from the keyboard
+function ddClose(except) {
+  for (const d of document.querySelectorAll(".dd")) if (d !== except) {
+    d.querySelector(".ddm").hidden = true; d.querySelector(".ddbtn").setAttribute("aria-expanded", "false");
+  }
+}
+function ddOpen(d, focus) {
+  ddClose(d);
+  const m = d.querySelector(".ddm");
+  m.hidden = false; d.querySelector(".ddbtn").setAttribute("aria-expanded", "true");
+  m.classList.remove("right");
+  if (m.getBoundingClientRect().right > innerWidth - 8) m.classList.add("right");
+  if (focus) m.querySelector(".ddi").focus();
+}
+const ddItems = (d) => [...d.querySelectorAll(".ddi")];
+for (const d of document.querySelectorAll(".dd")) {
+  const b = d.querySelector(".ddbtn"), m = d.querySelector(".ddm");
+  let hovered = 0;                                       // (opened by sliding over it: the click that follows keeps it open)
+  b.addEventListener("click", () => (m.hidden ? ddOpen(d) : performance.now() - hovered < 600 ? 0 : ddClose()));
+  b.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse" && document.querySelector(".ddm:not([hidden])") && m.hidden) { ddOpen(d); hovered = performance.now(); } });
+  b.addEventListener("keydown", (e) => { if (e.key === "ArrowDown") { e.preventDefault(); e.stopPropagation(); ddOpen(d, true); } });
+  m.addEventListener("click", (e) => { if (e.target.closest(".ddi")) ddClose(); });
+  m.addEventListener("keydown", (e) => {
+    const it = ddItems(d), k = it.indexOf(document.activeElement);
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); it[(k + (e.key === "ArrowDown" ? 1 : it.length - 1)) % it.length].focus(); }
+    else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); ddClose(); b.focus(); }
+    else if (e.key === "Tab") ddClose();
+    else if ((e.key === "Enter" || e.key === " ") && e.target.tagName === "LABEL") { e.preventDefault(); e.target.click(); }
+  });
+}
+document.addEventListener("pointerdown", (e) => { if (!e.target.closest?.(".dd")) ddClose(); });
+addEventListener("resize", () => ddClose());
+
 $("tour").addEventListener("keydown", (e) => { if (e.key === "Escape") { tourShow(-1); e.stopPropagation(); } });
 function sharedDone(loaded) {
   sharedSong = null;
