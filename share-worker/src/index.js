@@ -6,8 +6,8 @@
 //   POST   /s               body: the package (gzip, made by the page), up to MAX_BYTES  ->  {"code": "SPGB_..."}
 //   GET    /s/SPGB_XXXXXXX  the package as uploaded
 //   DELETE /s/SPGB_XXXXXXX  removes it (moderation): Authorization: Bearer ADMIN_TOKEN
-// A code lasts CODE_DAYS (var, 14; Ed, Nov 23 2026): after that GET says it's gone (and deletes it), and the bucket's
-// lifecycle rule (songs-expire: SPGB_, 14 days) clears what nobody opened. 0 = codes last until deleted.
+// A code lasts CODE_DAYS (var, 30 days from when that code was made, each its own; Ed, Nov 23 2026): after that GET says it's gone (and deletes it), and the bucket's
+// lifecycle rule (songs-expire: SPGB_, 30 days after each object was written) clears what nobody opened. 0 = codes last until deleted.
 // Bindings (wrangler.toml): SONGS (R2) and / or SONGS_KV (KV), UPLOADS (rate limit, optional), ALLOWED_ORIGINS (var),
 // DAILY_SHARES (var: shares a visitor may make a UTC day, 0 = no cap; counted in R2 under caps/), ADMIN_TOKEN (secret).
 

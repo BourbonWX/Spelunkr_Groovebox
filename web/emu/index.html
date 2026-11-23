@@ -1924,8 +1924,8 @@ async function fetchCode(code) {
   const r = await fetch(`${SHARE_API}/s/${code}`);
   if (r.status === 404) {
     const j = await r.json().catch(() => ({}));
-    throw new Error(j.expired ? `the code ${code} has expired: codes last two weeks (the person who shared it can SHARE it again)`
-      : `no song with the code ${code}: it may have expired (codes last two weeks), or check the letters (no 0, O, 1 or I in a code)`);
+    throw new Error(j.expired ? `the code ${code} has expired: codes last a month from when they were shared (the person who shared it can SHARE it again)`
+      : `no song with the code ${code}: it may have expired (codes last a month), or check the letters (no 0, O, 1 or I in a code)`);
   }
   if (!r.ok) throw new Error(`the song store said ${r.status}`);
   const j = JSON.parse(new TextDecoder().decode(await gz(new Uint8Array(await r.arrayBuffer()), new DecompressionStream("gzip"))));
@@ -2193,7 +2193,7 @@ const TOUR = [                                           // (Ed: "cover every pa
   { t: "17 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>SAVE</kbd> downloads a project file (your samples too) "
       + "and <kbd>OPEN</kbd> brings it back. <kbd>SHARE</kbd> gives a short code (SPGB_…) and a link, carrying the samples your song uses: "
       + "whoever opens the link, or types the code into <kbd>CODE</kbd>, hears your song and can carry on from it. "
-      + "A code lasts two weeks; each SHARE makes a new one." },
+      + "A code lasts a month from when it was made; each SHARE makes a new one." },
   { t: "18 · EXPORT", el: "#bounce", x: () => "<kbd>EXPORT</kbd> makes the WAV: the song once through (or the pattern looped), with a WAV for each track if you like. "
       + "<kbd>RECORD</kbd> at the top records you playing live instead. That's a whole song: have fun!" },
 ];
@@ -2294,7 +2294,7 @@ $("share").addEventListener("click", async () => {
     $("sharelead").textContent = "Or send the link: it opens the song straight away.";
     $("shareinfo").textContent = samples.length ? `It carries the song and the ${samples.length} sample${samples.length > 1 ? "s" : ""} it plays (${code.bytes < 1048576 ? Math.max(1, Math.round(code.bytes / 1024)) + " KB" : (code.bytes / 1048576).toFixed(1) + " MB"}).`
       : "It carries the song: the tracks and their sounds, patterns A–F and the song's parts.";
-    if (code.days) $("shareinfo").textContent += ` The code works for ${code.days === 14 ? "two weeks" : code.days + " days"}; SAVE keeps the song for good.`;
+    if (code.days) $("shareinfo").textContent += ` The code works for ${code.days === 30 ? "a month (30 days from now)" : code.days + " days"}; SAVE keeps the song for good.`;
   } else {
     $("sharelink").value = longUrl;
     $("sharelead").textContent = "Anyone who opens this link hears your song in their own groovebox, and can carry on from it.";
