@@ -6,19 +6,20 @@ compatibility_date = "2025-06-01"
 [vars]
 # the pages allowed to upload (reading a code works from anywhere)
 ALLOWED_ORIGINS = "https://bourbonwx.github.io,http://localhost:8769"
+# shares a visitor may make in a UTC day (counted in R2; 0 = no daily cap)
+DAILY_SHARES = "50"
 
-# where the songs are kept: a KV namespace (free, no card). Make it once with
-#   npx wrangler kv namespace create SONGS_KV
-# and put the id it prints here.
+# where the songs are kept. New songs go to the R2 bucket (10 GB free); the KV namespace stays bound so the codes made
+# before the move (Nov 23 2026) still open. A fresh setup can use either one alone:
+#   npx wrangler r2 bucket create spgb-songs          (R2 asks for a card, even on its free tier)
+#   npx wrangler kv namespace create SONGS_KV         (no card; put the id it prints below)
+[[r2_buckets]]
+binding = "SONGS"
+bucket_name = "spgb-songs"
+
 [[kv_namespaces]]
 binding = "SONGS_KV"
 id = "4189f0ebdd524f2db832e384895547e6"
-
-# or an R2 bucket instead (more room; R2 asks for a card even on its free tier): comment out the KV above, then
-#   npx wrangler r2 bucket create spgb-songs
-# [[r2_buckets]]
-# binding = "SONGS"
-# bucket_name = "spgb-songs"
 
 # 10 shares a minute per visitor
 [[ratelimits]]

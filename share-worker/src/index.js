@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // The Spelunkr Groovebox's share codes: SHARE uploads a song (and the samples it plays) and gets back a short code,
-// SPGB_7K2QX9A; opening the code downloads it again. A Cloudflare Worker with a KV namespace (SONGS_KV, no card
-// needed) or an R2 bucket (SONGS) to keep them in (README.md).
+// SPGB_7K2QX9A; opening the code downloads it again. A Cloudflare Worker with an R2 bucket (SONGS: 10 GB free) and / or a
+// KV namespace (SONGS_KV: no card needed, 1 GB, 1,000 writes a day) to keep them in (README.md). With both bound, new
+// songs go to R2 and a code is looked for in R2, then in KV (the codes made before the move, Nov 23 2026).
 //   POST   /s               body: the package (gzip, made by the page), up to MAX_BYTES  ->  {"code": "SPGB_..."}
 //   GET    /s/SPGB_XXXXXXX  the package as uploaded
 //   DELETE /s/SPGB_XXXXXXX  removes it (moderation): Authorization: Bearer ADMIN_TOKEN
-// Bindings (wrangler.toml): SONGS_KV (KV) or SONGS (R2), UPLOADS (rate limit, optional), ALLOWED_ORIGINS (var),
-// ADMIN_TOKEN (secret).
+// Bindings (wrangler.toml): SONGS (R2) and / or SONGS_KV (KV), UPLOADS (rate limit, optional), ALLOWED_ORIGINS (var),
+// DAILY_SHARES (var: shares a visitor may make a UTC day, 0 = no cap; counted in R2 under caps/), ADMIN_TOKEN (secret).
 
 const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";   // (no 0 O 1 I: a code read off a stream or a screen)
 const CODE_LEN = 7;
@@ -32,21 +33,42 @@ function cors(req, env) {
     Vary: "Origin",
   };
 }
-// where the songs are kept: R2 when bound, else KV (values up to 25 MB; the songs here are 12 MB at most)
+// where the songs are kept: R2 first when bound (new songs go there), then KV (older codes; values up to 25 MB, the
+// songs here are 12 MB at most)
 function store(env) {
-  if (env.SONGS) return {
+  const r2 = env.SONGS && {
     has: async (k) => !!(await env.SONGS.head(k)),
     put: (k, body, meta) => env.SONGS.put(k, body, { httpMetadata: { contentType: "application/gzip" }, customMetadata: meta }),
     get: async (k) => (await env.SONGS.get(k))?.body ?? null,
     del: (k) => env.SONGS.delete(k),
   };
-  if (env.SONGS_KV) return {
+  const kv = env.SONGS_KV && {
     has: async (k) => { const s = await env.SONGS_KV.get(k, "stream"); if (s) await s.cancel(); return !!s; },
     put: (k, body, meta) => env.SONGS_KV.put(k, body, { metadata: meta }),
     get: (k) => env.SONGS_KV.get(k, "stream"),
     del: (k) => env.SONGS_KV.delete(k),
   };
-  throw new Error("no song store bound (SONGS_KV or SONGS)");
+  const all = [r2, kv].filter(Boolean);
+  if (!all.length) throw new Error("no song store bound (SONGS or SONGS_KV)");
+  return {
+    has: async (k) => { for (const s of all) if (await s.has(k)) return true; return false; },
+    put: (k, body, meta) => all[0].put(k, body, meta),
+    get: async (k) => { for (const s of all) { const b = await s.get(k); if (b) return b; } return null; },
+    del: async (k) => { for (const s of all) await s.del(k); },
+  };
+}
+// a visitor's shares today (UTC), counted in R2 under caps/<day>/<a hash of the address> (no address is kept; the
+// bucket's lifecycle rule clears caps/ after a couple of days). Returns false once DAILY_SHARES are used up.
+async function dailyOk(env, ip) {
+  const cap = Number(env.DAILY_SHARES || 0);
+  if (!cap || !env.SONGS) return true;
+  const day = new Date().toISOString().slice(0, 10);
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`spgb:${ip}`)));
+  const key = `caps/${day}/${[...h.slice(0, 8)].map((b) => b.toString(16).padStart(2, "0")).join("")}`;
+  const n = Number((await (await env.SONGS.get(key))?.text()) || 0);
+  if (n >= cap) return false;
+  await env.SONGS.put(key, String(n + 1));
+  return true;
 }
 const json = (h, status, o) => new Response(JSON.stringify(o), { status, headers: { ...h, "Content-Type": "application/json" } });
 
@@ -58,8 +80,8 @@ export default {
 
     if (url.pathname === "/s" && req.method === "POST") {
       if (h["Access-Control-Allow-Origin"] === "null") return json(h, 403, { error: "uploads only from the groovebox" });
+      const ip = req.headers.get("CF-Connecting-IP") || "unknown";
       if (env.UPLOADS) {
-        const ip = req.headers.get("CF-Connecting-IP") || "unknown";
         const { success } = await env.UPLOADS.limit({ key: ip });
         if (!success) return json(h, 429, { error: "too many shares in a minute: wait a little" });
       }
@@ -68,6 +90,7 @@ export default {
       const body = new Uint8Array(await req.arrayBuffer());
       if (body.length > MAX_BYTES) return json(h, 413, { error: "too big to share" });
       if (body.length < 18 || body[0] !== 0x1f || body[1] !== 0x8b) return json(h, 400, { error: "not a groovebox song" });
+      if (!(await dailyOk(env, ip))) return json(h, 429, { error: "that's the most shares for today: try again tomorrow" });
       for (let tries = 0; tries < 5; tries++) {
         const code = newCode();
         if (await db.has(code)) continue;                         // (35 bits: a clash is rare, but never overwrite)
