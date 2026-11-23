@@ -30,7 +30,13 @@ saves in this browser, and a link shares it.
   the pattern playing. The columns are your patterns, or, once the song has parts, the parts in order: click one
   to play that pattern next.
 - **The keys** along the bottom, or your computer keyboard: **Z** to **M** and **Q** to **O** (the rows above them are
-  the black keys). **[** and **]** move an octave. A MIDI keyboard works too.
+  the black keys). **[** and **]** move an octave. A MIDI keyboard works too: plug it in and look at **MIDI** in the song bar. It shows the keyboard's
+  name once it's found, and lights when you play. By default the keyboard plays the track you've picked, on any
+  channel; switch it to **by channel** if you want channel 1 for DRUMS, 2 for SYNTH 1, 3 for SYNTH 2 and 4 for SYNTH 3.
+  If it says **ALLOW MIDI**, click it and say yes when the browser asks. Firefox asks you to add a small "site
+  permission" add-on, which comes from Firefox itself. If you said no before, click the icon left of the address,
+  clear or allow the MIDI permission, and reload the page. **NO KEYBOARD** means MIDI is allowed but nothing is plugged in:
+  check the cable and that the keyboard is switched on.
 
 ## Make a song, start to finish
 

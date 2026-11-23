@@ -189,6 +189,7 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "solo") { ex.web_solo_toggle(m.k);
       } else if (m.type === "tool") { ex.web_tool(m.k, m.which);   // (the page's shortcuts: felucca_web.c)
       } else if (m.type === "undo") { ex.web_undo();
+      } else if (m.type === "midisel") { if (ex.web_midi_sel_set) ex.web_midi_sel_set(m.on ? 1 : 0);
       } else if (m.type === "recgo") { ex.web_rec_go(m.c);
       } else if (m.type === "tempo") { ex.web_tempo(m.bpm);
       } else if (m.type === "swing") { ex.web_swing(m.v);

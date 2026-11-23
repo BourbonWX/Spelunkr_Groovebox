@@ -76,6 +76,8 @@ header nav .btn.on { background: var(--rec); color: var(--night); border-color: 
 .songbar .sbchk input { width: 18px; height: 18px; accent-color: var(--yellow); }
 .songbar .sbchk.off { opacity: .45; }
 #taptempo.hot { background: var(--yellow); color: var(--night); }
+#midibtn.ok { background: var(--panel); color: #fff; } #midibtn.warn { background: var(--orange); color: var(--night); }
+#midibtn.hit { background: var(--yellow); color: var(--night); }
 
 main { max-width: 1480px; margin: 0 auto; padding: 16px 20px 16px; display: flex; flex-direction: column; gap: 16px; }
 .top { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
@@ -365,6 +367,8 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   <span class="sb"><b>SWING</b><button class="btn sbarr" id="swdn" type="button" aria-label="Less swing">&#9664;</button><span class="sbv" id="swing">--</span><button class="btn sbarr" id="swup" type="button" aria-label="More swing">&#9654;</button></span>
   <span class="sb"><b>KEY</b><select id="keyroot" aria-label="The key's note"></select><select id="keyscale" aria-label="The scale"></select>
     <label class="sbchk"><input type="checkbox" id="keysnap"> keys stay in key</label></span>
+  <span class="sb"><b>MIDI</b><button class="btn" id="midibtn" type="button">CONNECT</button>
+    <select id="midiroute" aria-label="What a MIDI keyboard plays"><option value="1">plays the picked track</option><option value="0">by channel</option></select></span>
 </div>
 
 <main>
@@ -1198,21 +1202,61 @@ function saveFlash(sectors) {
 }
 
 // ------------------------------------------------------------------ MIDI in: keyboards and controllers
-async function midiOn() {
-  if (!navigator.requestMIDIAccess) return;
-  try {
-    const access = await navigator.requestMIDIAccess();
-    const bind = () => {
-      for (const input of access.inputs.values())
-        input.onmidimessage = (e) => {
-          const d = e.data;
-          if (d.length >= 2 && d[0] >= 0x80 && d[0] < 0xF0) send({ type: "midi", data: [d[0], d[1], d[2] || 0] });
-        };
-    };
-    access.onstatechange = bind;
-    bind();
-  } catch {}
+// (Ed, Nov 23: "I plugged my midi keyboard in and it's not controlling the software"): the song bar's MIDI button says
+// what's going on (the keyboard's name, no access, no MIDI in this browser) and asks again on a click; a note lights
+// it. A keyboard plays the picked track whatever its channel (felucca_web.c web_midi_sel), unless "by channel".
+let midiAccess = null, midiHitT = 0;
+function midiShow(text, cls, tip) {
+  const b = $("midibtn");
+  b.textContent = text; b.className = "btn " + (cls || ""); b.dataset.tip = tip;
 }
+function midiBind() {
+  if (!midiAccess) return;
+  const ins = [...midiAccess.inputs.values()].filter((i) => i.state !== "disconnected");
+  for (const input of ins)
+    input.onmidimessage = (e) => {
+      const d = e.data;
+      if (d.length >= 2 && d[0] >= 0x80 && d[0] < 0xF0) {
+        send({ type: "midi", data: [d[0], d[1], d[2] || 0] });
+        if ((d[0] & 0xF0) === 0x90 && d[2]) {             // (a note: the button lights)
+          $("midibtn").classList.add("hit"); clearTimeout(midiHitT);
+          midiHitT = setTimeout(() => $("midibtn").classList.remove("hit"), 120);
+        }
+      }
+    };
+  if (ins.length) midiShow(ins.length > 1 ? `${ins.length} KEYBOARDS` : (ins[0].name || "KEYBOARD").toUpperCase().slice(0, 18), "ok",
+    "MIDI: " + ins.map((i) => i.name || "a keyboard").join(", ") + " connected. Play it: the notes go to " +
+    ($("midiroute").value === "1" ? "the picked track." : "the tracks by channel (1 DRUMS, 2 SYNTH 1, 3 SYNTH 2, 4 SYNTH 3)."));
+  else midiShow("NO KEYBOARD", "warn", "MIDI is allowed, but no keyboard is plugged in (or it's switched off). Plug it in: it's found by itself. Still nothing? Unplug it, plug it back in, then reload the page.");
+}
+async function midiOn(asked) {
+  if (!navigator.requestMIDIAccess) {
+    midiShow("NOT HERE", "warn", "This browser has no MIDI for web pages (Safari, and every browser on an iPhone or iPad). Chrome, Edge, Firefox or Brave on a computer have it.");
+    return;
+  }
+  try {
+    midiAccess = await navigator.requestMIDIAccess();
+    midiAccess.onstatechange = midiBind;
+    midiBind();
+  } catch (err) {
+    midiAccess = null;
+    const ff = /Firefox\//.test(navigator.userAgent);
+    midiShow("ALLOW MIDI", "warn", (asked ? "MIDI wasn't allowed. " : "") + (ff
+      ? "Firefox asks to add a small 'site permission' add-on for MIDI: click ALLOW MIDI and accept it (it's from Firefox itself). Turned it down before? Click the icon left of the address, clear the MIDI permission, reload."
+      : "Click ALLOW MIDI and say yes when the browser asks. Said no before? Click the icon left of the address, allow MIDI, reload."));
+  }
+}
+$("midibtn").addEventListener("click", () => { if (!midiAccess) midiOn(true); else midiBind(); });
+{
+  let r = "1";
+  try { r = localStorage.getItem("spelunkr-groovebox-midiroute") || "1"; } catch {}
+  $("midiroute").value = r;
+}
+$("midiroute").addEventListener("change", () => {
+  try { localStorage.setItem("spelunkr-groovebox-midiroute", $("midiroute").value); } catch {}
+  send({ type: "midisel", on: $("midiroute").value === "1" });
+  midiBind();
+});
 
 // ------------------------------------------------------------------ switching on
 const say = (t) => { $("status").textContent = t; };
@@ -1266,6 +1310,7 @@ async function switchOn(withSong) {
     $("start").hidden = true;
     syncButtons(); syncKeys();
     send({ type: "visible", on: !document.hidden });
+    send({ type: "midisel", on: $("midiroute").value === "1" });
     midiOn();
     if (sharedSong) sharedDone(withSong);
     if (tourDue()) setTimeout(() => tourShow(0), 700);   // first visit: the tour (after the screen is up)
@@ -1874,6 +1919,8 @@ const TIPS = {
   "#bounce": "EXPORT: make a WAV of the song or the pattern, faster than real time, with a WAV for each track if you like.",
   "#share": "SHARE: a short code and a link that play this song in anyone's groovebox, with the samples it uses.",
   "#codebtn": "CODE: open a song someone shared, by its code (SPGB_…) or its link.",
+  "#midibtn": "MIDI: your keyboard's state. Click it to connect (the browser asks first).",
+  "#midiroute": "What a MIDI keyboard plays: the track you picked (whatever its channel), or each track on its own channel (1 DRUMS, 2 SYNTH 1, 3 SYNTH 2, 4 SYNTH 3).",
   "#undobtn": "UNDO: take back the last thing you did to the music: a NEW SONG or RANDOM, a sound you picked, BEAT / RANDOM / VARY / CLEAR on a track. Click again to put it back.",
   "#bpmdn": "Slower (hold to keep going; the mouse wheel over the number too).",
   "#bpmup": "Faster (hold to keep going; the mouse wheel over the number too).",

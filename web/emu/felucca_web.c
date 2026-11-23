@@ -33,6 +33,8 @@ static unsigned char web_pad_k;          /* the track the page's pads are on (Ed
 #define WEB_FX_LOCK 1                    /* (ui_layer.c layer_tap: FX tapped locks its keys open) */
 static unsigned char web_rec_ask;        /* REC tapped while stopped: the page asks about the metronome (web_rec_go) */
 #define WEB_REC_ASK web_rec_ask
+static unsigned char web_midi_sel = 1;   /* a MIDI keyboard plays the picked track (ROUT SEL), whatever its channel; 0:
+                                         * the song's own ROUT (by channel: CH1-4 ..), the page's MIDI choice */
 static unsigned char web_click_held, web_click_mode, web_cin_bars, web_rec_ran;   /* (ui.c rp_apply: over the settings) */
 #define WEB_CLICK_HELD web_click_held
 #define WEB_CLICK_MODE web_click_mode
@@ -423,6 +425,8 @@ static void web_ms(void)
         lcd_fill(0, 0, 240, 240, T_BG);
         web_last_frame = fm1_ms - 15u;
     }
+    if (web_midi_sel && song.g[G_ROUTE] != ROUTE_SEL)
+        song.g[G_ROUTE] = ROUTE_SEL;                      /* (seq.c lets the other channels go on the change) */
     if (web_rec_ask && (song.playing || seq_counting() || !song.rec))
         web_rec_ask = 0;                                  /* (started or disarmed some other way: no question) */
     if (web_click_held) {                                 /* web_rec_go's metronome: the settings' again once the take is
@@ -657,6 +661,8 @@ EXPORT void web_rec_go(uint32_t c)
     transport_req = 1;
     ui.force = 1;
 }
+/* MIDI: 1 a keyboard plays the picked track (any channel), 0 the song's ROUT (POWER USER's MENU > MIDI) */
+EXPORT void web_midi_sel_set(uint32_t on) { web_midi_sel = (unsigned char)(on != 0); }
 /* the tempo (40..240) and the swing (0..100), from the page's header */
 EXPORT void web_tempo(uint32_t bpm) { song.g[G_BPM] = (int16_t)clamp((int32_t)bpm, GP[G_BPM].min, GP[G_BPM].max); ui.force = 1; }
 EXPORT void web_swing(uint32_t v) { song.g[G_SWING] = (int16_t)clamp((int32_t)v, 0, 100); ui.force = 1; }
