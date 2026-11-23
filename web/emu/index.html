@@ -80,10 +80,20 @@ header nav .btn.on { background: var(--rec); color: var(--night); border-color: 
 #midibtn.hit { background: var(--yellow); color: var(--night); }
 
 main { max-width: 1480px; margin: 0 auto; padding: 16px 20px 16px; display: flex; flex-direction: column; gap: 16px; }
-.top { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+/* the panels (Ed, Nov 23: "the sample above the tracks nestled under the menu with the tracks spanning the length of
+ * the bottom"): wide, the device and the SAMPLES under it on the left, the FX PAD + VAPOR on the right, the tracks
+ * across the whole width under them; narrower, one under another: device, FX PAD, tracks, SAMPLES */
+.top { display: contents; }
+.device { order: 1; } .fxpad { order: 2; } #studiomsg { order: 3; } .guide { order: 4; } .samples { order: 5; }
+@media (min-width: 1420px) {                    /* (narrower, the device's controls go under its screen) */
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 280px; align-items: start;
+         grid-template-areas: "dev fx" "smp fx" "msg msg" "guide guide"; }
+  .device { grid-area: dev; } .fxpad { grid-area: fx; } .samples { grid-area: smp; } #studiomsg { grid-area: msg; margin: 0; }
+  .guide { grid-area: guide; }
+}
 
 /* the device */
-.device { flex: 999 1 1010px; display: flex; flex-direction: column; }
+.device { display: flex; flex-direction: column; }
 .trackbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 14px; }
 .trackbar .arrow { width: 38px; min-height: 38px; padding: 0; font-size: 18px; }
 .trackbar .num { font: 36px/1 var(--head); }
@@ -91,7 +101,7 @@ main { max-width: 1480px; margin: 0 auto; padding: 16px 20px 16px; display: flex
 .trackbar .what { color: var(--soft); }
 .trackbar .state { margin-left: auto; font: 26px/1 var(--head); }
 .trackbar .pat { color: var(--dim); }
-.body { display: flex; flex-wrap: wrap; gap: 18px; padding: 16px; align-items: flex-start; justify-content: center; }
+.body { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; align-items: flex-start; justify-content: center; }
 .face { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 216px; }
 .face .btn[hidden] { display: none; }
 .face .btn { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; min-height: 52px; padding: 3px 4px; }
@@ -131,7 +141,7 @@ main { max-width: 1480px; margin: 0 auto; padding: 16px 20px 16px; display: flex
 .start p { margin: 0; max-width: 22em; color: var(--soft); }
 
 /* the FX PAD */
-.fxpad { flex: 1 1 280px; display: flex; flex-direction: column; }
+.fxpad { display: flex; flex-direction: column; }
 .fxpad .title { display: flex; align-items: baseline; gap: 10px; padding: 6px 14px; }
 .fxpad .title b { font: 28px/1 var(--head); color: var(--yellow); }
 .fxpad .title span { color: var(--soft); }
