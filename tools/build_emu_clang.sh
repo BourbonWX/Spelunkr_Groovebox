@@ -29,11 +29,20 @@ static inline int pipe(int f[2]) { (void)f; return -1; }
 #define WIFEXITED(s) 1
 #define WEXITSTATUS(s) 0
 EOF
-clang --target=wasm32-wasi --sysroot="$SYSROOT" -O2 -ffp-contract=off -std=gnu99 -w \
-    "-DFELUCCA_VERSION=\"$VERSION\"" -Ibuild/gen -Ifirmware/src -I"$STUB" -mexec-model=reactor \
-    -Wl,--no-entry -Wl,--export-dynamic -Wl,--gc-sections -Wl,-z,stack-size=1048576 -Wl,--initial-memory=33554432 \
-    -nodefaultlibs -o "$OUT/felucca.wasm" web/emu/felucca_web.c -lc "$RT/libclang_rt.builtins-wasm32.a"
+# two builds of the same code: felucca.wasm for any browser, felucca-simd.wasm (WebAssembly SIMD + bulk memory: the
+# page picks it where the browser has them, ~15-30 % less of the audio thread; the sound is bit for bit the same)
+wasm() {   # wasm OUTFILE [extra clang flags]
+    f=$1; shift
+    clang --target=wasm32-wasi --sysroot="$SYSROOT" -O2 "$@" ${EMU_CFLAGS:-} -ffp-contract=off -std=gnu99 -w \
+        "-DFELUCCA_VERSION=\"$VERSION\"" -Ibuild/gen -Ifirmware/src -I"$STUB" -mexec-model=reactor \
+        -Wl,--no-entry -Wl,--export-dynamic -Wl,--gc-sections -Wl,-z,stack-size=1048576 -Wl,--initial-memory=33554432 \
+        -nodefaultlibs -o "$f" web/emu/felucca_web.c -lc "$RT/libclang_rt.builtins-wasm32.a"
+}
+wasm "$OUT/felucca.wasm" & p1=$!
+wasm "$OUT/felucca-simd.wasm" -msimd128 -mbulk-memory & p2=$!
+wait $p1
+wait $p2
 sed -e "s/@VERSION@/$VERSION/g" -e "s/@PREVIEW@//g" -e "s|@SHARE_API@|${SHARE_API:-@SHARE_API@}|g" -e "s|@SOURCE@|${EMU_SOURCE:-https://github.com/BourbonWX/Dungeon-Tracker}|g" web/emu/index.html > "$OUT/index.html"
 cp web/emu/worklet.js web/emu/bounce.js web/emu/spk_samples.js "$OUT/"
 cp web/emu/fonts/DotGothic16-subset.woff web/emu/fonts/OFL.txt "$OUT/fonts/"
-echo "emu: $OUT ($(wc -c < "$OUT/felucca.wasm" | tr -d ' ') B wasm, $VERSION)"
+echo "emu: $OUT ($(wc -c < "$OUT/felucca.wasm" | tr -d ' ') B wasm, $(wc -c < "$OUT/felucca-simd.wasm" | tr -d ' ') B simd, $VERSION)"

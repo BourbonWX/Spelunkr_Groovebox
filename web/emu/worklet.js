@@ -125,6 +125,53 @@ export function midiKnob(last, cc, value, mode = "abs") {
   return { role, n: was === undefined ? 0 : value - was };
 }
 
+// The warm-up (Ed, Nov 23 2026: "some hiccups ... on a lower powered thin pc running Edge"). Browsers compile a
+// WebAssembly function the first time it runs, in the thread that runs it: here the audio thread. So the first visit to
+// each page, sound and effect stalled the audio while its code compiled (measured: 15-19 audio blocks late in the first
+// minute, up to 25 ms on a fast PC; several times that on a slow one). A second, throwaway copy of the device sharing
+// the compiled module plays this script during the power-on splash, a slice of each audio block at a time, so the real
+// one finds everything compiled (measured: 0-1 late blocks).
+const WARM_BLOCK = 128;
+export function* warmScript(ex) {
+  function* run(sec) {
+    const n = Math.ceil(sec * 44100 / WARM_BLOCK);
+    for (let i = 0; i < n; i++) {
+      ex.web_render(WARM_BLOCK);
+      yield;
+    }
+  }
+  function* tap(b, hold = 0.06, after = 0.12) {
+    ex.web_buttons(1 << b);
+    yield* run(hold);
+    ex.web_buttons(0);
+    yield* run(after);
+  }
+  const [FX, SCL, ENV, LFO, EDIT, GLO, HOME, SAVE, ARP, SEQ, PLAY, REC, OCTDN, OCTUP] = [...Array(14).keys()];
+  yield* run(2.6);                                         // the splash
+  for (let s = 0; s < 4; s++) {                           // four random songs: their engines, kits, effects
+    if (ex.web_seed) ex.web_seed(0x5EED + s);
+    if (ex.web_new_song) ex.web_new_song(1);
+    yield* tap(PLAY);
+    yield* run(0.8);
+    for (const b of [SEQ, SEQ, SEQ, HOME, GLO, GLO, GLO, HOME, EDIT, EDIT, EDIT, HOME, SCL, HOME, ENV, HOME, LFO, HOME,
+                     ARP, HOME, FX, FX, HOME, OCTUP, OCTDN]) yield* tap(b);
+    if (ex.web_guide) ex.web_guide();
+    if (ex.web_enc) for (let r = 0; r < 7; r++) { ex.web_enc(r, 2); yield* run(0.05); ex.web_enc(r, -2); yield* run(0.05); }
+    yield* tap(PLAY);
+  }
+  if (ex.web_vapor) {                                      // VAPOR's four
+    for (let k = 0; k < 4; k++) ex.web_vapor(k, 90);
+    yield* tap(PLAY);
+    yield* run(0.6);
+    for (let k = 0; k < 4; k++) ex.web_vapor(k, 0);
+    yield* tap(PLAY);
+  }
+  yield* tap(HOME, 1.0, 0.2);                             // MENU (HOME held), then out
+  yield* tap(HOME);
+  yield* tap(REC);                                         // REC armed, then off
+  yield* tap(REC);
+}
+
 if (typeof registerProcessor === "function") {
   const clock = globalThis.performance ? () => globalThis.performance.now() : () => Date.now();
   class Felucca extends AudioWorkletProcessor {
@@ -147,8 +194,18 @@ if (typeof registerProcessor === "function") {
     async onMessage(m) {
       if (m.type === "load") {
         try {
-          const { instance } = await WebAssembly.instantiate(m.wasm, WASI_STUB);
-          const ex = instance.exports;
+          const module = await WebAssembly.compile(m.wasm);
+          const ex = (await WebAssembly.instantiate(module, WASI_STUB)).exports;
+          try {                                         // the warm-up's copy (process() plays it a slice at a time)
+            const wx = (await WebAssembly.instantiate(module, WASI_STUB)).exports;
+            wx._initialize();
+            wx.web_nor_erase();
+            if (wx.web_plain) wx.web_plain(0);          // (POWER USER: every page there is)
+            if (wx.web_seed) wx.web_seed(0x5EED);
+            wx.web_boot();
+            this.warm = warmScript(wx);
+            this.warmStart = clock();
+          } catch { this.warm = null; }
           ex._initialize();
           ex.web_nor_erase();
           restoreSectors(new Uint8Array(ex.memory.buffer, ex.web_nor(), ex.web_nor_size()), m.sectors);
@@ -167,7 +224,7 @@ if (typeof registerProcessor === "function") {
         }
         return;
       }
-      if (m.type === "off") { this.dead = true; this.ex = null; return; }   // switched off (the page made another)
+      if (m.type === "off") { this.dead = true; this.ex = null; this.warm = null; return; }   // switched off (the page made another)
       const ex = this.ex;
       if (!ex) return;
       if (m.type === "buttons" || m.type === "keys") this.queue.push(m);
@@ -304,7 +361,18 @@ if (typeof registerProcessor === "function") {
         this.lastFrame = currentTime;
         this.publish();
       }
+      if (this.warm) this.warmSlice();
       return true;
+    }
+
+    // a slice of the warm-up after the real block: generous during the splash (nothing playing yet), then a small
+    // share of each block's time, so the real device always comes first
+    warmSlice() {
+      const now = clock(), end = now + (now - this.warmStart < 2500 ? 6 : 0.8);
+      try {
+        while (clock() < end)
+          if (this.warm.next().done) { this.warm = null; this.port.postMessage({ type: "warm", ms: Math.round(clock() - this.warmStart) }); break; }
+      } catch { this.warm = null; }
     }
   }
   registerProcessor("felucca", Felucca);

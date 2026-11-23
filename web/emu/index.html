@@ -1349,7 +1349,13 @@ async function boot(sectors, song) {
   return n;
 }
 // the device's 3.4 MB starts downloading with the page, so SWITCH ON doesn't wait for it (a failed fetch is tried again)
-const getWasm = () => fetch("felucca.wasm").then((r) => { if (!r.ok) throw new Error(`felucca.wasm: ${r.status}`); return r.arrayBuffer(); });
+// The SIMD build where the browser runs WebAssembly SIMD (Chrome / Edge 91+, Firefox 89+, Safari 16.4+): the same
+// sound, a lighter load on the audio thread (tools/build_emu_clang.sh); the plain build elsewhere, or if it's missing.
+const WASM_SIMD = (() => { try {
+  return WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]));
+} catch { return false; } })();
+const fetchWasm = (f) => fetch(f).then((r) => { if (!r.ok) throw new Error(`${f}: ${r.status}`); return r.arrayBuffer(); });
+const getWasm = () => (WASM_SIMD ? fetchWasm("felucca-simd.wasm").catch(() => fetchWasm("felucca.wasm")) : fetchWasm("felucca.wasm"));
 let wasmEarly = getWasm();
 wasmEarly.catch(() => {});
 async function switchOn(withSong) {

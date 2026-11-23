@@ -81,6 +81,7 @@ present the site as theirs.
 |---|---|
 | `index.html` | The page: the instrument and the studio bar |
 | `felucca.wasm` | The firmware, compiled for the browser |
+| `felucca-simd.wasm` | The same firmware using WebAssembly SIMD: lighter on the CPU, and picked automatically where the browser supports it |
 | `worklet.js` | Runs the firmware in the browser's audio thread, and handles live recording |
 | `bounce.js` | Renders a song faster than real time, in the background |
 | `guide.html`, `manual.html` | The quick start and the full manual |
