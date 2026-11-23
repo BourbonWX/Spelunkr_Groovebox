@@ -1236,10 +1236,29 @@ static uint16_t lc_box(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t fill
 #define L5_X(c) (6 + 46 * (int32_t)(c))
 #define L5_W 42
 static int32_t lc_w = LC_W;
+/* touch (ui_touch.c): the key a cell stands for, from its note (wnote / bnote set it, the cell takes it): touching the
+ * cell plays that key, as the layer's own keys do. -1 none */
+static int16_t lc_key = -1;
+static int16_t lc_key_of(uint32_t black, uint32_t place)   /* the key that is the place-th white (black) one */
+{
+    uint32_t k;
+    for (k = 0; k < 27u; k++)
+        if ((uint32_t)key_black(k) == black && key_place(k) == place)
+            return (int16_t)k;
+    return -1;
+}
+static void wnote(char *n, uint32_t p) { n[0] = W_NOTE[p % 16u]; lc_key = lc_key_of(0, p); }
+static void lc_touch(int32_t x, int32_t y, int32_t w, int32_t h)   /* a cell of the key lc_key, if any */
+{
+    if (lc_key >= 0)
+        tz_add(x, y, w, h, TZ_NOTE, (uint32_t)lc_key, 0);
+    lc_key = -1;
+}
 static void lcell(int32_t x, int32_t y, int32_t h, const char *note, uint32_t icon, uint32_t icon2, const char *name,
                   uint32_t st, int tri)
 {
     uint16_t ink, fill = lc_fill(st, &ink), idle = fill == T_RAISE || ((st & LS_ALT) && fill == lc_alt());
+    lc_touch(x, y, lc_w, h);
     fill = lc_box(x, y, lc_w, h, fill);
     if (note)
         cv_text_on(x + 5, y + 3, &AF_S, note, idle ? T_MID : ink, fill);
@@ -1280,7 +1299,7 @@ static void lcell(int32_t x, int32_t y, int32_t h, const char *note, uint32_t ic
             cv_rect(x + lc_w - 7 + j, y + 2 + j, 4 - j, 1, ink);
     }
 }
-static void bnote(char *n, uint32_t t) { n[0] = B_NOTE[t]; n[1] = '#'; n[2] = 0; }
+static void bnote(char *n, uint32_t t) { n[0] = B_NOTE[t]; n[1] = '#'; n[2] = 0; lc_key = lc_key_of(1, t); }
 
 static void layer_fx(void)
 {
@@ -1293,7 +1312,7 @@ static void layer_fx(void)
         ea = e >= PF_U1 && e <= PF_U4 ? pf_user_bits(PF_BIT(e)) : e < PF_NFX ? PF_BIT(e) : 0u;   /* (a USER key: its two) */
         st = p == ed ? LS_SEL : e >= PF_NFX || !((ok >> e) & 1u) ? LS_DIM : !((held >> e) & 1u) ? LS_OFF
            : act & ea ? LS_HELD : LS_WAIT;              /* (the key PRESETS assigns: the selection's fill) */
-        n[0] = W_NOTE[p];
+        wnote(n, p);
         lcell(LC_X(p % 4u), 4 + (LF_H + 4) * (int32_t)(p / 4u), LF_H, n, 0, 0, e < PF_NFX ? PF_CELL[e] : "",
               st | (p & 1u ? LS_ALT : 0u), 0);           /* (#173: the 2nd and 4th columns' idle cells their own fill) */
     }
@@ -1313,7 +1332,7 @@ static void layer_glo(void)
     char n[3] = {0, 0, 0};
     lc_w = L5_W;
     for (e = 0; e < NTRK; e++) {                        /* F3 .. B3, G4: SOLO the shown FEEDs 1..5 while held */
-        n[0] = W_NOTE[e < 4u ? e : 8u];
+        wnote(n, e < 4u ? e : 8u);
         lcell(L5_X(e), 4, LC_H, n, trk_icon(FD_AT[e], 0), 0, "SOLO", (perf_solo >> FD_AT[e]) & 1u ? LS_HELD : LS_OFF, 1);
     }
     for (e = 0; e < NTRK; e++) {                        /* the black keys 1..5: MUTE, latched */
@@ -1321,14 +1340,14 @@ static void layer_glo(void)
         lcell(L5_X(e), LM_Y, LM_H, n, ICON_MUTE, trk_icon(FD_AT[e], 0), 0, trk[FD_AT[e]].p[P_MUTE] ? LS_MUTE : LS_OFF, 0);
     }
     lc_w = LC_W;
-    n[0] = W_NOTE[4];
+    wnote(n, 4);
     n[1] = 0;
     lcell(LC_X(0), 50, LC_H, n, ICON_MUTE, 0, "ALL", LS_OFF, 0);   /* (unmute all) */
-    n[0] = W_NOTE[5];
+    wnote(n, 5);
     lcell(LC_X(1), 50, LC_H, n, ICON_MIDI, 0, "LEARN", ui.ml.on ? LS_SEL : LS_OFF, 0);   /* (MIDI LEARN, 1.5) */
-    n[0] = W_NOTE[6];
+    wnote(n, 6);
     lcell(LC_X(2), 50, LC_H, n, ICON_STEPS, 0, "FILL", seq_fill ? LS_HELD : LS_OFF, 1);   /* (FILL while held, 1.5.5) */
-    n[0] = W_NOTE[7];
+    wnote(n, 7);
     lcell(LC_X(3), 50, LC_H, n, ICON_TEMPO, 0, "TAP", song.g[G_CLOCK] ? LS_DIM : LS_OFF, 0);
 }
 static void layer_scl(void)                             /* KNOB 2's scales, 4 x 4, the one now selected */
@@ -1354,6 +1373,8 @@ static void eqa_row(uint32_t n)
                     : on ? (a->kind == LK_HOLD ? LS_HELD : LS_SEL) : LS_OFF;
         int32_t x = 6 + (int32_t)((w + 4u) * i), j;
         uint16_t ink, fill = lc_box(x, 100, (int32_t)w, 18, lc_fill(st, &ink));
+        lc_key = lc_key_of(1, i);                          /* (touch: black key i + 1) */
+        lc_touch(x, 100, (int32_t)w, 18);
         GFX_HOOK_ALIGN(x, 100, x + (int32_t)w, 118, AL_HV, "edit quick action cell name centred");
         cv_text_in(x, 100 + CAP_IN(S, 18), (int32_t)w, &AF_S, a->name(TSEL, a->arg), ink, fill);
         for (j = 0; a->kind == LK_HOLD && j < 4; j++)
@@ -1368,6 +1389,7 @@ static void layer_edit(void)                            /* the engines from F3, 
     for (i = 0; i < cells; i++) {
         int32_t x = LC_X(i % 4u), y = 4 + (int32_t)(h + 4u) * (int32_t)(i / 4u);
         const engine_t *en = ENGINES[eng_vis(i) % NENGINES];
+        lc_key = lc_key_of(0, i);                          /* (touch: white key i) */
         if (i < n)
             lcell(x, y, (int32_t)h, 0, engine_icon(en->name), 0, h > 24u ? en->name : eng_abbr(en->name),
                   eng_vis(i) == TSEL->eng_req % NENGINES ? LS_SEL : LS_OFF, 0);
@@ -1414,7 +1436,7 @@ static void layer_seq(void)
     for (p = 0; p < TL_DOUBLE && !eu.on; p++) {
         if (!tl_cell(TSEL, p))
             continue;
-        n[0] = W_NOTE[p];
+        wnote(n, p);
         str_cpy(nm, TL_NAME[p], sizeof nm);
         if (p >= TL_LCLR) {                             /* the lane's: "CLR BD" */
             str_cpy(nm + str_len(nm), " ", 2);
@@ -1425,13 +1447,16 @@ static void layer_seq(void)
     for (p = 0; drum && p < NLANE; p++) {               /* the lanes (black keys 1..8): 8 cells of 18 px, 2 px apart */
         int32_t x = 6 + 20 * (int32_t)p;
         uint16_t ink, fill = lc_box(x, 100, 18, 18, lc_fill(p == ui.lane % NLANE ? LS_SEL : LS_OFF, &ink));
+        lc_key = lc_key_of(1, p);
+        lc_touch(x, 100, 18, 18);
         GFX_HOOK_ALIGN(x, 100, x + 18, 118, AL_HV, "tools lane cell name centred");
         cv_text_in(x, 100 + CAP_IN(S, 18), 18, &AF_S, drum_lane_abbr(TSEL, p), ink, fill);
     }
     for (p = TL_DOUBLE; !eu.on && p < TL_N; p++) {     /* 1.5.5: D5 DOUBLE (x2), E5 HALF (/2) at the row's end, */
         int32_t x = 168 + 35 * (int32_t)(p - TL_DOUBLE);   /* 31 px each (the lanes' row: no room for their names) */
         uint16_t ink, fill = lc_box(x, 100, 31, 18, lc_fill(st, &ink));
-        n[0] = W_NOTE[p];
+        wnote(n, p);
+        lc_touch(x, 100, 31, 18);
         GFX_HOOK_ALIGN(0, 100, 0, 118, AL_V, "tools resize cell on its middle");
         cv_text_on(x + 5, 100 + CAP_IN(S, 18), &AF_S, n, fill == T_RAISE || fill == T_SURF ? T_MID : ink, fill);
         GFX_HOOK_ALIGN(0, 100, 0, 118, AL_V, "tools resize cell on its middle");
@@ -1452,7 +1477,8 @@ static void layer_rec(void)
         int32_t y = 4 + (LR_H + 4) * (int32_t)r, x = 6, vx = 6 + LR_KW + 4;
         uint32_t dim = r == 0u && (chain_busy() || !rec_clearable());
         uint16_t ink, fill = lc_box(x, y, LR_KW, LR_H, lc_fill(dim ? LS_DIM : LS_OFF, &ink));
-        n[0] = W_NOTE[r];
+        wnote(n, r);
+        lc_touch(x, y, 234 - x, LR_H);
         GFX_HOOK_ALIGN(0, y, 0, y + LR_H, AL_V, "rec layer key cell on its middle");
         cv_text_on(x + 5, y + CAP_IN(S, LR_H), &AF_S, n, fill == T_RAISE || fill == T_SURF ? T_MID : ink, fill);
         GFX_HOOK_ALIGN(0, y, 0, y + LR_H, AL_V, "rec layer key cell on its middle");
@@ -1585,6 +1611,7 @@ static void layer_arp(void)
     for (k = 0; k < NTRK; k++) {                         /* (black key k + 1 picks it, as GLO's mutes: no note label; 0.10:
                                                           * five, in the shown order) */
         int32_t t = clamp(trk[FD_AT[k]].p[P_ITYPE], 0, IT_N - 1);
+        lc_key = lc_key_of(1, k);
         lcell(L5_X(k), 4, LC_H, 0, trk_icon(FD_AT[k], 0), 0, N_ITYPE[t], FD_AT[k] == song.sel ? LS_SEL : t ? LS_OFF : LS_DIM, 0);
     }
     lc_w = LC_W;

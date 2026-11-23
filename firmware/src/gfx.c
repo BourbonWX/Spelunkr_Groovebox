@@ -202,7 +202,7 @@ static inline uint16_t swap16(uint32_t c) { return (uint16_t)(((c >> 8) & 0xFFu)
  * a menu row) adds a zone in its canvas's coordinates (tz_add); the canvas's blit puts its zones on the screen, in place
  * of those wholly under it (a redrawn region's old zones go with its old pixels; what is not redrawn keeps its own).
  * A full redraw (ui.force) starts from none (tz_reset). Layout pixels. Newest first when they overlap. */
-enum { TZ_NONE, TZ_CARD, TZ_KEY, TZ_CELL, TZ_ROW, TZ_LIST };
+enum { TZ_NONE, TZ_CARD, TZ_KEY, TZ_CELL, TZ_ROW, TZ_LIST, TZ_NOTE };   /* (TZ_NOTE: a layer map's cell, its key) */
 typedef struct { int16_t x, y, w, h; uint8_t kind; uint8_t a; int16_t b; } tzone_t;
 #define TZ_MAX 192
 #define TZ_PEND 128                                    /* (the tracker: 8 rows of up to 10) */

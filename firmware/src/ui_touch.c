@@ -10,11 +10,16 @@
  *   the tracker              a tap on a cell: the cursor to it (its row and column); on the cursor's own drum cell:
  *                            the hit on / off; a drag up / down: the steps (the finger pushes the list), sideways: the
  *                            columns
+ *   a layer map's cell        its key, held while the finger is down (FX KEYS: the effect; GLO: SOLO, MUTE ..; SEQ
+ *                            TOOLS, REC, EDIT, ARP: what the key does there)
  *   the MENU's rows          a tap picks the row; on the picked row: its next value, or OCT+ (OPEN, CLEAR, ...)
  * ui_touch(phase, x, y): phase TOUCH_DOWN / TOUCH_MOVE / TOUCH_UP, x y in layout pixels (0..239).
  * TOUCH_BTN(b, on): the HAL's: button b (B_*) held by touch or let go (a tap's release at least a frame later). */
 #ifndef TOUCH_BTN
 #define TOUCH_BTN(b, on) ((void)(b), (void)(on))
+#endif
+#ifndef TOUCH_KEY                                       /* key k (0..26) held by touch or let go: the HAL's */
+#define TOUCH_KEY(k, on) ((void)(k), (void)(on))
 #endif
 enum { TOUCH_DOWN, TOUCH_MOVE, TOUCH_UP };
 #define TOUCH_STEP 8                                    /* px of drag a knob step (a card) */
@@ -22,6 +27,7 @@ enum { TOUCH_DOWN, TOUCH_MOVE, TOUCH_UP };
 
 static struct {
     uint8_t on, moved, btn;                             /* btn: B_* + 1 held by this touch, 0 none */
+    int8_t key;                                         /* the key held by this touch, -1 none */
     tzone_t z;                                          /* what it came down on (a copy: the zones move under it) */
     int16_t x0, y0, x, y;
     int16_t ax, ay;                                     /* the drag left over (px, under a step) */
@@ -86,7 +92,10 @@ static void ui_touch(uint32_t phase, int32_t x, int32_t y)
         const tzone_t *z = tz_at(x, y);
         if (tch.btn)                                    /* (a second finger: the first one's button let go) */
             TOUCH_BTN(tch.btn - 1u, 0);
+        if (tch.on && tch.key >= 0)
+            TOUCH_KEY((uint32_t)tch.key, 0);
         memset(&tch, 0, sizeof tch);
+        tch.key = -1;
         tch.on = 1;
         tch.x0 = tch.x = (int16_t)x;
         tch.y0 = tch.y = (int16_t)y;
@@ -95,6 +104,9 @@ static void ui_touch(uint32_t phase, int32_t x, int32_t y)
         if (tch.z.kind == TZ_KEY && tch.z.a < KC_COUNT && TOUCH_KC_BTN[tch.z.a]) {
             tch.btn = (uint8_t)TOUCH_KC_BTN[tch.z.a];
             TOUCH_BTN(tch.btn - 1u, 1);
+        } else if (tch.z.kind == TZ_NOTE) {
+            tch.key = (int8_t)tch.z.a;
+            TOUCH_KEY(tch.z.a, 1);
         }
         scrn.idle = fm1_ms;                             /* (a touch wakes the screen as a knob would) */
         return;
@@ -130,6 +142,11 @@ static void ui_touch(uint32_t phase, int32_t x, int32_t y)
     }
     /* TOUCH_UP */
     tch.on = 0;
+    if (tch.key >= 0) {                                 /* (a key: let go wherever the finger went) */
+        TOUCH_KEY((uint32_t)tch.key, 0);
+        tch.key = -1;
+        return;
+    }
     if (tch.btn) {
         TOUCH_BTN(tch.btn - 1u, 0);
         tch.btn = 0;

@@ -2048,7 +2048,7 @@ const TIPS = {
   "#tail": "How long to let the sound ring out after the end.",
   ".logo": "spelunkr.tv: like cable TV, but weirder.",
   "footer a[href='guide.html']": "The guide: how everything works, in plain words.",
-  "#screen": "The groovebox's screen. The buttons on the left and the controls under it work it, and it's a touch screen: drag a card up or down to turn its knob, click a key hint (OCT+ CLEAR) to press it, click a step on the tracker to go there (again on a drum hit: on / off), drag it or use the mouse wheel to scroll, click a MENU row.",
+  "#screen": "The groovebox's screen. The buttons on the left and the controls under it work it, and it's a touch screen: drag a card up or down to turn its knob, click a key hint (OCT+ CLEAR) to press it, hold a box on a key map (FX KEYS' effects) to play it, click a step on the tracker to go there (again on a drum hit: on / off), drag it or use the mouse wheel to scroll, click a MENU row.",
 };
 function tipsInit() {
   for (const [sel, t] of Object.entries(TIPS)) if (t) document.querySelectorAll(sel).forEach((e) => { if (!e.title && !e.dataset.tip) e.title = t; });

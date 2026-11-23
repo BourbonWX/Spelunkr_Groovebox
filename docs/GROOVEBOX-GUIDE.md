@@ -25,7 +25,8 @@ saves in this browser, and a link shares it.
   wheel over a control works too).
 - **The screen is a touch screen**: click it with the mouse or touch it on a phone or tablet. Drag one of the four
   boxes along its top up or down to turn that control. Click a key hint, such as **OCT+ CLEAR** or **OCT- BACK**, to
-  press that button. On the tracker (STEPS), click a step to go to it, and click it again to turn a drum hit on or
+  press that button. On a map of the keys, such as FX KEYS' glitch effects, touch a box to play its effect for as
+  long as you hold it, just as holding its key does. On the tracker (STEPS), click a step to go to it, and click it again to turn a drum hit on or
   off; drag the tracker up or down to scroll it. In the MENU (POWER USER: hold HOME), click a row to pick it and click
   it again to change it.
 - **SOUNDS** picks another sound for the track, **TRACK** picks the track, **SCROLL** moves through lists and menus,

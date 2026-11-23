@@ -233,6 +233,8 @@ static void lcd_init(void) {}
 #include "../../firmware/src/ui_layer.c"
 static void web_touch_btn(uint32_t b, int on);
 #define TOUCH_BTN(b, on) web_touch_btn((b), (on))
+static void web_touch_key(uint32_t k, int on);
+#define TOUCH_KEY(k, on) web_touch_key((k), (on))
 #include "../../firmware/src/ui_touch.c"            /* the screen as a touch surface (web_touch) */
 
 /* ------------------------------------------------------------ the flash --- */
@@ -831,8 +833,15 @@ static void web_touch_btn(uint32_t b, int on)
             web_touch_rel_ms = web_touch_down_ms[b] + 60u;
     }
 }
+static uint32_t web_touch_keys, web_touch_krel, web_touch_krel_ms, web_touch_kdown_ms;   /* (touch: a layer's cells) */
+static void web_keys_apply(void);
 static void web_touch_tick(void)
 {
+    if (web_touch_krel && (int32_t)(fm1_ms - web_touch_krel_ms) >= 0) {
+        web_touch_keys &= ~web_touch_krel;
+        web_touch_krel = 0;
+        web_keys_apply();
+    }
     if (web_touch_rel && (int32_t)(fm1_ms - web_touch_rel_ms) >= 0) {
         web_touch_lab &= ~web_touch_rel;
         web_touch_rel = 0;
@@ -841,13 +850,30 @@ static void web_touch_tick(void)
 }
 /* the screen touched (the page's pointer on the canvas): phase 0 down, 1 move, 2 up; x y in the screen's layout pixels */
 EXPORT void web_touch(uint32_t phase, int32_t x, int32_t y) { ui_touch(phase, x, y); }
-EXPORT void web_keys(uint32_t mask)
+static void web_keys_apply(void)
 {
-    uint32_t old = fm1_in.notes;
-    mask &= (1u << 27) - 1u;
-    web_key_mask = mask;
+    uint32_t old = fm1_in.notes, mask = (web_key_mask | web_touch_keys) & ((1u << 27) - 1u);
     web_notes_pressed |= mask & ~old;
     fm1_in.notes = mask;
+}
+EXPORT void web_keys(uint32_t mask)
+{
+    web_key_mask = mask & ((1u << 27) - 1u);
+    web_keys_apply();
+}
+static void web_touch_key(uint32_t k, int on)
+{
+    if (k >= 27u)
+        return;
+    if (on) {
+        web_touch_keys |= 1u << k;
+        web_touch_krel &= ~(1u << k);
+        web_touch_kdown_ms = fm1_ms;
+        web_keys_apply();
+    } else if (web_touch_keys >> k & 1u) {
+        web_touch_krel |= 1u << k;                      /* (let go in web_touch_tick, a frame on at least) */
+        web_touch_krel_ms = web_touch_kdown_ms + 60u;
+    }
 }
 EXPORT void web_enc(uint32_t role, int32_t n)
 {
