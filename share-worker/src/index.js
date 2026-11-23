@@ -6,6 +6,8 @@
 //   POST   /s               body: the package (gzip, made by the page), up to MAX_BYTES  ->  {"code": "SPGB_..."}
 //   GET    /s/SPGB_XXXXXXX  the package as uploaded
 //   DELETE /s/SPGB_XXXXXXX  removes it (moderation): Authorization: Bearer ADMIN_TOKEN
+// A code lasts CODE_DAYS (var, 14; Ed, Nov 23 2026): after that GET says it's gone (and deletes it), and the bucket's
+// lifecycle rule (songs-expire: SPGB_, 14 days) clears what nobody opened. 0 = codes last until deleted.
 // Bindings (wrangler.toml): SONGS (R2) and / or SONGS_KV (KV), UPLOADS (rate limit, optional), ALLOWED_ORIGINS (var),
 // DAILY_SHARES (var: shares a visitor may make a UTC day, 0 = no cap; counted in R2 under caps/), ADMIN_TOKEN (secret).
 
@@ -39,13 +41,13 @@ function store(env) {
   const r2 = env.SONGS && {
     has: async (k) => !!(await env.SONGS.head(k)),
     put: (k, body, meta) => env.SONGS.put(k, body, { httpMetadata: { contentType: "application/gzip" }, customMetadata: meta }),
-    get: async (k) => (await env.SONGS.get(k))?.body ?? null,
+    get: async (k) => { const o = await env.SONGS.get(k); return o && { body: o.body, created: o.customMetadata?.created }; },
     del: (k) => env.SONGS.delete(k),
   };
   const kv = env.SONGS_KV && {
     has: async (k) => { const s = await env.SONGS_KV.get(k, "stream"); if (s) await s.cancel(); return !!s; },
     put: (k, body, meta) => env.SONGS_KV.put(k, body, { metadata: meta }),
-    get: (k) => env.SONGS_KV.get(k, "stream"),
+    get: async (k) => { const { value, metadata } = await env.SONGS_KV.getWithMetadata(k, "stream"); return value && { body: value, created: metadata?.created }; },
     del: (k) => env.SONGS_KV.delete(k),
   };
   const all = [r2, kv].filter(Boolean);
@@ -95,7 +97,7 @@ export default {
         const code = newCode();
         if (await db.has(code)) continue;                         // (35 bits: a clash is rare, but never overwrite)
         await db.put(code, body, { created: new Date().toISOString(), country: String(req.cf?.country || "") });
-        return json(h, 201, { code });
+        return json(h, 201, { code, days: Number(env.CODE_DAYS || 0) });
       }
       return json(h, 503, { error: "no free code: try again" });
     }
@@ -105,9 +107,14 @@ export default {
       const code = decodeURIComponent(m[1]).toUpperCase();
       if (!CODE_RE.test(code)) return json(h, 400, { error: "not a share code" });
       if (req.method === "GET") {
-        const body = await db.get(code);
-        if (!body) return json(h, 404, { error: "no song with that code" });
-        return new Response(body, { headers: { ...h, "Content-Type": "application/gzip", "Cache-Control": "public, max-age=3600" } });
+        const song = await db.get(code), days = Number(env.CODE_DAYS || 0);
+        if (song && days && song.created && Date.now() - Date.parse(song.created) > days * 86400000) {
+          await song.body.cancel?.();
+          await db.del(code);                                     // (past its days: gone, whatever the sweep's timing)
+          return json(h, 404, { error: "that code has expired", expired: true });
+        }
+        if (!song) return json(h, 404, { error: "no song with that code" });
+        return new Response(song.body, { headers: { ...h, "Content-Type": "application/gzip", "Cache-Control": "public, max-age=3600" } });
       }
       if (req.method === "DELETE") {
         const auth = req.headers.get("Authorization") || "";

@@ -1922,7 +1922,11 @@ function codeOf(text) {                                  // a code from a code, 
 async function fetchCode(code) {
   if (!SHARE_API) throw new Error("song codes aren't set up on this copy of the groovebox");
   const r = await fetch(`${SHARE_API}/s/${code}`);
-  if (r.status === 404) throw new Error(`no song with the code ${code} (check the letters: no 0, O, 1 or I in a code)`);
+  if (r.status === 404) {
+    const j = await r.json().catch(() => ({}));
+    throw new Error(j.expired ? `the code ${code} has expired: codes last two weeks (the person who shared it can SHARE it again)`
+      : `no song with the code ${code}: it may have expired (codes last two weeks), or check the letters (no 0, O, 1 or I in a code)`);
+  }
   if (!r.ok) throw new Error(`the song store said ${r.status}`);
   const j = JSON.parse(new TextDecoder().decode(await gz(new Uint8Array(await r.arrayBuffer()), new DecompressionStream("gzip"))));
   if (j.format !== "spgb-share" || typeof j.song !== "string") throw new Error("that code doesn't hold a groovebox song");
@@ -1977,7 +1981,7 @@ async function shareUpload(packed, samples) {
   const r = await fetch(`${SHARE_API}/s`, { method: "POST", headers: { "Content-Type": "application/gzip" }, body });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || !CODE_RE.test(j.code || "")) throw new Error(j.error || `the song store said ${r.status}`);
-  return { code: j.code, bytes: body.length };
+  return { code: j.code, bytes: body.length, days: j.days | 0 };
 }
 // ------------------------------------------------------------------ the hover help (Ed: "the mouse hover pop up also
 // provide an explanation for every clickable option"): every title on the page shows in one box, at once and styled;
@@ -2188,7 +2192,8 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "trim it, slice it, hear it (<kbd>■ STOP</kbd> stops it), and put it on a track as a synth, as chops on the keys, or as a drum kit." },
   { t: "17 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>SAVE</kbd> downloads a project file (your samples too) "
       + "and <kbd>OPEN</kbd> brings it back. <kbd>SHARE</kbd> gives a short code (SPGB_…) and a link, carrying the samples your song uses: "
-      + "whoever opens the link, or types the code into <kbd>CODE</kbd>, hears your song and can carry on from it." },
+      + "whoever opens the link, or types the code into <kbd>CODE</kbd>, hears your song and can carry on from it. "
+      + "A code lasts two weeks; each SHARE makes a new one." },
   { t: "18 · EXPORT", el: "#bounce", x: () => "<kbd>EXPORT</kbd> makes the WAV: the song once through (or the pattern looped), with a WAV for each track if you like. "
       + "<kbd>RECORD</kbd> at the top records you playing live instead. That's a whole song: have fun!" },
 ];
@@ -2289,6 +2294,7 @@ $("share").addEventListener("click", async () => {
     $("sharelead").textContent = "Or send the link: it opens the song straight away.";
     $("shareinfo").textContent = samples.length ? `It carries the song and the ${samples.length} sample${samples.length > 1 ? "s" : ""} it plays (${code.bytes < 1048576 ? Math.max(1, Math.round(code.bytes / 1024)) + " KB" : (code.bytes / 1048576).toFixed(1) + " MB"}).`
       : "It carries the song: the tracks and their sounds, patterns A–F and the song's parts.";
+    if (code.days) $("shareinfo").textContent += ` The code works for ${code.days === 14 ? "two weeks" : code.days + " days"}; SAVE keeps the song for good.`;
   } else {
     $("sharelink").value = longUrl;
     $("sharelead").textContent = "Anyone who opens this link hears your song in their own groovebox, and can carry on from it.";

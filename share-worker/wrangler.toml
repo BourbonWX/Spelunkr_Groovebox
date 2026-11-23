@@ -8,6 +8,9 @@ compatibility_date = "2025-06-01"
 ALLOWED_ORIGINS = "https://bourbonwx.github.io,http://localhost:8769"
 # shares a visitor may make in a UTC day (counted in R2; 0 = no daily cap)
 DAILY_SHARES = "50"
+# how long a code lasts, in days (0 = until deleted). Keep the bucket's lifecycle rule the same:
+#   npx wrangler r2 bucket lifecycle add spgb-songs songs-expire SPGB_ --expire-days 14
+CODE_DAYS = "14"
 
 # where the songs are kept. New songs go to the R2 bucket (10 GB free); the KV namespace stays bound so the codes made
 # before the move (Nov 23 2026) still open. A fresh setup can use either one alone:

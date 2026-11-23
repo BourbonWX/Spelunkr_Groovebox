@@ -124,7 +124,9 @@ locked pad is part of the song: it's still there next time, in a SAVE file and i
 - Everything saves in this browser as you go.
 - **SHARE** gives your song a short code, like `SPGB_7K2QX9A`, and a link. Whoever opens the link, or types the code
   into **CODE**, hears your song in their own groovebox and can carry on from it. The samples your song plays go with
-  it (only those, cut to their trim), into the same sample slots on their side.
+  it (only those, cut to their trim), into the same sample slots on their side. A code lasts **two weeks**, then it
+  expires; **SAVE** keeps a song for good. Every SHARE makes a new code: if a friend opens yours, changes the song and
+  shares it back, that's a new code, and yours still holds the song as you sent it.
 - **EXPORT** renders the song (or the pattern) to a WAV, with a WAV a track if you like.
 - **RECORD** at the top records what you hear, live, to a WAV.
 - **SAVE** downloads everything as a project file, your samples too; **OPEN** loads one.

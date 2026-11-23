@@ -41,7 +41,9 @@ repository variable**, name `SHARE_API`, value the address `wrangler deploy` pri
   ```
 
 Codes are `SPGB_` and 7 of `23456789ABCDEFGHJKLMNPQRSTUVWXYZ` (no 0 O 1 I, easy to read off a screen): 34 billion,
-random, so nobody can step through them. Songs are kept until deleted. Each is stored with the time it was shared and
+random, so nobody can step through them. Every share is a new code (a song shared again, changed or not, gets another
+one; the old code keeps the song as it was). A code lasts `CODE_DAYS` (14): after that it says it has expired and
+is deleted, and the bucket's lifecycle rule `songs-expire` (prefix `SPGB_`, 14 days) clears the ones nobody opened. Each is stored with the time it was shared and
 the sharer's country, nothing else about them.
 
 **Try it locally**: `npx wrangler dev --port 8787 --var ADMIN_TOKEN:test`, then build the groovebox with
