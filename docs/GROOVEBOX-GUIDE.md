@@ -12,6 +12,13 @@ saves in this browser, and a link shares it.
 
 ## The page
 
+**The Spelunkr Box** (the line about a future standalone device, at the very bottom of the page): the same
+groovebox laid out like the faceplate of the standalone box we're building, at its real proportions. Everything works:
+the XY glass is the FX pad, the 13-key octave plays, the 15 keys on the right do what the screen needs (their names
+follow it; tap SHIFT for the second set: scale, envelope, wobble, arp, mute, redo, tempo and tap), the yellow knob is
+the volume (drag or scroll), the stick bends the pitch side to side and adds wobble pushed up. **BACK TO THE
+GROOVEBOX** returns.
+
 **Two scenes**, switched at the top left:
 
 - **CREATE** is for writing the song: the groovebox, **VAPOR** beside it, your **SAMPLES** under it and the tracks
