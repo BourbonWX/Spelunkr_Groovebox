@@ -174,8 +174,43 @@ body.boxpanel > *:not(#boxpanel):not(dialog) { display: none !important; }
 body.boxpanel #boxpanel { display: grid; position: fixed; inset: 0; place-items: center; background: #000; }
 #boxpanel .bezel { width: min(100vw, 100vh); height: min(100vw, 100vh); padding: 0; border: 0; border-radius: 0; }
 #boxpanel #screen { width: 100%; height: 100%; }
-#boxsay { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px; background: rgba(210, 59, 44, .92); color: #fff; font: 22px/1.2 var(--head);
+body.boxpanel #screen, body.boxv #screen { cursor: default; touch-action: auto; }   /* (the box's screen is not touch) */
+/* the box's own pages over the screen (VAPOR, SAMPLES): the screen's look, sized from its width (--u = 1 %) */
+.boxpg { position: absolute; inset: 0; z-index: 3; background: #0A104E; color: #f4f4ff; font: calc(var(--u) * 3.6)/1.2 "VT323", monospace;
+  padding: calc(var(--u) * 3); display: flex; flex-direction: column; gap: calc(var(--u) * 1.4); overflow: hidden; }
+.boxpg[hidden] { display: none; }
+.boxpg h3 { margin: 0; font: calc(var(--u) * 6.5)/1 var(--head); color: var(--yellow); letter-spacing: .04em; }
+.boxpg h3 small { font: calc(var(--u) * 3.4)/1 "VT323", monospace; color: #a9b3ff; margin-left: calc(var(--u) * 2); letter-spacing: 0; }
+.boxpg p { margin: 0; }
+.bp-cards { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 2); flex: 1; }
+.bp-card { position: relative; background: #16268c; border: calc(var(--u) * .6) solid #2F49C8; border-radius: calc(var(--u) * 1.5); padding: calc(var(--u) * 2);
+  display: flex; flex-direction: column; gap: calc(var(--u) * .6); overflow: hidden; }
+.bp-card.on { border-color: var(--yellow); background: linear-gradient(#E2741F, #B5480F); }
+.bp-card b { font: calc(var(--u) * 5)/1 var(--head); color: var(--yellow); font-weight: normal; letter-spacing: .04em; }
+.bp-card.on b { color: #fff; }
+.bp-card span { font-size: calc(var(--u) * 8); line-height: 1; }
+.bp-card em { font-style: normal; color: #c9d0ff; font-size: calc(var(--u) * 3); }
+.bp-card i { position: absolute; left: 0; bottom: 0; height: calc(var(--u) * 1.4); background: var(--yellow); }
+.bp-big { font: calc(var(--u) * 5.5)/1 var(--head); color: var(--yellow); text-align: center; letter-spacing: .04em; }
+.bp-help { margin-top: auto !important; color: #a9b3ff; font-size: calc(var(--u) * 3); }
+.bp-sub { color: #dfe4ff; }
+.bp-msg { color: var(--yellow); min-height: 1.2em; }
+.bp-slots { display: flex; gap: calc(var(--u) * 1); }
+.bp-slots span { flex: 1; min-width: 0; background: #16268c; border-radius: calc(var(--u) * 1); padding: calc(var(--u) * .6) calc(var(--u) * 1); color: #a9b3ff; white-space: nowrap; overflow: hidden; }
+.bp-slots span b { display: block; color: #fff; font-weight: normal; overflow: hidden; text-overflow: ellipsis; }
+.bp-slots span.on { background: linear-gradient(#E2741F, #B5480F); color: #fff; box-shadow: 0 0 0 calc(var(--u) * .4) var(--yellow); }
+.bp-slots span.empty b { color: #5a64b8; }
+.bp-wave { width: 100%; height: calc(var(--u) * 42); border-radius: calc(var(--u) * 1); display: block; }
+.bp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: calc(var(--u) * .5); }
+.bp-list li { padding: calc(var(--u) * .5) calc(var(--u) * 1.5); border-radius: calc(var(--u) * 1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-list li small { color: #a9b3ff; margin-left: calc(var(--u) * 2); }
+.bp-list li.on { background: linear-gradient(#E2741F, #B5480F); box-shadow: 0 0 0 calc(var(--u) * .4) var(--yellow); }
+.bp-meter { height: calc(var(--u) * 6); background: #050314; border-radius: calc(var(--u) * 1); overflow: hidden; }
+.bp-meter i { display: block; height: 100%; background: linear-gradient(90deg, #2ea77a 0 70%, #f5c93a 70% 90%, #d23b2c 90%); }
+.bp-meter i.clip { box-shadow: inset 0 0 0 calc(var(--u) * .5) #fff; }
+#boxsay { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px; background: rgba(210, 59, 44, .92); color: #fff; font: 22px/1.2 var(--head);
   text-align: center; z-index: 5; }
+#boxsay.info { background: rgba(14, 30, 120, .94); color: var(--yellow); }
 @media (min-width: 1420px) {                    /* (narrower, the device's controls go under its screen) */
   main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: start;
          grid-template-areas: "dev side" "smp side" "msg msg" "guide guide"; }
@@ -760,6 +795,7 @@ const ICON = ["D", "1", "2", "3", "P"];
 let node = null, btnMask = 0, keyMask = 0, latched = 0, masterValue = 700, lastLeds = [0, 0, 0, 0, 0], power = false, G = null;
 const btnBy = new Map(), keyBy = new Map();
 let hwWs = null, hwSent = "", hwBattLow = false;   // (the box's hardware: see hwConnect)
+let boxPg = null, boxPgEl = null;                         // (the box's own page open: VAPOR / SAMPLES, below)
 let boxKeyEls = [], boxDeckEls = [], boxKnob = null;      // (the device view's octave, 15 keys and knob: filled further down)
 const send = (m) => { if (node) node.port.postMessage(m); };
 try { power = localStorage.getItem(POWER) === "1"; } catch {}
@@ -1134,7 +1170,7 @@ const canvas = $("screen"), ctx = canvas.getContext("2d");
   let acc = [0, 0];
   const step = (role, n) => { if (n) send({ type: "enc", role, n }); };
   canvas.addEventListener("wheel", (e) => {
-    if (!gridMode()) return;
+    if (!gridMode() || boxMode()) return;               // (the box's screen is not touch: its wheel is the ANO)
     e.preventDefault();
     const f = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1;
     let dx = e.deltaX * f, dy = e.deltaY * f;
@@ -1159,7 +1195,7 @@ const canvas = $("screen"), ctx = canvas.getContext("2d");
     return [Math.round((e.clientX - r.left) / r.width * 240), Math.round((e.clientY - r.top) / r.height * 240)];
   };
   canvas.addEventListener("pointerdown", (e) => {
-    if (!node || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (!node || boxMode() || (e.pointerType === "mouse" && e.button !== 0)) return;   // (the box's screen: no touch)
     tid = e.pointerId;
     try { canvas.setPointerCapture(e.pointerId); } catch {}
     const [x, y] = at(e);
@@ -1260,17 +1296,21 @@ $("undobtn").addEventListener("click", () => { send({ type: "undo" }); studioSay
 // REC tapped while stopped (Ed, Nov 22): the device waits (felucca_web.c web_rec_ask); the page asks about the metronome
 let recAsking = false;
 function recAsk(g) {
+  if (!g.recask && recAsking && boxPg === PG_RECASK) { rqDone = null; recAsking = false; boxPgClose(); return; }   // (REC let go meanwhile)
   if (!g.recask || recAsking) return;
   recAsking = true;
   const d = $("recdlg");
-  d.returnValue = "";
-  d.onclose = () => {
+  const answer = (v) => {
     recAsking = false;
-    const c = d.returnValue === "with" ? 1 : d.returnValue === "without" ? 0 : 2;
+    const c = v === "with" ? 1 : v === "without" ? 0 : 2;
     send({ type: "recgo", c });
+    if (boxMode()) boxSay(["RECORDING · NO CLICK", "ONE BAR OF CLICKS, THEN RECORDING", "RECORD CANCELLED"][c], 3000, true);
     studioSay(c === 1 ? "Counting you in: one bar of clicks, then it records. RECORD again stops recording, PLAY stops the music." :
               c === 0 ? "Recording: play the keys. RECORD again stops recording, PLAY stops the music." : "Recording cancelled.");
   };
+  if (boxMode()) { rqDone = answer; boxPgOpen(PG_RECASK); return; }   // (the box: no touch screen; its own page)
+  d.returnValue = "";
+  d.onclose = () => answer(d.returnValue);
   d.showModal();
   $("recwith").focus();
 }
@@ -1288,6 +1328,7 @@ function showGuide(g) {
   $("tpage").textContent = g.page;
   if (g.b && JSON.stringify(g.b) !== JSON.stringify(btnCtx)) { btnCtx = g.b; names(); }
   deckLights(); boxKnobDraw();
+  if (boxPg && boxPg.id === "vapor" && !document.hidden) boxPgDraw();
   $("tpat").textContent = "PATTERN " + letter(g.cur) + (g.queue >= 0 ? " → " + letter(g.queue) : "");
   {                                                       // (the pads' track: theirs while one is on, else the picked one)
     const on = g.xyk >= 0 && (padAt[0] || padAt[1]), t = "on " + ROLE[on ? g.xyk : g.sel] + (on && padsState() ? " · locked" : "");
@@ -1544,11 +1585,12 @@ async function switchOn(withSong) {
     syncButtons(); syncKeys();
     send({ type: "visible", on: !document.hidden });
     send({ type: "midisel", on: $("midiroute").value === "1" });
-    if (boxMode() === "panel") hwConnect(); else midiOn();   // (the box: its MIDI comes through the deck service)
+    if (boxMode() !== "panel") midiOn();                 // (the box: its MIDI comes through the deck service, hwConnect at load)
     if (sharedSong) sharedDone(withSong);
-    if (tourDue()) setTimeout(() => tourShow(0), 700);   // first visit: the tour (after the screen is up)
+    if (tourDue() && !boxMode()) setTimeout(() => tourShow(0), 700);   // first visit: the tour (not on the box: it's the page's)
   } catch (err) {
     node = null;
+    try { if (ac) ac.close(); } catch {}                 // (tried again on the box: no pile of contexts)
     go.disabled = false;
     go.textContent = "SWITCH ON";
     say("Could not start: " + (err && err.message || err) + (window.isSecureContext ? "" : ". The page must be served over https") + ". A current Chrome, Edge, Firefox or Safari should work.");
@@ -1565,8 +1607,19 @@ async function restart(sectors, song) {
 }
 $("go").addEventListener("click", () => switchOn(!!sharedSong));
 // the box powers up straight into the groovebox: its kiosk runs Chromium with --autoplay-policy=no-user-gesture-required,
-// so no tap is needed (if the sound can't start, SWITCH ON stays for a tap on the touch glass)
-if (boxMode() === "panel") addEventListener("load", () => setTimeout(() => { if (!node) $("go").click(); }, 300));
+// so no tap is needed. Its screen is not touch, so SWITCH ON can't be tapped: if the sound can't start it says so and tries
+// again every 3 s; the keys and the Pico are connected from the start either way.
+if (boxMode() === "panel") addEventListener("load", () => {
+  hwConnect();
+  setTimeout(() => { if (!node) $("go").click(); }, 300);
+  const check = () => {                                  // (still off after 5 s: say so; a failed start is tried again)
+    if (node) return;
+    if (!$("go").disabled) $("go").click();
+    boxSay("THE SOUND HASN'T STARTED · TRYING AGAIN", 3000);
+    setTimeout(check, 4000);
+  };
+  setTimeout(check, 5000);
+});
 $("gobare").addEventListener("click", () => switchOn(false));
 document.addEventListener("visibilitychange", () => send({ type: "visible", on: !document.hidden }));
 
@@ -1859,7 +1912,7 @@ function smpStop() {
   smpStopShow();
   smpDraw();
 }
-function smpStopShow() { const b = $("smpstop"); if (b) b.hidden = !smpPlay; }
+function smpStopShow() { const b = $("smpstop"); if (b) b.hidden = !smpPlay; if (typeof boxPg !== "undefined" && boxPg) boxPgDraw(); }   // (the box's HEAR ALL / STOP key)
 addEventListener("keydown", (e) => { if (e.key === "Escape" && smpPlay) { smpStop(); } });
 // the wave: drag an edge to trim, click to add a slice, drag a slice, double-click (or right-click) one to remove it
 function smpHit(e) {
@@ -1990,21 +2043,29 @@ async function smpLoadFile(f) {
   }
   const bad = SPK.cleanPcm(pcm);
   if (bad > 0.01 || !pcm.length) { $("smpinfo").textContent = `${f.name} didn't come out as sound (the browser misread it): save it as a 16 or 24-bit WAV and try again.`; return; }
+  smpTake(pcm, f.name.replace(/\.[^.]*$/, ""), cut || seconds > SPK.MAX_SECONDS + 0.05);
+}
+// mono PCM at RATE into the selected slot (a file, or the box's LINE IN): as loud as the rest, trimmed, sliced at the hits
+function smpTake(pcm, base, cut) {
   const n = pcm.length;
   let pk = 0;
   for (const v of pcm) pk = Math.max(pk, Math.abs(v));
   if (pk > 0) for (let i = 0; i < n; i++) pcm[i] *= 0.9 / pk;   // (every sample as loud: its peak at -1 dB)
-  const trim = SPK.autoTrim(pcm), base = f.name.replace(/\.[^.]*$/, "");
+  const trim = SPK.autoTrim(pcm);
   const s = { name: base.toUpperCase().replace(/[^A-Z0-9 _-]/g, "").trim().slice(0, 8) || `USER ${smpSel + 1}`,
               root: SPK.rootFromName(base), pcm, trim, starts: [] };
   s.starts = SPK.sliceTransients(pcm.subarray(trim[0], trim[1]), 16).filter((x) => x > 0).map((x) => x + trim[0]);
   smp[smpSel] = s;
   smpPeaks = null;
   smpChanged(smpSel, true);
-  $("smpinfo").textContent = (cut || seconds > SPK.MAX_SECONDS + 0.05 ? `Kept the first ${SPK.MAX_SECONDS} seconds. ` : "") +
+  $("smpinfo").textContent = (cut ? `Kept the first ${SPK.MAX_SECONDS} seconds. ` : "") +
     `${s.name}: ${smpStarts(s).length} slices found at the hits. Now put it on a track.`;
 }
-$("smpfile").addEventListener("change", (e) => { const f = e.target.files[0]; e.target.value = ""; smpLoadFile(f); });
+$("smpfile").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; e.target.value = "";
+  await smpLoadFile(f);
+  if (boxPg === PG_SAMPLES) { bsMsg = $("smpinfo").textContent; bsMode = "edit"; bsView = null; bsCur = bsS() ? bsS().trim[0] : 0; boxPgDraw(); }
+});
 for (const t of ["dragenter", "dragover"]) $("smped").addEventListener(t, (e) => { e.preventDefault(); $("smped").classList.add("drag"); });
 for (const t of ["dragleave", "drop"]) $("smped").addEventListener(t, () => $("smped").classList.remove("drag"));
 $("smped").addEventListener("drop", (e) => { e.preventDefault(); smpLoadFile(e.dataTransfer.files[0]); });
@@ -2117,7 +2178,11 @@ boxPart("silk big", 84.5, 155.5, 96, 6, "SPELUNKR GROOVEBOX");
     el.type = "button";
     el.setAttribute("aria-label", NOTE[k % 12] + (k === 12 ? " (the octave up)" : ""));
     el.title = `${NOTE[k % 12]}: play this note (on a drum track, a drum). The octave buttons are on the 15 keys.`;
-    el.addEventListener("pointerdown", (e) => { e.preventDefault(); el.releasePointerCapture?.(e.pointerId); keyBy.set("p" + e.pointerId, k); syncKeys(); });
+    el.addEventListener("pointerdown", (e) => {
+      e.preventDefault(); el.releasePointerCapture?.(e.pointerId);
+      if (boxPg && boxPg.note) { boxPg.note(k, true); return; }            // (SAMPLES: the keys hear the slices)
+      keyBy.set("p" + e.pointerId, k); syncKeys();
+    });
     el.addEventListener("pointerenter", (e) => { if (e.buttons && keyBy.has("p" + e.pointerId)) { keyBy.set("p" + e.pointerId, k); syncKeys(); } });
     el.addEventListener("contextmenu", (e) => e.preventDefault());
     boxKeyEls.push(el);
@@ -2135,6 +2200,7 @@ const cardName = (k) => (power ? k.label : KNOB_PLAIN[k.label] || k.label);
 function boxTurn(n) {
   if (!n) return;
   if (anoPushed || boxShift) { turn(wheelEls[3], n); if (anoPushed) anoPushTurned = true; else boxShiftUsed = true; }
+  else if (boxPg) { boxPg.turn(n); boxFreeA += n * 15; }    // (the box's own page: VAPOR / SAMPLES)
   else {
     const c = boxCardNow();
     if (c >= 0) { boxCard = c; turn(knobEls[c], n); } else turn(wheelEls[2], n);
@@ -2143,6 +2209,7 @@ function boxTurn(n) {
   boxKnobDraw();
 }
 function boxClick() {                                      // the centre pushed and let go without turning
+  if (boxPg) { boxPg.click(); return; }
   if (gridMode()) tapButton(B.EDIT);                       // (the tracker: the step's own job)
   else {
     const c = boxCards();
@@ -2161,7 +2228,10 @@ const anoRep = {};
 function anoDir(dir, down) {                               // held: again after 380 ms, then every 90
   clearTimeout(anoRep[dir]);
   if (!down) return;
-  const step = () => { const [r, n] = (gridMode() ? GRID_ARROWS : ARROWS)[ANO_KEY[dir]]; send({ type: "enc", role: r, n }); };
+  const step = () => {
+    if (boxPg) { boxPg.dir(dir); return; }
+    const [r, n] = (gridMode() ? GRID_ARROWS : ARROWS)[ANO_KEY[dir]]; send({ type: "enc", role: r, n });
+  };
   step();
   const again = () => { step(); anoRep[dir] = setTimeout(again, 90); };
   anoRep[dir] = setTimeout(again, 380);
@@ -2211,6 +2281,7 @@ function boxKnobDraw() {                                    // the wheel's ring 
   const cs = boxCards(), c = boxCardNow(), k = c >= 0 ? G.knobs[c] : null;
   let a, name, val, g = -1;
   if (anoPushed || boxShift) { a = -135 + 270 * masterValue / 1023; name = "VOLUME"; val = Math.round(masterValue / 10.23) + "%"; g = Math.round(masterValue / 10.23); }
+  else if (boxPg) { a = boxFreeA; [name, val, g] = boxPg.read(); name = ascii(name); val = ascii(val); }
   else if (k) {
     a = k.frac < 0 ? boxFreeA : -135 + 270 * Math.max(0, Math.min(1000, k.frac)) / 1000;
     name = ascii(cardName(k)); val = ascii(k.val || "");
@@ -2267,9 +2338,11 @@ const UNDO = { fn: () => $("undobtn").click(), icon: "↶", lab: "UNDO", col: "u
 const OCTROW = [{ bit: "OCT-", col: "util" }, { wheel: 1, n: 1, icon: "⇅", lab: "NEXT TRACK", col: "util" }, { bit: "OCT+", col: "util" }];
 const DECK_FACE = [{ bit: "EDIT", col: "face" }, { bit: "SEQ", col: "face" }, { bit: "GLO", col: "face" },
   { bit: "FX", col: "fx" }, { bit: "SAVE", col: "util" }, UNDO, ...OCTROW];
-const DECK_SHIFT = [{ bit: "SCL", col: "face" }, { bit: "ENV", col: "face" }, { bit: "LFO", col: "face" },
-  { bit: "ARP", col: "face" }, { fn: () => G && send({ type: "mute", k: G.sel }), icon: "M", lab: "MUTE", col: "rec", lit: () => !!(G && G.tracks[G.sel].mute) },
-  { fn: () => $("undobtn").click(), icon: "↷", lab: "REDO", col: "util" },
+// (Ed, Nov 24: VAPOR and SAMPLES on the box: they lead the SHIFT set; ARP and REDO gave way: UNDO again is the redo)
+const DECK_SHIFT = [{ fn: () => boxPgOpen(PG_VAPOR), icon: "☁", lab: "VAPOR", col: "pat", lit: () => !!(typeof vapEls !== "undefined" && vapEls.some((e) => e.v)) },
+  { fn: () => boxPgOpen(PG_SAMPLES), icon: "✂", lab: "SAMPLES", col: "tempo" },
+  { fn: () => G && send({ type: "mute", k: G.sel }), icon: "M", lab: "MUTE", col: "rec", lit: () => !!(G && G.tracks[G.sel].mute) },
+  { bit: "SCL", col: "face" }, { bit: "ENV", col: "face" }, { bit: "LFO", col: "face" },
   { fn: () => setBpm(sbBpm - 1), icon: "−", lab: "TEMPO", col: "tempo" },
   { fn: () => $("taptempo").dispatchEvent(new PointerEvent("pointerdown")), icon: "♩", lab: "TAP", col: "tempo" },
   { fn: () => setBpm(sbBpm + 1), icon: "+", lab: "TEMPO", col: "tempo" }];
@@ -2287,13 +2360,14 @@ const DECK_MIXER = [trackKey(0), trackKey(1), trackKey(2), trackKey(3), trackKey
   { fn: () => G && send({ type: "solo", k: G.sel }), icon: "S", lab: "SOLO", col: "tempo", lit: () => !!(G && G.tracks[G.sel].solo) }, ...OCTROW];
 const pat = (p) => ({ fn: () => send({ type: "cue", p }), icon: "ABCDEF"[p], lab: "PATTERN", col: "pat", lit: () => !!(G && G.cur === p), pat: p });
 const DECK_PATS = [pat(0), pat(1), pat(2), pat(3), pat(4), pat(5),
-  DECK_SHIFT[4], { fn: () => G && send({ type: "solo", k: G.sel }), icon: "S", lab: "SOLO", col: "tempo", lit: () => !!(G && G.tracks[G.sel].solo) }, { bit: "GLO", col: "face" }];
+  DECK_SHIFT[2], { fn: () => G && send({ type: "solo", k: G.sel }), icon: "S", lab: "SOLO", col: "tempo", lit: () => !!(G && G.tracks[G.sel].solo) }, { bit: "GLO", col: "face" }];
 const drum = (note, icon, lab) => ({ note, icon, lab, col: "drum" });   // GM notes, as the KIT and DRUM play them
 const DECK_DRUMS = [drum(49, "✺", "CRASH"), drum(50, "◔", "HIGH TOM"), drum(45, "◕", "LOW TOM"),   // (the kick bottom left, as on pads)
   drum(37, "╱", "RIM"), drum(39, "✱", "CLAP"), drum(46, "◎", "OPEN HAT"),
   drum(36, "●", "KICK"), drum(38, "◉", "SNARE"), drum(42, "✕", "HAT")];
 const card = (c) => ({ card: c, col: "card" });
 function deckCtx() {
+  if (boxPg) return [boxPg.id, boxPg.keys()];
   if (!G || !btnCtx) return ["face", DECK_FACE];
   const fx = btnCtx[B.FX], page = G.page || "";
   if (fx && /OFF/.test(fx[0])) return ["fx", DECK_FXK];
@@ -2308,7 +2382,7 @@ function deckCtx() {
   return ["face", DECK_FACE];
 }
 let boxShift = false, boxShiftPtr = null, boxShiftUsed = false, deckMap = DECK_FACE, deckMapName = "face";
-const deckKey = (i) => (i < 6 ? DECK_TOP[i][boxShift ? 1 : 0] : (boxShift ? DECK_SHIFT : deckMap)[i - 6]);
+const deckKey = (i) => (i < 6 ? DECK_TOP[i][boxShift ? 1 : 0] : (boxShift ? (boxPg && boxPg.shift ? boxPg.shift() : DECK_SHIFT) : deckMap)[i - 6]);
 function deckLabel(a) {
   if (a.bit) {
     const f = FACE.find(([d]) => d === a.bit), ctx = btnCtx && btnCtx[B[a.bit]];
@@ -2346,7 +2420,7 @@ function deckDraw() {
 function deckLights() {                                  // (the guide ~8 a second, the buttons: the lights, or all when the map moved)
   if (!boxDeckEls.length) return;
   const nm = deckCtx()[0];
-  if (nm !== deckMapName || nm === "cards" || nm === "mixer") deckDraw(); else deckPaint();
+  if (nm !== deckMapName || nm === "cards" || nm === "mixer" || boxPg) deckDraw(); else deckPaint();
 }
 function deckPaint() {
   boxDeckEls.forEach((el, i) => {
@@ -2371,6 +2445,11 @@ function deckDown(i, id) {
     if (boxShift && boxShiftPtr === null) { boxShift = false; }
     else { boxShift = true; boxShiftPtr = id; boxShiftUsed = false; }
     deckDraw(); boxKnobDraw();
+    return;
+  }
+  if (boxPg && i < 6 && (a.bit === "HOME" || a.wheel === 2)) {     // a page open: HOME closes it, ◀ ▶ are its own
+    if (a.bit === "HOME") boxPgClose(); else boxPg.dir(a.n < 0 ? "left" : "right");
+    el.classList.add("down"); deckHeld.set(id, { i, timer: null, note: null });
     return;
   }
   const h = { i, timer: null, note: null };
@@ -2430,6 +2509,384 @@ function deckUp(i, id) {
   }
   deckDraw();
 }
+// ------------------------------------------------------------------ the box's own pages (Ed, Nov 24: VAPOR and the
+// sample slicer "are on the Web App but not on the Test Build or the Physical Build"; the Physical Build = this page as the box runs
+// it, natively on a laptop for now, the Test Build = the virtual faceplate standing in for the box's parts): screens the page draws over the
+// groovebox's own, in the box's views only (?box=panel, ?box=1), driven like the rest of the box: the ANO wheel (turn,
+// push, up / down / left / right), the 15 keys (their own 3 x 3 while a page is open, HOME closes it), the readout.
+// Opened from the keys' SHIFT set: SHIFT + VAPOR, SHIFT + SAMPLES. VAPOR: the four amounts and VAPORIZE / CLEAN.
+// SAMPLES: the 8 slots, the wave (a cursor, slices added and removed at it, zoom), the octave hears the slices, AUTO,
+// TRIM, ROOT, AS A SYNTH / CHOPS / KIT; sounds from a USB stick (the helper lists and serves the audio files on the
+// box's drives, or the laptop's music folders: http://127.0.0.1:8081/files) or recorded from LINE IN (the
+// HiFiBerry's input on the box, its level through the helper's /gain; this computer's input on a laptop).
+const HELPER = "http://127.0.0.1:8081";
+const helperHere = () => boxMode() === "panel";          // (the Web App's Box View never calls this computer's ports)
+const BP_COL = { vap: "#7a2fb5", smp: "#0f7f86", trim: "#E2741F", use: "#1f6fb5", back: "#3b2a8f" };
+function boxPgOpen(pg) {
+  if (!boxMode()) return;
+  if (boxPg && boxPg.leave) boxPg.leave();
+  boxPg = pg;
+  if (!boxPgEl) {
+    boxPgEl = document.createElement("div");
+    boxPgEl.className = "boxpg";
+    $("screen").parentNode.append(boxPgEl);
+  }
+  boxPgEl.hidden = false;
+  boxPgEl.dataset.pg = pg.id;
+  boxPgFit();
+  pg.enter && pg.enter();
+  boxPgDraw();
+}
+function boxPgClose() {
+  if (!boxPg) return;
+  if (boxPg.leave) boxPg.leave();
+  boxPg = null;
+  if (boxPgEl) boxPgEl.hidden = true;
+  deckDraw(); boxKnobDraw();
+}
+function boxPgFit() { if (boxPgEl) boxPgEl.style.setProperty("--u", ($("screen").clientWidth || 480) / 100 + "px"); }
+addEventListener("resize", boxPgFit);
+let boxPgDrawF = 0;
+function boxPgDraw() {                                     // (once a frame at most)
+  if (!boxPg || boxPgDrawF) return;
+  boxPgDrawF = requestAnimationFrame(() => { boxPgDrawF = 0; if (boxPg) { boxPg.draw(boxPgEl); deckDraw(); boxKnobDraw(); } });
+}
+const pgKey = (icon, lab, col, fn, lit) => ({ fn, icon, lab, col, lit });
+const BACK = pgKey("↩", "BACK", "back", () => boxPgClose());
+
+// ---- VAPOR: SLOWED WOW VINYL CRUSH as four cards (2 x 2); the wheel turns the picked one, its centre VAPORIZE / CLEAN
+let vapPick = 0;
+const vapOn = () => vapEls.some((e) => e.v);
+const PG_VAPOR = {
+  id: "vapor",
+  turn(n) { vapSet(vapPick, vapEls[vapPick].v + n * 4); boxPgDraw(); },
+  click() { $("vapgo").click(); boxPgDraw(); },
+  dir(d) { vapPick = d === "left" ? (vapPick + 3) % 4 : d === "right" ? (vapPick + 1) % 4 : (vapPick + 2) % 4; boxPgDraw(); },
+  read() { const e = vapEls[vapPick]; return [e.d.lab, e.d.show(e.v), Math.round(e.v / 1.27)]; },
+  keys() {
+    const pick = (k) => pgKey(String(Math.round(vapEls[k].v / 1.27)), VAPOR[k].lab, "vap", () => { vapPick = k; boxPgDraw(); }, () => vapPick === k);
+    return [pick(0), pick(1), pick(2), pick(3), pgKey("☁", vapOn() ? "CLEAN" : "VAPORIZE", "fx", () => this.click(), vapOn), BACK,
+      pgKey("−", "LESS", "util", () => this.turn(-4)), pgKey("0", "OFF", "util", () => { vapSet(vapPick, 0); boxPgDraw(); }), pgKey("+", "MORE", "util", () => this.turn(4))];
+  },
+  draw(el) {
+    el.innerHTML = `<h3>VAPOR <small>the whole mix, live</small></h3><div class="bp-cards"></div>
+      <p class="bp-big"></p><p class="bp-help">TURN: the amount · ◀ ▶ ▲ ▼: pick one · PUSH: ${vapOn() ? "CLEAN" : "VAPORIZE"} · HOME: back</p>`;
+    const cards = el.querySelector(".bp-cards");
+    vapEls.forEach((e, k) => {
+      const c = document.createElement("div");
+      c.className = "bp-card" + (k === vapPick ? " on" : "");
+      c.innerHTML = `<b></b><span></span><i style="width:${Math.round(e.v / 1.27)}%"></i><em></em>`;
+      c.querySelector("b").textContent = e.d.lab; c.querySelector("span").textContent = e.d.show(e.v); c.querySelector("em").textContent = e.d.tip;
+      cards.append(c);
+    });
+    el.querySelector(".bp-big").textContent = vapOn() ? "VAPOR IS ON" : "CLEAN (VAPOR OFF)";
+  },
+};
+
+// ---- RECORD's question (the metronome), on the box: the page's dialog wants a click, the box has no touch screen.
+// The wheel or ◀ ▶ picks, PUSH or the answer's own key answers, HOME / CANCEL disarms.
+let rqPick = 0, rqDone = null;
+const RQ = [["WITH CLICK", "♩", "with"], ["NO CLICK", "●", "without"], ["CANCEL", "✕", "cancel"]];
+const PG_RECASK = {
+  id: "recask",
+  enter() { rqPick = 0; },
+  answer(v) { const f = rqDone; rqDone = null; boxPgClose(); if (f) f(v); },
+  leave() { const f = rqDone; rqDone = null; if (f) f("cancel"); },     // (HOME, or another page: cancelled)
+  turn(n) { rqPick = Math.max(0, Math.min(2, rqPick + Math.sign(n))); boxPgDraw(); },
+  click() { this.answer(RQ[rqPick][2]); },
+  dir(d) { if (d === "left" || d === "up") this.turn(-1); else this.turn(1); },
+  read() { return ["RECORD?", RQ[rqPick][0], -1]; },
+  keys() {
+    const k = (i, col) => pgKey(RQ[i][1], RQ[i][0], col, () => this.answer(RQ[i][2]), () => rqPick === i);
+    const no = pgKey("", "", "util", () => {});
+    return [k(0, "rec"), k(1, "rec"), k(2, "util"), no, no, no, no, no, no];
+  },
+  draw(el) {
+    el.innerHTML = `<h3>RECORD <small>with a metronome?</small></h3>
+      <p class="bp-sub">With the click, a bar counts you in, then it keeps time while you record. (Arm RECORD while the
+      music plays and there's no question.)</p><div class="bp-cards"></div>
+      <p class="bp-help">TURN or ◀ ▶: pick · PUSH: answer · HOME: cancel</p>`;
+    const cards = el.querySelector(".bp-cards");
+    cards.style.gridTemplateColumns = "1fr 1fr 1fr"; cards.style.flex = "0 0 auto";
+    RQ.forEach(([lab, icon], i) => {
+      const c = document.createElement("div");
+      c.className = "bp-card" + (i === rqPick ? " on" : "");
+      c.innerHTML = "<span></span><b></b>";
+      c.querySelector("span").textContent = icon; c.querySelector("b").textContent = lab;
+      cards.append(c);
+    });
+  },
+};
+
+// ---- SAMPLES
+let bsMode = "edit", bsCur = 0, bsView = null, bsAuto = 0, bsClearAt = 0, bsMsg = "";
+const AUTOS = [["HITS", null], ["4", 4], ["8", 8], ["16", 16], ["NONE", 0]];
+const bsS = () => smp[smpSel];
+function bsFixView() {                                     // the window on the wave: always holds the cursor
+  const s = bsS();
+  if (!s) { bsView = null; return; }
+  const n = s.pcm.length;
+  if (!bsView || bsView.n !== n) bsView = { a: 0, b: n, n };
+  bsCur = Math.max(0, Math.min(n, bsCur));
+  const w = bsView.b - bsView.a;
+  if (bsCur < bsView.a) { bsView.a = bsCur; bsView.b = bsCur + w; }
+  if (bsCur > bsView.b) { bsView.b = bsCur; bsView.a = bsCur - w; }
+  if (bsView.a < 0) { bsView.b -= bsView.a; bsView.a = 0; }
+  if (bsView.b > n) { bsView.a -= bsView.b - n; bsView.b = n; }
+  bsView.a = Math.max(0, bsView.a);
+}
+function bsZoom(f) {
+  const s = bsS(); if (!s) return;
+  bsFixView();
+  const n = s.pcm.length, w = Math.max(512, Math.min(n, Math.round((bsView.b - bsView.a) * f)));
+  bsView.a = Math.round(bsCur - w * (bsCur - bsView.a) / Math.max(1, bsView.b - bsView.a)); bsView.b = bsView.a + w;
+  bsFixView();
+}
+function bsSlot(d) { smpStop(); smpSel = (smpSel + d + SPK.NSLOT) % SPK.NSLOT; smpPeaks = null; bsView = null; bsCur = bsS() ? bsS().trim[0] : 0; smpShow(); }
+function bsSlices() { const s = bsS(); if (!s) return []; const st = smpStarts(s); return st.map((a, i) => [a, i + 1 < st.length ? st[i + 1] : s.trim[1]]); }
+function bsHearSlice(i) { const sl = bsSlices()[i]; if (sl) { smpHear(sl[0], sl[1]); bsMsg = `slice ${i + 1}`; } }
+function bsNear() {                                        // the slice marker at the cursor (a 60th of the view either side)
+  const s = bsS(); if (!s) return -1;
+  const tol = Math.max(64, (bsView.b - bsView.a) / 60);
+  return s.starts.findIndex((m) => Math.abs(m - bsCur) <= tol);
+}
+function bsAutoNext() {
+  const s = bsS(); if (!s) return;
+  bsAuto = (bsAuto + 1) % AUTOS.length;
+  const [lab, nEq] = AUTOS[bsAuto], [a, e] = s.trim;
+  s.starts = nEq === null ? SPK.sliceTransients(s.pcm.subarray(a, e), 16).filter((x) => x > 0).map((x) => x + a)
+    : nEq ? SPK.sliceEqual(e - a, nEq).filter((x) => x > 0).map((x) => x + a) : [];
+  bsMsg = `slices: ${lab === "HITS" ? "at the hits" : lab === "NONE" ? "none" : lab + " equal"} (${smpStarts(s).length})`;
+  smpChanged(smpSel);
+}
+function bsTrim(end) {
+  const s = bsS(); if (!s) return;
+  const min = Math.round(0.03 * SPK.RATE);
+  if (end) s.trim[1] = Math.min(s.pcm.length, Math.max(bsCur, s.trim[0] + min)); else s.trim[0] = Math.max(0, Math.min(bsCur, s.trim[1] - min));
+  bsMsg = (end ? "ends" : "starts") + " at the cursor";
+  smpChanged(smpSel);
+}
+function bsUse(mode) {
+  const b = document.querySelector(`[data-use="${mode}"]`);
+  if (b && bsS()) b.click();
+}
+const secs2 = (n) => (n / SPK.RATE).toFixed(2) + " s";
+// the files on the USB stick (the helper)
+let bsFiles = [], bsFilePick = 0, bsFilesWhy = "";
+async function bsListFiles() {
+  bsFiles = []; bsFilePick = 0; bsFilesWhy = "looking…"; boxPgDraw();
+  try {
+    const r = await fetch(HELPER + "/files", { cache: "no-store" });
+    const j = await r.json();
+    bsFiles = j.files || [];
+    bsFilesWhy = bsFiles.length ? "" : (j.roots && j.roots.length ? "No sound files on " + j.roots.join(", ") + ": plug in a USB stick with WAV, MP3, OGG or FLAC files." : "No USB stick plugged in.");
+  } catch {
+    bsFilesWhy = "The box's file helper isn't running here (on the website, load files in the SAMPLES panel).";
+  }
+  boxPgDraw();
+}
+async function bsLoadPicked() {
+  const f = bsFiles[bsFilePick]; if (!f) return;
+  bsMsg = "loading " + f.name + "…"; boxPgDraw();
+  try {
+    const r = await fetch(HELPER + "/file?path=" + encodeURIComponent(f.path));
+    if (!r.ok) throw new Error(await r.text());
+    const blob = await r.blob();
+    await smpLoadFile(new File([blob], f.name, { type: blob.type }));
+    bsMsg = $("smpinfo").textContent;
+  } catch (e) { bsMsg = "couldn't read " + f.name + ": " + (e.message || e); }
+  bsMode = "edit"; bsView = null; bsCur = bsS() ? bsS().trim[0] : 0;
+  boxPgDraw();
+}
+// LINE IN: the input's level shown live; recorded up to 30 s; then into the slot as a file would be
+let lineIn = null, linLevel = 96, linHw = null;
+async function linArm() {
+  if (lineIn) return;
+  const L = lineIn = { ac: null, stream: null, gain: null, chunks: [], on: false, t0: 0, peak: 0, n: 0, why: "" };   // (this arming's)
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } });
+    if (lineIn !== L) { stream.getTracks().forEach((t) => t.stop()); return; }   // (BACK while it was asking)
+    L.stream = stream;
+    L.ac = new AudioContext();
+    const src = L.ac.createMediaStreamSource(L.stream);
+    L.gain = L.ac.createGain();
+    const sp = L.ac.createScriptProcessor(4096, 1, 1);
+    src.connect(L.gain); L.gain.connect(sp); sp.connect(L.ac.destination);   // (sp's output is silence)
+    sp.onaudioprocess = (e) => {
+      const d = e.inputBuffer.getChannelData(0);
+      let pk = 0; for (let i = 0; i < d.length; i++) { const v = Math.abs(d[i]); if (v > pk) pk = v; }
+      L.peak = Math.max(pk, L.peak * 0.85);
+      if (L.on) {
+        L.chunks.push(d.slice()); L.n += d.length;
+        if (L.n >= L.ac.sampleRate * SPK.MAX_SECONDS) linStop();
+      }
+      e.outputBuffer.getChannelData(0).fill(0);
+      boxPgDraw();
+    };
+    linSetLevel(linLevel);
+  } catch (e) { L.why = "No input to record from: " + (e.message || e.name || e); boxPgDraw(); }
+}
+function linSetLevel(v) {
+  linLevel = Math.max(0, Math.min(127, v));
+  // the box: the HiFiBerry's own input gain (cleanest); else this computer's input, boosted or cut in the page
+  // (the helper answers 204 when there's no input gain to set: a laptop)
+  if (linHw !== false && helperHere()) fetch(HELPER + "/gain?level=" + linLevel).then((r) => { linHw = r.status === 200; if (!linHw && lineIn && lineIn.gain) lineIn.gain.gain.value = linLevel / 64; })
+    .catch(() => { linHw = false; if (lineIn && lineIn.gain) lineIn.gain.gain.value = linLevel / 64; });
+  else if (lineIn && lineIn.gain) lineIn.gain.gain.value = linLevel / 64;
+  if (linHw && lineIn && lineIn.gain) lineIn.gain.gain.value = 1;
+}
+function linStart() { if (!lineIn || !lineIn.ac || lineIn.on) return; lineIn.chunks = []; lineIn.n = 0; lineIn.on = true; lineIn.t0 = performance.now(); boxPgDraw(); }
+async function linStop() {
+  if (!lineIn || !lineIn.on) return;
+  lineIn.on = false;
+  const all = new Float32Array(lineIn.n); let o = 0;
+  for (const c of lineIn.chunks) { all.set(c.subarray(0, Math.min(c.length, lineIn.n - o)), o); o += c.length; if (o >= lineIn.n) break; }
+  const rate = lineIn.ac.sampleRate;
+  bsMsg = "taking the recording…"; boxPgDraw();
+  const pcm = (await SPK.resample(all, rate)).subarray(0, SPK.RATE * SPK.MAX_SECONDS);
+  let pk = 0; for (const v of pcm) pk = Math.max(pk, Math.abs(v));
+  if (pk < 0.003) { bsMsg = "That was silent: check the cable and the level, and record again."; boxPgDraw(); return; }
+  smpTake(pcm, "LINEIN" + (smpSel + 1), false);
+  bsMsg = $("smpinfo").textContent;
+  linDisarm(); bsMode = "edit"; bsView = null; bsCur = bsS() ? bsS().trim[0] : 0;
+  boxPgDraw();
+}
+function linDisarm() {
+  if (!lineIn) return;
+  try { lineIn.stream && lineIn.stream.getTracks().forEach((t) => t.stop()); } catch {}
+  try { lineIn.ac && lineIn.ac.close(); } catch {}
+  lineIn = null;
+}
+const PG_SAMPLES = {
+  id: "samples",
+  enter() { bsMode = "edit"; bsView = null; bsCur = bsS() ? bsS().trim[0] : 0; bsMsg = ""; },
+  leave() { linDisarm(); smpStop(); },
+  turn(n) {
+    if (bsMode === "files") { bsFilePick = Math.max(0, Math.min(bsFiles.length - 1, bsFilePick + n)); }
+    else if (bsMode === "rec") linSetLevel(linLevel + n * 3);
+    else if (bsS()) { bsFixView(); bsCur += Math.round(n * Math.max(16, (bsView.b - bsView.a) / 120)); bsFixView(); }
+    boxPgDraw();
+  },
+  click() {
+    if (bsMode === "files") return bsLoadPicked();
+    if (bsMode === "rec") { if (lineIn && lineIn.on) linStop(); else linStart(); return; }
+    const s = bsS(); if (!s) { bsMsg = "Empty slot: LOAD a file or REC IN first."; boxPgDraw(); return; }
+    bsFixView();
+    const i = bsNear();
+    if (i >= 0) { s.starts.splice(i, 1); bsMsg = "slice removed"; }
+    else if (bsCur <= s.trim[0] + 64 || bsCur >= s.trim[1] - 64) bsMsg = "move inside the trimmed part first";
+    else if (smpStarts(s).length >= SPK.NSLICE) bsMsg = `${SPK.NSLICE} slices at most`;
+    else { s.starts.push(bsCur); s.starts.sort((a, b) => a - b); bsMsg = "slice added at the cursor"; }
+    smpChanged(smpSel); boxPgDraw();
+  },
+  dir(d) {
+    if (bsMode === "files") { if (d === "up" || d === "down") this.turn(d === "up" ? -1 : 1); else if (d === "left") { bsMode = "edit"; boxPgDraw(); } else bsLoadPicked(); return; }
+    if (bsMode === "rec") { if (d === "left") { linDisarm(); bsMode = "edit"; boxPgDraw(); } else this.turn(d === "up" || d === "right" ? 1 : -1); return; }
+    const s = bsS(); if (!s) return;
+    if (d === "up") bsZoom(0.5); else if (d === "down") bsZoom(2);
+    else {                                                 // to the next / previous slice, and hear it
+      const sl = bsSlices(), at = sl.findIndex(([a, b]) => bsCur >= a && bsCur < b);
+      const i = d === "right" ? Math.min(sl.length - 1, at + 1) : Math.max(0, at < 0 ? sl.length - 1 : (bsCur > sl[at][0] ? at : at - 1));
+      if (sl[i]) { bsCur = sl[i][0]; bsFixView(); bsHearSlice(i); }
+    }
+    boxPgDraw();
+  },
+  note(k, down) { if (down && bsMode === "edit") { bsHearSlice(k); boxPgDraw(); } },
+  read() {
+    if (bsMode === "files") { const f = bsFiles[bsFilePick]; return [f ? `FILE ${bsFilePick + 1}/${bsFiles.length}` : "USB", f ? f.name : "no files", -1]; }
+    if (bsMode === "rec") return ["INPUT LEVEL", Math.round(linLevel / 1.27) + "%" + (lineIn && lineIn.on ? " REC" : ""), Math.round(linLevel / 1.27)];
+    const s = bsS(); if (!s) return [`SLOT ${smpSel + 1}`, "EMPTY", -1];
+    return [`SLOT ${smpSel + 1} ${s.name}`, secs2(bsCur), Math.round(100 * bsCur / s.pcm.length)];
+  },
+  keys() {
+    if (bsMode === "files") return [pgKey("▲", "UP", "nav", () => this.turn(-1)), pgKey("✓", "LOAD", "smp", () => bsLoadPicked()), pgKey("▼", "DOWN", "nav", () => this.turn(1)),
+      pgKey("⇞", "PAGE UP", "nav", () => this.turn(-8)), pgKey("↩", "BACK", "back", () => { bsMode = "edit"; boxPgDraw(); }), pgKey("⇟", "PAGE DOWN", "nav", () => this.turn(8)),
+      pgKey("↻", "LOOK AGAIN", "util", () => bsListFiles()), pgKey("", "", "back", () => {}), pgKey("", "", "back", () => {})];
+    if (bsMode === "rec") return [pgKey("−", "LEVEL", "util", () => this.turn(-3)), pgKey(lineIn && lineIn.on ? "■" : "●", lineIn && lineIn.on ? "STOP" : "RECORD", "rec", () => this.click(), () => !!(lineIn && lineIn.on)),
+      pgKey("+", "LEVEL", "util", () => this.turn(3)),
+      pgKey("", "", "back", () => {}), pgKey("↩", "BACK", "back", () => { linDisarm(); bsMode = "edit"; boxPgDraw(); }), pgKey("", "", "back", () => {}),
+      pgKey("", "", "back", () => {}), pgKey("", "", "back", () => {}), pgKey("", "", "back", () => {})];
+    const [autoLab] = AUTOS[(bsAuto + 1) % AUTOS.length];
+    return [pgKey("◀", "SLOT", "smp", () => { bsSlot(-1); boxPgDraw(); }), helperHere() ? pgKey("⇩", "LOAD USB", "smp", () => { bsMode = "files"; bsListFiles(); })
+      : pgKey("⇩", "LOAD FILE", "smp", () => $("smpfile").click()),     // (the Web App's Box View: this computer's files)
+      pgKey("▶", "SLOT", "smp", () => { bsSlot(1); boxPgDraw(); }),
+      pgKey("●", "REC IN", "rec", () => { bsMode = "rec"; bsMsg = ""; linArm(); boxPgDraw(); }), pgKey("✂", "AUTO " + autoLab, "trim", () => { bsAutoNext(); boxPgDraw(); }),
+      pgKey(smpPlay ? "■" : "▶", smpPlay ? "STOP" : "HEAR ALL", "play", () => { const s = bsS(); if (s) { if (smpPlay) smpStop(); else smpHear(s.trim[0], s.trim[1]); } boxPgDraw(); }),
+      pgKey("♪", "AS SYNTH", "use", () => { bsUse(0); bsMsg = $("smpinfo").textContent; boxPgDraw(); }),
+      pgKey("▤", "AS CHOPS", "use", () => { bsUse(1); bsMsg = $("smpinfo").textContent; boxPgDraw(); }),
+      pgKey("◉", "AS KIT", "use", () => { bsUse(2); bsMsg = $("smpinfo").textContent; boxPgDraw(); })];
+  },
+  shift() {                                                // SHIFT here: the trim, the root, clear
+    const s = bsS();
+    return [pgKey("⟦", "TRIM START", "trim", () => { bsTrim(false); boxPgDraw(); }), pgKey("⟧", "TRIM END", "trim", () => { bsTrim(true); boxPgDraw(); }),
+      pgKey("✕", performance.now() - bsClearAt < 3000 ? "SURE? AGAIN" : "CLEAR SLOT", "rec", () => {
+        if (!s) return;
+        if (performance.now() - bsClearAt < 3000) { $("smpclear").click(); bsClearAt = 0; bsMsg = $("smpinfo").textContent; }
+        else { bsClearAt = performance.now(); bsMsg = "CLEAR SLOT again to clear it"; setTimeout(boxPgDraw, 3100); }   // (the key's label back)
+        boxPgDraw();
+      }),
+      pgKey("−", "ROOT " + (s ? noteName(s.root) : ""), "util", () => { if (s) { s.root = Math.max(24, s.root - 1); smpChanged(smpSel); boxPgDraw(); } }),
+      pgKey("+", "ROOT", "util", () => { if (s) { s.root = Math.min(96, s.root + 1); smpChanged(smpSel); boxPgDraw(); } }),
+      pgKey("↩", "BACK", "back", () => boxPgClose()),
+      ...DECK_SHIFT.slice(6)];
+  },
+  draw(el) {
+    const s = bsS();
+    const slots = smp.map((x, k) => `<span class="${k === smpSel ? "on" : ""}${x ? "" : " empty"}">${k + 1}<b>${x ? escHtml(x.name) : "·"}</b></span>`).join("");
+    let body = "";
+    if (bsMode === "files") {
+      const top = Math.max(0, Math.min(bsFilePick - 4, bsFiles.length - 9));
+      body = `<p class="bp-sub">LOAD INTO SLOT ${smpSel + 1} FROM USB</p><ul class="bp-list">` +
+        bsFiles.slice(top, top + 9).map((f, i) => `<li class="${top + i === bsFilePick ? "on" : ""}">${escHtml(f.name)}<small>${escHtml(f.dir)} · ${(f.size / 1048576).toFixed(1)} MB</small></li>`).join("") +
+        `</ul><p class="bp-msg">${escHtml(bsFilesWhy)}</p><p class="bp-help">TURN / ▲ ▼: pick · PUSH / ▶: load · ◀: back</p>`;
+    } else if (bsMode === "rec") {
+      const t = lineIn && lineIn.on ? (lineIn.n / lineIn.ac.sampleRate) : 0, pk = lineIn ? lineIn.peak : 0;
+      body = `<p class="bp-sub">RECORD FROM LINE IN INTO SLOT ${smpSel + 1}</p>
+        <div class="bp-meter"><i style="width:${Math.min(100, pk * 100).toFixed(1)}%" class="${pk > 0.98 ? "clip" : ""}"></i></div>
+        <p class="bp-big">${lineIn && lineIn.on ? "● RECORDING " + t.toFixed(1) + " s / " + SPK.MAX_SECONDS : lineIn && lineIn.ac ? "READY: PUSH TO RECORD" : "…"}</p>
+        <p class="bp-msg">${escHtml(lineIn && lineIn.why ? lineIn.why : `Level ${Math.round(linLevel / 1.27)}% (turn the wheel)${linHw ? " · the box's input" : linHw === false ? " · this computer's input" : ""}: keep the meter out of the red.`)}</p>
+        <p class="bp-help">PUSH: record / stop (${SPK.MAX_SECONDS} s at most) · TURN: level · ◀: back</p>`;
+    } else {
+      body = `<canvas class="bp-wave"></canvas>
+        <p class="bp-sub">${s ? `${escHtml(s.name)} · ${secs(s.trim[1] - s.trim[0])} · ${smpStarts(s).length} slice${smpStarts(s).length === 1 ? "" : "s"} · root ${noteName(s.root)} · cursor ${secs2(bsCur)}` : "EMPTY SLOT: LOAD USB or REC IN"}</p>
+        <p class="bp-msg">${escHtml(bsMsg || $("smpinfo").textContent || "")}</p>
+        <p class="bp-help">TURN: the cursor · PUSH: add / remove a slice · ◀ ▶: slices · ▲ ▼: zoom · KEYS: hear slices · SHIFT: trim, root, clear</p>`;
+    }
+    el.innerHTML = `<h3>SAMPLES <small>${bsMode === "files" ? "USB" : bsMode === "rec" ? "LINE IN" : "SLICE"}</small></h3><div class="bp-slots">${slots}</div>${body}`;
+    const cv = el.querySelector(".bp-wave");
+    if (cv && s) bsDrawWave(cv, s);
+  },
+};
+const escHtml = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function bsDrawWave(cv, s) {
+  bsFixView();
+  const w = cv.width = Math.round(cv.clientWidth * (devicePixelRatio || 1)), h = cv.height = Math.round(cv.clientHeight * (devicePixelRatio || 1));
+  const g = cv.getContext("2d"), { a, b } = bsView, span = Math.max(1, b - a), X = (i) => (i - a) / span * w, mid = h / 2;
+  g.fillStyle = "#0B0530"; g.fillRect(0, 0, w, h);
+  for (let x = 0; x < w; x++) {
+    const i0 = Math.floor(a + x / w * span), i1 = Math.max(i0 + 1, Math.floor(a + (x + 1) / w * span));
+    let lo = 0, hi = 0;
+    for (let i = i0; i < i1 && i < s.pcm.length; i += Math.max(1, Math.floor((i1 - i0) / 64))) { const v = s.pcm[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+    const inside = i0 >= s.trim[0] && i0 <= s.trim[1];
+    g.fillStyle = inside ? "#9FB4FF" : "#3C48B8";
+    g.fillRect(x, mid - hi * mid * 0.9, 1, Math.max(1, (hi - lo) * mid * 0.9));
+  }
+  g.fillStyle = "rgba(11, 5, 48, .55)";
+  g.fillRect(0, 0, Math.max(0, X(s.trim[0])), h); g.fillRect(X(s.trim[1]), 0, w, h);
+  g.fillStyle = "#E2741F"; g.fillRect(X(s.trim[0]) - 2, 0, 4, h); g.fillRect(X(s.trim[1]) - 2, 0, 4, h);
+  g.font = `${Math.round(h / 7)}px VT323, monospace`;
+  smpStarts(s).forEach((m, i) => {
+    const x = X(m); if (x < -20 || x > w + 2) return;
+    g.fillStyle = "#FFE13A"; if (i) g.fillRect(x - 1, 0, 2, h);
+    g.fillRect(x + (i ? 0 : 2), h - h / 6, h / 7 + (i + 1 > 9 ? h / 14 : 0), h / 6);
+    g.fillStyle = "#1C0A57"; g.fillText(String(i + 1), x + (i ? 2 : 4), h - h / 30);
+  });
+  g.fillStyle = "#FFFFFF"; g.fillRect(X(bsCur) - 1.5, 0, 3, h);                  // the cursor
+  if (smpPlay && ac) {
+    const at = smpPlay.a + (ac.currentTime - smpPlay.t0) * SPK.RATE;
+    if (at < smpPlay.b) { g.fillStyle = "#FFE13A88"; g.fillRect(X(at), 0, 2, h); requestAnimationFrame(boxPgDraw); }
+  }
+}
 // ------------------------------------------------------------------ the box's own hardware (?box=panel, its kiosk)
 // The Pi's deck service (pi/spelunkr-deck.py, ws://127.0.0.1:8082) draws the 15 keys from the faces this page sends
 // ({type: "keys", keys: [15 x {icon, label, color, lit}]}, whenever one changes) and sends each press back ({type: "key",
@@ -2467,6 +2924,7 @@ let hwXY = { x: 64, y: 64, on: false };
 function boxMidi(d) {                                      // the Pico's messages the page acts on itself: true = done
   const st = d[0] & 0xF0, ch = d[0] & 15, v = d[2] | 0;
   if (ch === 0 && (st === 0x90 || st === 0x80) && d[1] >= 48 && d[1] <= 60) {
+    if (boxPg && boxPg.note) { boxPg.note(d[1] - 48, st === 0x90 && v > 0); return true; }
     const id = "hn" + d[1];
     if (st === 0x90 && v) keyBy.set(id, d[1] - 48); else keyBy.delete(id);
     syncKeys();
@@ -2495,10 +2953,11 @@ function boxMidi(d) {                                      // the Pico's message
   return true;
 }
 let boxSayT = null;
-function boxSay(t, ms = 6000) {                            // a line over the box's screen
+function boxSay(t, ms = 6000, info = false) {             // a line over the box's screen (info: not a warning)
   let el = $("boxsay");
-  if (!el) { el = document.createElement("div"); el.id = "boxsay"; $("boxpanel").append(el); }
-  el.textContent = t; el.hidden = false;
+  if (!el) { el = document.createElement("div"); el.id = "boxsay"; }
+  if (el.parentNode !== bezel) bezel.append(el);         // (over the screen in either box view)
+  el.textContent = t; el.hidden = false; el.classList.toggle("info", info);
   clearTimeout(boxSayT); if (ms) boxSayT = setTimeout(() => { el.hidden = true; }, ms);
 }
 async function safeOff() {                                 // SAFE OFF: stop, save, then the Pi powers off
@@ -2521,6 +2980,8 @@ function setBoxView(mode) {                              // null: the groovebox 
   if (mode === "1") boxScreen.append(bezel);
   else if (mode === "panel") $("boxpanel").append(bezel);
   else if (bezel.parentElement !== bezelHome) bezelHome.prepend(bezel);
+  if (!mode) boxPgClose();                                // (the box's own pages belong to its views)
+  screenTip();
   boxFit(); deckDraw(); boxKnobDraw();
 }
 function boxGo(mode) {
@@ -2754,6 +3215,13 @@ const TIPS = {
 };
 function tipsInit() {
   for (const [sel, t] of Object.entries(TIPS)) if (t) document.querySelectorAll(sel).forEach((e) => { if (!e.title && !e.dataset.tip) e.title = t; });
+  setTimeout(screenTip, 0);                              // (once the titles have become tips)
+}
+function screenTip() {                                   // the screen's tip: the Web App's touch screen, or the box's (no touch)
+  const e = $("screen");
+  if (!e.dataset.tipWeb) { if (!e.dataset.tip) return; e.dataset.tipWeb = e.dataset.tip; }
+  e.dataset.tip = boxMode() ? "The box's screen. It isn't a touch screen: the ANO wheel (left) and the 15 keys (right) drive it." : e.dataset.tipWeb;
+  e.setAttribute("aria-label", e.dataset.tip);
 }
 const tipBox = $("tip");
 let tipEl = null, tipT = 0, tipX = 0, tipY = 0;
