@@ -289,7 +289,10 @@ uint32_t _data_start[1], _data_end[1], _data_load[1], _bss_start[1], _bss_end[1]
 uint32_t _pool_start[1], _pool_end[1], _rt_start[1], _rt_end[1], _rt_load[1];
 static uint32_t web_master_adc = 700;   /* MASTER, 0..1023 as the ADC reads it */
 enum { FM1_ADC_BATT = 3, FM1_ADC_MASTER = 4 };
-static int32_t fm1_adc_read(uint32_t ch) { return ch == FM1_ADC_MASTER ? (int32_t)web_master_adc : 620; }
+static int32_t web_batt_adc = 620;     /* the battery as the ADC reads it: full (the page), the box's cells (web_batt) */
+static int32_t fm1_adc_read(uint32_t ch) { return ch == FM1_ADC_MASTER ? (int32_t)web_master_adc : web_batt_adc; }
+/* the Spelunkr Box's cells (its Pico, CC 22): 1..127 the charge, 0 on DC (shown full). The screen's bars are at 531 /
+ * 561 / 591 (ui_draw.c): 1..127 spread over 516..620, so a third of the charge a bar (web_batt, below) */
 static void fm1_adc_init(void) {}
 static void fm1_timer5_ack(void) {}
 static void fm1_timer5_start(void (*isr)(void), uint32_t prio) { (void)isr; (void)prio; }
@@ -455,6 +458,7 @@ static void web_ms(void)
 
 static float out_l[1024], out_r[1024];
 EXPORT float *web_out_l(void) { return out_l; }
+EXPORT void web_batt(uint32_t level) { web_batt_adc = level ? 515 + (int32_t)(level > 127u ? 127u : level) * 105 / 127 : 620; }
 EXPORT float *web_out_r(void) { return out_r; }
 /* ---- Spelunkr: VAPOR, on the master (Ed, Nov 18 2026), after the device's own output, so the page's recorder, the
  * bounce and the stems all have it. Four amounts 0..127, kept in the song (song.g's two inert globals, two a slot:

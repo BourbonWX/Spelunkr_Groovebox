@@ -230,6 +230,7 @@ if (typeof registerProcessor === "function") {
       if (m.type === "buttons" || m.type === "keys") this.queue.push(m);
       else if (m.type === "enc") ex.web_enc(m.role, m.n | 0);
       else if (m.type === "master") ex.web_master(m.value | 0);
+      else if (m.type === "batt") { if (ex.web_batt) ex.web_batt(m.level | 0); }   // (the box: its cells' charge, 0 on DC)
       else if (m.type === "midi") ex.web_midi(m.data[0] | 0, m.data[1] | 0, m.data[2] | 0);
       else if (m.type === "visible") this.period = m.on ? 1 / 30 : 1 / 4;
       else if (m.type === "rec") {                    // the studio: record what plays (on), or send the rest (off)

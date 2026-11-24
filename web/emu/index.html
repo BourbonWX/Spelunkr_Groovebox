@@ -105,7 +105,7 @@ main { max-width: 1480px; margin: 0 auto; padding: 16px 20px 16px; display: flex
 body.jam .samples, body.jam .vappanel { display: none; }
 body:not(.jam) .fxpad { display: none; }
 body.jam .ghd .tools { display: none; }
-/* the device view (Ed, Nov 24): the standalone box's faceplate (rev v12) at its real proportions, every control working.
+/* the device view (Ed, Nov 24): the standalone box's faceplate (rev v13) at its real proportions, every control working.
  * Positions are the CAD's, in mm from the plate's front-left corner; --mm (set by boxFit) is one mm in px. */
 .boxview, #boxpanel { display: none; }
 body.boxv .songbar, body.boxv main, body.boxv .keybar, body.boxv .scenes, body.boxv #smpgo { display: none; }
@@ -152,6 +152,13 @@ body.boxv footer { margin-bottom: 16px; }
   box-shadow: 0 calc(1.5 * var(--mm)) 0 #6b5207, 0 0 0 calc(1.2 * var(--mm)) #1a0f45; }
 .bknob i { position: absolute; left: 50%; top: 8%; width: calc(1.4 * var(--mm)); height: 34%; margin-left: calc(-.7 * var(--mm)); background: #1C0A57;
   border-radius: 2px; transform-origin: 50% 123%; transform: rotate(var(--a, 0deg)); }
+.bknob.down { filter: brightness(.9); transform: translateY(calc(.5 * var(--mm))); }
+.bread { background: #050314; border: 1px solid #3a2a7a; border-radius: calc(1 * var(--mm)); display: flex; justify-content: space-between; align-items: center;
+  gap: calc(1 * var(--mm)); padding: 0 calc(1.2 * var(--mm)); font: calc(3 * var(--mm))/1 var(--head); color: var(--yellow); white-space: nowrap; overflow: hidden; pointer-events: none; }
+.bread b { font-weight: normal; overflow: hidden; text-overflow: ellipsis; } .bread span { color: #fff; }
+.dkey.small i { font-size: calc(4.2 * var(--mm)); }
+.dkey.queued { animation: dkq .5s steps(2) infinite; }
+@keyframes dkq { 50% { box-shadow: inset 0 0 0 calc(.7 * var(--mm)) #fff; } }
 .bstick { border-radius: 50%; background: #0b0920; box-shadow: inset 0 0 0 calc(1 * var(--mm)) #3a2a7a; cursor: grab; }
 .bstick i { position: absolute; left: 50%; top: 50%; width: 78%; height: 78%; margin: -39% 0 0 -39%; border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #5a5a6a, #222 60%, #111); box-shadow: 0 calc(1 * var(--mm)) 0 #000; pointer-events: none; }
@@ -164,6 +171,8 @@ body.boxpanel > *:not(#boxpanel):not(dialog) { display: none !important; }
 body.boxpanel #boxpanel { display: grid; position: fixed; inset: 0; place-items: center; background: #000; }
 #boxpanel .bezel { width: min(100vw, 100vh); height: min(100vw, 100vh); padding: 0; border: 0; border-radius: 0; }
 #boxpanel #screen { width: 100%; height: 100%; }
+#boxsay { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px; background: rgba(210, 59, 44, .92); color: #fff; font: 22px/1.2 var(--head);
+  text-align: center; z-index: 5; }
 @media (min-width: 1420px) {                    /* (narrower, the device's controls go under its screen) */
   main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: start;
          grid-template-areas: "dev side" "smp side" "msg msg" "guide guide"; }
@@ -615,12 +624,12 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   </section>
 </main>
 
-<!-- the device view: the standalone box's faceplate (rev v12), every control working (boxview / boxFit below) -->
+<!-- the device view: the standalone box's faceplate (rev v13), every control working (boxview / boxFit below) -->
 <section class="boxview" id="boxview" aria-label="The Spelunkr Box">
   <div class="boxhead"><div><b>THE SPELUNKR BOX</b><span>A preview of the standalone groovebox: the same software, laid out like its faceplate. Everything here works.</span></div>
     <button class="btn" id="boxback" type="button">&#9664; BACK TO THE GROOVEBOX</button></div>
   <div class="plate" id="plate"></div>
-  <p class="boxnote">Left hand: the FX pad and the octave. Right hand: the 15 keys (their jobs follow the screen; tap SHIFT for the second set), the volume knob (drag or scroll) and the stick (pitch side to side, mod up). The screen is a touch screen.<span class="phone"> Turn your phone sideways for a bigger box.</span></p>
+  <p class="boxnote">Left hand: the FX pad and the octave. Above the pad, the encoder: it turns the screen card its readout names (drag or scroll), a click moves to the next card, SHIFT + turn is the volume. Right hand: the 15 keys (the bottom nine change with the screen: the glitches with FX KEYS on, the tracker's moves on STEPS, mutes on the MIXER, A–F on PATTERNS, drum pads while recording drums, the cards on a page of cards; tap SHIFT for the second set) and the stick (pitch side to side, mod up). The screen is a touch screen.<span class="phone"> Turn your phone sideways for a bigger box.</span></p>
 </section>
 <div id="boxpanel"></div>
 
@@ -747,6 +756,7 @@ const ICON = ["D", "1", "2", "3", "P"];
 
 let node = null, btnMask = 0, keyMask = 0, latched = 0, masterValue = 700, lastLeds = [0, 0, 0, 0, 0], power = false, G = null;
 const btnBy = new Map(), keyBy = new Map();
+let hwWs = null, hwSent = "", hwBattLow = false, hwPush = false, hwPushTurned = false;   // (the box's hardware: see hwConnect)
 let boxKeyEls = [], boxDeckEls = [], boxKnob = null;      // (the device view's octave, 15 keys and knob: filled further down)
 const send = (m) => { if (node) node.port.postMessage(m); };
 try { power = localStorage.getItem(POWER) === "1"; } catch {}
@@ -991,6 +1001,7 @@ function syncKeys() {
   if (m !== keyMask) { keyMask = m; send({ type: "keys", mask: m }); }
   keyEls.forEach((el, k) => el.classList.toggle("on", !!(m & (1 << k))));
   boxKeyEls.forEach((el, k) => el.classList.toggle("on", !!(m & (1 << k))));
+  deckLights();
 }
 $("octdn").addEventListener("click", () => tapButton(B["OCT-"]));
 $("octup").addEventListener("click", () => tapButton(B["OCT+"]));
@@ -1273,7 +1284,7 @@ function showGuide(g) {
   $("tstate").textContent = g.play ? "PLAYING" : "STOPPED";
   $("tpage").textContent = g.page;
   if (g.b && JSON.stringify(g.b) !== JSON.stringify(btnCtx)) { btnCtx = g.b; names(); }
-  deckLights();
+  deckLights(); boxKnobDraw();
   $("tpat").textContent = "PATTERN " + letter(g.cur) + (g.queue >= 0 ? " → " + letter(g.queue) : "");
   {                                                       // (the pads' track: theirs while one is on, else the picked one)
     const on = g.xyk >= 0 && (padAt[0] || padAt[1]), t = "on " + ROLE[on ? g.xyk : g.sel] + (on && padsState() ? " · locked" : "");
@@ -1530,7 +1541,7 @@ async function switchOn(withSong) {
     syncButtons(); syncKeys();
     send({ type: "visible", on: !document.hidden });
     send({ type: "midisel", on: $("midiroute").value === "1" });
-    midiOn();
+    if (boxMode() === "panel") hwConnect(); else midiOn();   // (the box: its MIDI comes through the deck service)
     if (sharedSong) sharedDone(withSong);
     if (tourDue()) setTimeout(() => tourShow(0), 700);   // first visit: the tour (after the screen is up)
   } catch (err) {
@@ -1550,6 +1561,9 @@ async function restart(sectors, song) {
   send({ type: "visible", on: !document.hidden });
 }
 $("go").addEventListener("click", () => switchOn(!!sharedSong));
+// the box powers up straight into the groovebox: its kiosk runs Chromium with --autoplay-policy=no-user-gesture-required,
+// so no tap is needed (if the sound can't start, SWITCH ON stays for a tap on the touch glass)
+if (boxMode() === "panel") addEventListener("load", () => setTimeout(() => { if (!node) $("go").click(); }, 300));
 $("gobare").addEventListener("click", () => switchOn(false));
 document.addEventListener("visibilitychange", () => send({ type: "visible", on: !document.hidden }));
 
@@ -2041,9 +2055,12 @@ setInterval(() => {
 
 // ------------------------------------------------------------------ the device view (Ed, Nov 24 2026: "the Box view and
 // the 15 keys as a third screen ... use the Top Faceplate CAD ... laid out how the actual device will be laid out"):
-// the standalone box's faceplate (rev v12) at its real proportions, every control working. The footer's line about the
+// the standalone box's faceplate (rev v13) at its real proportions, every control working. The footer's line about the
 // future device opens it (?box=1); BACK returns. ?box=panel: the screen alone, the whole window (the box's own kiosk).
-const BOX = { view: [94.08, 65.08, 71.84], xy: [12, 99, 60, 58], deck: [184, 10, 72, 108], knob: [190, 143.5], stick: [236, 143.5],
+// rev v13 (Ed, Nov 24: the XY lower, the knob above it as a clicking encoder, a 5" screen): the YX 5.08" 720 x 720
+// (91.37 mm active) in the middle, the XY glass lowered to sit on the keys, the encoder over it, the stick over the deck.
+// The numbers are the CAD's (spelunkr_box_v13.scad: view_at, xy_c, enc_c, stick_c)
+const BOX = { view: [83.81, 56.31, 91.37], xy: [12, 50, 60, 58], deck: [184, 10, 72, 108], knob: [42, 138], stick: [220, 143.5],
   keys: [12, 10], pitch: 19.05 };
 const plate = $("plate"), bezel = document.querySelector(".bezel"), bezelHome = bezel.parentElement;
 function boxAt(el, x, y, w, h) {                         // place by the CAD: mm from the plate's front-left corner
@@ -2057,12 +2074,12 @@ function boxPart(cls, x, y, w, h, html = "", tag = "div") {
   return el;
 }
 const boxScreen = boxPart("bscreen", BOX.view[0], BOX.view[1], BOX.view[2], BOX.view[2]);
-boxPart("silk big", 82, 159, 96, 6, "SPELUNKR GROOVEBOX");
+boxPart("silk big", 80, 155.5, 96, 6, "SPELUNKR GROOVEBOX");
 // the XY glass: the FX PAD's first pad (FILTER × GATE), on the picked track, springing back
 {
   const xy = boxPart("bxy", ...BOX.xy, '<span class="dot"></span>'), dot = xy.firstChild;
   xy.title = "The XY glass: the FX pad (filter × gate) on the picked track. Hold and drag; let go and it springs back.";
-  boxPart("silk", 12, 92.5, 60, 4, "FX PAD · FILTER × GATE");
+  boxPart("silk", 12, 109.5, 60, 4, "FX PAD · FILTER × GATE");
   let held = null;
   const move = (e) => {
     const r = xy.getBoundingClientRect();
@@ -2102,23 +2119,56 @@ boxPart("silk big", 82, 159, 96, 6, "SPELUNKR GROOVEBOX");
     boxKeyEls.push(el);
   }
 }
-// the volume knob (an encoder on the box): drag up / down or scroll
+// the encoder (Ed, Nov 24: "a contextual encoder knob, preferably with a click-down button"): it turns the screen card
+// it is on (the readout under it says which); a click moves it to the next card (SHIFT + click: back one); on a page of
+// cards the 3 × 3 picks one too. SHIFT + turn: the volume. A screen with no cards: it scrolls. Drag up / down or scroll.
+let boxCard = 0, boxRead = null, boxFreeA = 0;
+const boxCards = () => (G && G.knobs ? G.knobs.map((k, i) => (k.label ? i : -1)).filter((i) => i >= 0) : []);
+function boxCardNow() { const c = boxCards(); return c.length ? (c.includes(boxCard) ? boxCard : c[0]) : -1; }
+const cardName = (k) => (power ? k.label : KNOB_PLAIN[k.label] || k.label);
+function boxTurn(n) {
+  if (!n) return;
+  if (boxShift) { turn(wheelEls[3], n); boxShiftUsed = true; }
+  else {
+    const c = boxCardNow();
+    if (c >= 0) { boxCard = c; turn(knobEls[c], n); } else turn(wheelEls[2], n);
+    boxFreeA += n * 15;
+  }
+  boxKnobDraw();
+}
+function boxClick() {
+  const c = boxCards();
+  if (c.length) { const i = c.indexOf(boxCardNow()); boxCard = c[(i + (boxShift ? c.length - 1 : 1)) % c.length]; }
+  if (boxShift && boxShiftPtr === null) boxShift = false;
+  deckDraw(); boxKnobDraw();
+}
 {
-  boxKnob = boxPart("bknob", BOX.knob[0] - 15, BOX.knob[1] - 15, 30, 30, "<i></i>");
-  boxKnob.title = "VOLUME: drag up or down, or scroll over it.";
-  boxPart("silk", BOX.knob[0] - 15, BOX.knob[1] - 21.5, 30, 4, "VOLUME");
-  let y0 = null;
-  boxKnob.addEventListener("pointerdown", (e) => { e.preventDefault(); boxKnob.setPointerCapture(e.pointerId); y0 = e.clientY; });
+  boxKnob = boxPart("bknob", BOX.knob[0] - 10, BOX.knob[1] - 10, 20, 20, "<i></i>");
+  boxRead = boxPart("bread", BOX.knob[0] - 22, BOX.knob[1] - 20.5, 44, 6.5, "<b></b><span></span>");
+  boxPart("silk", BOX.knob[0] - 22, BOX.knob[1] + 12, 44, 4, "TURN · PUSH = NEXT");
+  boxKnob.title = "The encoder: turn it (drag up or down, or scroll) to change the screen card the readout names; click it for the next card. SHIFT + turn: the volume.";
+  let y0 = null, moved = false;
+  boxKnob.addEventListener("pointerdown", (e) => { if (e.button) return; e.preventDefault(); boxKnob.setPointerCapture(e.pointerId); y0 = e.clientY; moved = false; boxKnob.classList.add("down"); });
   boxKnob.addEventListener("pointermove", (e) => {
     if (y0 === null) return;
     const n = Math.trunc((y0 - e.clientY) / 6);
-    if (n) { y0 -= n * 6; turn(wheelEls[3], n); }
+    if (n) { y0 -= n * 6; moved = true; boxTurn(n); }
   });
-  for (const t of ["pointerup", "pointercancel"]) boxKnob.addEventListener(t, () => { y0 = null; });
-  boxKnob.addEventListener("wheel", (e) => { e.preventDefault(); turn(wheelEls[3], e.deltaY < 0 ? 1 : -1); }, { passive: false });
-  boxKnobDraw();
+  boxKnob.addEventListener("pointerup", () => { if (y0 !== null && !moved) boxClick(); y0 = null; boxKnob.classList.remove("down"); });
+  boxKnob.addEventListener("pointercancel", () => { y0 = null; boxKnob.classList.remove("down"); });
+  boxKnob.addEventListener("wheel", (e) => { e.preventDefault(); boxTurn(e.deltaY < 0 ? 1 : -1); }, { passive: false });
 }
-function boxKnobDraw() { if (boxKnob) boxKnob.style.setProperty("--a", (-135 + 270 * masterValue / 1023) + "deg"); }
+function boxKnobDraw() {
+  if (!boxKnob) return;
+  const c = boxCardNow(), k = c >= 0 ? G.knobs[c] : null;
+  let a, head, val;
+  if (boxShift) { a = -135 + 270 * masterValue / 1023; head = "VOLUME"; val = Math.round(masterValue / 10.23) + "%"; }
+  else if (k) { a = k.frac < 0 ? boxFreeA : -135 + 270 * Math.max(0, Math.min(1000, k.frac)) / 1000; head = `${c + 1}·${cardName(k)}`; val = k.val || ""; }
+  else { a = boxFreeA; head = "SCROLL"; val = ""; }
+  boxKnob.style.setProperty("--a", a + "deg");
+  if (boxRead.firstChild.textContent !== head) boxRead.firstChild.textContent = head;
+  if (boxRead.lastChild.textContent !== val) boxRead.lastChild.textContent = val;
+}
 // the thumbstick: pitch bend side to side, modulation pushed up (MIDI, as the box's Pico sends them); springs back
 {
   const st = boxPart("bstick", BOX.stick[0] - 14, BOX.stick[1] - 14, 28, 28, "<i></i>"), cap = st.firstChild;
@@ -2141,53 +2191,165 @@ function boxKnobDraw() { if (boxKnob) boxKnob.style.setProperty("--a", (-135 + 2
   const up = (e) => { if (held !== e.pointerId) return; held = null; st.classList.remove("on"); cap.style.transform = ""; out(8192, 0); };
   st.addEventListener("pointerup", up); st.addEventListener("pointercancel", up);
 }
-// the 15 keys (the Stream Deck Module, upright): rows 1-2 fixed, the 3 × 3 the face buttons; their names follow the
-// screen (the firmware's own labels, as on the website's face). SHIFT: tap it (it stays until the next key), or hold it.
-const DECK_ICON = { HOME: "⌂", EDIT: "♪", SEQ: "▦", GLO: "≡", FX: "✶", SAVE: "⤓", SCL: "∿", ENV: "⌒", LFO: "〜", ARP: "⋰", "OCT-": "−", "OCT+": "+", PLAY: "▶", REC: "●" };
-const DECK_COL = { nav: "#2E3FD8", face: "#5b3fd1", fx: "#E2741F", play: "#2a9d55", rec: "#d23b2c", shift: "#F5C93A", util: "#3b2a8f", tempo: "#0f7f86" };
-const DECK = [   // [normal, with SHIFT]
+// the 15 keys (the Stream Deck Module, upright): rows 1-2 fixed (◀ HOME ▶ / PLAY REC SHIFT); the 3 × 3 follows the page
+// (Ed, Nov 24: "the 9 contextual keys ... don't change per page"): `deckCtx` picks its map from the screen: FX KEYS on:
+// the glitches; STEPS: the tracker's moves and tools; the MIXER: a mute a track; PATTERNS / SONG: A-F; recording on a
+// drum track: drum pads; a page of cards (SOUND, ENVELOPE ..): which card the encoder turns; else (HOME, the menus) the
+// face buttons. SHIFT (tap: one key; hold: while held) the same set everywhere: the deep pages, MUTE / REDO, the tempo.
+const DECK_ICON = { HOME: "⌂", EDIT: "♪", SEQ: "▦", GLO: "≡", FX: "✶", SAVE: "⇩", SCL: "∿", ENV: "◠", LFO: "∾", ARP: "⋰", "OCT-": "−", "OCT+": "+", PLAY: "▶", REC: "●" };
+const DECK_COL = { nav: "#2E3FD8", face: "#5b3fd1", fx: "#E2741F", play: "#2a9d55", rec: "#d23b2c", shift: "#F5C93A", util: "#3b2a8f",
+  tempo: "#0f7f86", drum: "#b5480f", grid: "#1f6fb5", card: "#0f7f86", pat: "#7a2fb5" };
+const DECK_TOP = [   // [normal, with SHIFT]
   [{ wheel: 2, n: -1, icon: "◀", lab: "SCROLL", col: "nav" }, { wheel: 0, n: -1, icon: "◀", lab: "SOUNDS", col: "nav" }],
   [{ bit: "HOME", col: "nav" }, { bit: "HOME", col: "nav" }],
   [{ wheel: 2, n: 1, icon: "▶", lab: "SCROLL", col: "nav" }, { wheel: 0, n: 1, icon: "▶", lab: "SOUNDS", col: "nav" }],
   [{ bit: "PLAY", col: "play" }, { bit: "PLAY", col: "play" }],
   [{ bit: "REC", col: "rec" }, { bit: "REC", col: "rec" }],
   [{ shift: 1, icon: "⇧", lab: "SHIFT", col: "shift" }, { shift: 1, icon: "⇧", lab: "SHIFT", col: "shift" }],
-  [{ bit: "EDIT", col: "face" }, { bit: "SCL", col: "face" }],
-  [{ bit: "SEQ", col: "face" }, { bit: "ENV", col: "face" }],
-  [{ bit: "GLO", col: "face" }, { bit: "LFO", col: "face" }],
-  [{ bit: "FX", col: "fx" }, { bit: "ARP", col: "face" }],
-  [{ bit: "SAVE", col: "util" }, { fn: () => G && send({ type: "mute", k: G.sel }), icon: "M", lab: "MUTE", col: "rec" }],
-  [{ fn: () => $("undobtn").click(), icon: "↶", lab: "UNDO", col: "util" }, { fn: () => $("undobtn").click(), icon: "↷", lab: "REDO", col: "util" }],
-  [{ bit: "OCT-", col: "util" }, { fn: () => setBpm(sbBpm - 1), icon: "−", lab: "TEMPO", col: "tempo" }],
-  [{ wheel: 1, n: 1, icon: "⇅", lab: "NEXT TRACK", col: "util" }, { fn: () => $("taptempo").dispatchEvent(new PointerEvent("pointerdown")), icon: "♩", lab: "TAP", col: "tempo" }],
-  [{ bit: "OCT+", col: "util" }, { fn: () => setBpm(sbBpm + 1), icon: "+", lab: "TEMPO", col: "tempo" }],
 ];
-let boxShift = false, boxShiftPtr = null, boxShiftUsed = false;
-const deckKey = (i) => DECK[i][boxShift ? 1 : 0];
+const UNDO = { fn: () => $("undobtn").click(), icon: "↶", lab: "UNDO", col: "util" };
+const OCTROW = [{ bit: "OCT-", col: "util" }, { wheel: 1, n: 1, icon: "⇅", lab: "NEXT TRACK", col: "util" }, { bit: "OCT+", col: "util" }];
+const DECK_FACE = [{ bit: "EDIT", col: "face" }, { bit: "SEQ", col: "face" }, { bit: "GLO", col: "face" },
+  { bit: "FX", col: "fx" }, { bit: "SAVE", col: "util" }, UNDO, ...OCTROW];
+const DECK_SHIFT = [{ bit: "SCL", col: "face" }, { bit: "ENV", col: "face" }, { bit: "LFO", col: "face" },
+  { bit: "ARP", col: "face" }, { fn: () => G && send({ type: "mute", k: G.sel }), icon: "M", lab: "MUTE", col: "rec", lit: () => !!(G && G.tracks[G.sel].mute) },
+  { fn: () => $("undobtn").click(), icon: "↷", lab: "REDO", col: "util" },
+  { fn: () => setBpm(sbBpm - 1), icon: "−", lab: "TEMPO", col: "tempo" },
+  { fn: () => $("taptempo").dispatchEvent(new PointerEvent("pointerdown")), icon: "♩", lab: "TAP", col: "tempo" },
+  { fn: () => setBpm(sbBpm + 1), icon: "+", lab: "TEMPO", col: "tempo" }];
+// FX KEYS' glitches are the keys' (C 1/4, D 1/8, E 1/16, F 1/32, G FREEZE, A ECHO, .. D' HPF, E' LPF, F' VERB): held like a key
+const fxk = (key, icon, lab) => ({ key, icon, lab, col: "fx" });
+const DECK_FXK = [fxk(2, "⁸", "ROLL 1/8"), fxk(4, "¹⁶", "ROLL 1/16"), fxk(5, "³²", "ROLL 1/32"),
+  fxk(7, "❄", "FREEZE"), fxk(9, "◌", "ECHO"), fxk(17, "≋", "VERB"),
+  fxk(16, "◣", "LOW PASS"), fxk(14, "◢", "HIGH PASS"), { bit: "FX", col: "fx" }];
+const tool = (which, icon, lab) => ({ fn: () => G && send({ type: "tool", k: G.sel, which }), icon, lab, col: "grid" });
+const DECK_STEPS = [{ knob: 0, n: -1, icon: "▲", lab: "UP", col: "nav" }, tool(0, "◆", "BEAT"), tool(1, "⚄", "RANDOM"),
+  { knob: 1, n: -1, icon: "◀", lab: "LEFT", col: "nav" }, { bit: "EDIT", col: "face" }, { knob: 1, n: 1, icon: "▶", lab: "RIGHT", col: "nav" },
+  { knob: 0, n: 1, icon: "▼", lab: "DOWN", col: "nav" }, tool(2, "≈", "VARY"), tool(3, "∅", "CLEAR")];
+const trackKey = (pos) => ({ track: pos, col: "rec" });   // (by the guide's order: the track at that place)
+const DECK_MIXER = [trackKey(0), trackKey(1), trackKey(2), trackKey(3), trackKey(4),
+  { fn: () => G && send({ type: "solo", k: G.sel }), icon: "S", lab: "SOLO", col: "tempo", lit: () => !!(G && G.tracks[G.sel].solo) }, ...OCTROW];
+const pat = (p) => ({ fn: () => send({ type: "cue", p }), icon: "ABCDEF"[p], lab: "PATTERN", col: "pat", lit: () => !!(G && G.cur === p), pat: p });
+const DECK_PATS = [pat(0), pat(1), pat(2), pat(3), pat(4), pat(5),
+  DECK_SHIFT[4], { fn: () => G && send({ type: "solo", k: G.sel }), icon: "S", lab: "SOLO", col: "tempo", lit: () => !!(G && G.tracks[G.sel].solo) }, { bit: "GLO", col: "face" }];
+const drum = (note, icon, lab) => ({ note, icon, lab, col: "drum" });   // GM notes, as the KIT and DRUM play them
+const DECK_DRUMS = [drum(49, "✺", "CRASH"), drum(50, "◔", "HIGH TOM"), drum(45, "◕", "LOW TOM"),   // (the kick bottom left, as on pads)
+  drum(37, "╱", "RIM"), drum(39, "✱", "CLAP"), drum(46, "◎", "OPEN HAT"),
+  drum(36, "●", "KICK"), drum(38, "◉", "SNARE"), drum(42, "✕", "HAT")];
+const card = (c) => ({ card: c, col: "card" });
+function deckCtx() {
+  if (!G || !btnCtx) return ["face", DECK_FACE];
+  const fx = btnCtx[B.FX], page = G.page || "";
+  if (fx && /OFF/.test(fx[0])) return ["fx", DECK_FXK];
+  if (G.rec && (ROLE[G.sel] === "DRUMS" || ROLE[G.sel] === "PERC")) return ["drums", DECK_DRUMS];   // (core.h trk_is_kit)
+  if (page === "STEPS" && gridMode()) return ["steps", DECK_STEPS];
+  if (page === "MIXER") return ["mixer", DECK_MIXER];
+  if (page === "PATTERNS" || page === "SONG") return ["pats", DECK_PATS];
+  if (page !== "HOME" && page !== "MENU" && boxCards().length) {   // the family's button: the one that says "›" here
+    const fam = FACE.map(([d]) => d).find((d) => btnCtx[B[d]] && /›$/.test(btnCtx[B[d]][0])) || "EDIT";
+    return ["cards", [card(0), card(1), card(2), card(3), { bit: fam, col: "face" }, UNDO, ...OCTROW]];
+  }
+  return ["face", DECK_FACE];
+}
+let boxShift = false, boxShiftPtr = null, boxShiftUsed = false, deckMap = DECK_FACE, deckMapName = "face";
+const deckKey = (i) => (i < 6 ? DECK_TOP[i][boxShift ? 1 : 0] : (boxShift ? DECK_SHIFT : deckMap)[i - 6]);
 function deckLabel(a) {
-  if (!a.bit) return [a.icon, a.lab];
-  const f = FACE.find(([d]) => d === a.bit), ctx = btnCtx && btnCtx[B[a.bit]];
-  const lab = power ? a.bit.replace("-", " −").replace("+", " +") : (ctx && ctx[0]) || f[1];
-  return [a.bit === "PLAY" && G && G.play ? "■" : DECK_ICON[a.bit], lab];
+  if (a.bit) {
+    const f = FACE.find(([d]) => d === a.bit), ctx = btnCtx && btnCtx[B[a.bit]];
+    const lab = power ? a.bit.replace("-", " −").replace("+", " +") : (ctx && ctx[0]) || f[1];
+    return [a.bit === "PLAY" && G && G.play ? "■" : DECK_ICON[a.bit], lab];
+  }
+  if (a.track !== undefined) {
+    const k = G ? [...G.tracks.keys()].sort((x, y) => G.tracks[x].pos - G.tracks[y].pos)[a.track] : a.track;
+    return [String(a.track + 1), "MUTE " + (k === undefined ? "" : ROLE[k])];
+  }
+  if (a.card !== undefined) {
+    const k = G && G.knobs && G.knobs[a.card];
+    return [k && k.label ? (k.val || "·") : "—", k && k.label ? cardName(k) : "CARD " + (a.card + 1)];
+  }
+  return [a.icon, a.lab];
 }
 function deckDraw() {
+  if (!boxDeckEls.length) return;                         // (names() runs before the keys are made)
+  const [nm, map] = deckCtx();
+  deckMap = map; deckMapName = nm; plate.dataset.deck = nm;
   boxDeckEls.forEach((el, i) => {
     const a = deckKey(i), [icon, lab] = deckLabel(a);
     el.style.background = DECK_COL[a.col];
     el.classList.toggle("dark", a.col === "shift");
-    el.firstChild.textContent = icon; el.lastChild.textContent = lab;
-    const what = a.bit ? FACE_TIP[a.bit] : a.lab === "SCROLL" ? WHEEL_TIP.SCROLL : a.lab === "SOUNDS" ? WHEEL_TIP.SOUNDS : "";
+    el.classList.toggle("small", a.card !== undefined && String(icon).length > 3);
+    if (el.firstChild.textContent !== icon) el.firstChild.textContent = icon;
+    if (el.lastChild.textContent !== lab) el.lastChild.textContent = lab;
+    const what = a.bit ? FACE_TIP[a.bit] : a.lab === "SCROLL" ? WHEEL_TIP.SCROLL : a.lab === "SOUNDS" ? WHEEL_TIP.SOUNDS
+      : a.card !== undefined ? "the encoder turns this card (tap to pick it)" : a.note ? "a drum pad (on the picked drum track)"
+      : a.track !== undefined ? "mute or unmute this track" : a.key !== undefined ? "hold it: the glitch, like its key" : "";
     el.title = `${lab}${what ? ": " + what : ""}${i === 5 ? ": tap it for the keys' second jobs (it stays on until you use one), or hold it." : ""}`;
   });
-  deckLights();
+  deckPaint();
 }
-function deckLights() {
+function deckLights() {                                  // (the guide ~8 a second, the buttons: the lights, or all when the map moved)
+  if (!boxDeckEls.length) return;
+  const nm = deckCtx()[0];
+  if (nm !== deckMapName || nm === "cards" || nm === "mixer") deckDraw(); else deckPaint();
+}
+function deckPaint() {
   boxDeckEls.forEach((el, i) => {
     const a = deckKey(i), ctx = a.bit && btnCtx && btnCtx[B[a.bit]];
-    el.classList.toggle("held", !!(a.bit && btnMask & (1 << B[a.bit])));
-    el.classList.toggle("lit", (a.shift && boxShift) || (a.bit === "PLAY" && !!(G && G.play)) || (a.bit === "FX" && !!ctx && /OFF/.test(ctx[0])));
+    el.classList.toggle("held", !!(a.bit && btnMask & (1 << B[a.bit])) || (a.key !== undefined && !!(keyMask & (1 << a.key))));
+    let lit = (a.shift && boxShift) || (a.bit === "PLAY" && !!(G && G.play)) || (a.bit === "REC" && !!(G && G.rec)) || (a.bit === "FX" && !!ctx && /OFF/.test(ctx[0]));
+    if (a.lit) lit = a.lit();
+    if (a.card !== undefined) lit = boxCardNow() === a.card;
+    if (a.track !== undefined && G) { const k = [...G.tracks.keys()].sort((x, y) => G.tracks[x].pos - G.tracks[y].pos)[a.track]; lit = k !== undefined && !G.tracks[k].mute; }
+    el.classList.toggle("lit", lit);
+    el.classList.toggle("blank", a.track !== undefined && G && a.track >= G.tracks.length);
+    if (a.pat !== undefined) el.classList.toggle("queued", !!(G && G.queue === a.pat));
     if (a.bit === "PLAY") el.firstChild.textContent = G && G.play ? "■" : "▶";
   });
+  hwKeys();
+}
+// a press of key i, from the screen (id "p" + pointer) or the box's own deck (id "h" + key): the same either way
+const deckHeld = new Map();                              // id -> {i, timer, note} while a key is down
+function deckDown(i, id) {
+  const a = deckKey(i), el = boxDeckEls[i];
+  if (a.shift) {
+    if (boxShift && boxShiftPtr === null) { boxShift = false; }
+    else { boxShift = true; boxShiftPtr = id; boxShiftUsed = false; }
+    deckDraw(); boxKnobDraw();
+    return;
+  }
+  const h = { i, timer: null, note: null };
+  deckHeld.set(id, h);
+  el.classList.add("down");
+  const rep = (f) => { let reps = 0; const again = () => { reps++; f(); h.timer = setTimeout(again, Math.max(50, 120 - reps * 6)); }; f(); h.timer = setTimeout(again, 380); };
+  if (a.bit) { btnBy.set(id, B[a.bit]); syncButtons(); }
+  else if (a.wheel !== undefined) rep(() => turn(wheelEls[a.wheel], a.n));
+  else if (a.knob !== undefined) rep(() => turn(knobEls[a.knob], a.n));
+  else if (a.key !== undefined) { keyBy.set(id, a.key); syncKeys(); }
+  else if (a.note) { h.note = a.note; send({ type: "midi", data: [0x90, a.note, 112] }); }
+  else if (a.card !== undefined) { if (G && G.knobs[a.card]?.label) boxCard = a.card; boxKnobDraw(); }
+  else if (a.track !== undefined) {
+    const k = G && [...G.tracks.keys()].sort((x, y) => G.tracks[x].pos - G.tracks[y].pos)[a.track];
+    if (k !== undefined && k !== null) send({ type: "mute", k });
+  } else if (a.fn) a.fn();
+  if (boxShift) boxShiftUsed = true;
+  deckLights();
+}
+function deckUp(i, id) {
+  const h = deckHeld.get(id);
+  if (h) {
+    deckHeld.delete(id);
+    clearTimeout(h.timer);
+    boxDeckEls[h.i].classList.remove("down");
+    if (h.note !== null) send({ type: "midi", data: [0x80, h.note, 0] });
+  }
+  if (btnBy.delete(id)) syncButtons();
+  if (keyBy.delete(id)) syncKeys();
+  if (boxShiftPtr === id) {                               // SHIFT let go: off if it was held for a shifted key
+    boxShiftPtr = null;
+    if (boxShiftUsed) { boxShift = false; deckDraw(); boxKnobDraw(); }
+    return;
+  }
+  if (h && boxShift && boxShiftPtr === null) { boxShift = false; deckDraw(); boxKnobDraw(); }   // (tapped SHIFT: one key, then off)
 }
 {
   const deck = boxPart("bdeck", ...BOX.deck);
@@ -2200,42 +2362,96 @@ function deckLights() {
       width: `calc(${kw} * var(--mm))`, height: `calc(${kw} * var(--mm))` });
     deck.append(el);
     boxDeckEls.push(el);
-    let timer = null;
-    const stop = () => { clearTimeout(timer); timer = null; };
     el.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       e.preventDefault();
-      const a = deckKey(i);
-      if (a.shift) {
-        if (boxShift && boxShiftPtr === null) { boxShift = false; }
-        else { boxShift = true; boxShiftPtr = e.pointerId; boxShiftUsed = false; el.setPointerCapture(e.pointerId); }
-        deckDraw();
-        return;
-      }
-      el.setPointerCapture(e.pointerId);
-      el.classList.add("down");
-      if (a.bit) { btnBy.set("p" + e.pointerId, B[a.bit]); syncButtons(); }
-      else if (a.wheel !== undefined) {
-        let reps = 0;
-        const again = () => { reps++; turn(wheelEls[a.wheel], a.n); timer = setTimeout(again, Math.max(50, 120 - reps * 6)); };
-        turn(wheelEls[a.wheel], a.n);
-        timer = setTimeout(again, 380);
-      } else if (a.fn) a.fn();
-      if (boxShift) boxShiftUsed = true;
+      if (!deckKey(i).shift) el.setPointerCapture(e.pointerId);
+      deckDown(i, "p" + e.pointerId);
     });
-    const up = (e) => {
-      stop();
-      el.classList.remove("down");
-      if (deckKey(i).shift || DECK[i][0].shift) {                // SHIFT let go: off if it was held for a shifted key
-        if (boxShiftPtr === e.pointerId) { boxShiftPtr = null; if (boxShiftUsed) { boxShift = false; deckDraw(); } }
-        return;
-      }
-      if (boxShift && boxShiftPtr === null) { boxShift = false; deckDraw(); }   // (tapped SHIFT: one key, then off)
-    };
+    const up = (e) => deckUp(i, "p" + e.pointerId);
     el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
     el.addEventListener("contextmenu", (e) => e.preventDefault());
   }
   deckDraw();
+}
+// ------------------------------------------------------------------ the box's own hardware (?box=panel, its kiosk)
+// The Pi's deck service (pi/spelunkr-deck.py, ws://127.0.0.1:8082) draws the 15 keys from the faces this page sends
+// ({type: "keys", keys: [15 x {icon, label, color, lit}]}, whenever one changes) and sends each press back ({type: "key",
+// k, down}). It also passes on the MIDI it hears ({type: "midi", data, box}: box = from the Pico, "Spelunkr Box"), so
+// the kiosk needs no Web MIDI permission. The Pico (pico/code.py): channel 1 notes 48..60 = the octave (played as the
+// page's own keys, so FX KEYS and PATTERNS work on them), its bend / CC 1 / CC 64 to the device; channel 16: CC 20 the
+// encoder (64 +- steps), CC 21 its push, CC 12 / 13 / 14 the XY glass, CC 22 the battery (1..127, 0 on DC), CC 23
+// battery low, CC 119 SAFE OFF (the Pi's helper powers off a few seconds later: the music is saved first).
+const HW_ICON = { PLAY: "play", REC: "rec", HOME: "home" };
+function deckFaces() {
+  return boxDeckEls.map((el, i) => {
+    const a = deckKey(i), [ic, label] = deckLabel(a);
+    let icon = a.shift ? "shift" : HW_ICON[a.bit] || (a.wheel === 2 || a.wheel === 0 ? (a.n < 0 ? "left" : "right") : String(ic));
+    if (a.bit === "PLAY" && G && G.play) icon = "stop";
+    return { icon, label, color: DECK_COL[a.col], lit: el.classList.contains("lit"), held: el.classList.contains("held") || el.classList.contains("down") };
+  });
+}
+function hwKeys() {
+  if (!hwWs || hwWs.readyState !== 1) return;
+  const j = JSON.stringify(deckFaces());
+  if (j !== hwSent) { hwSent = j; hwWs.send(`{"type":"keys","keys":${j}}`); }
+}
+function hwConnect() {
+  let ws;
+  try { ws = new WebSocket("ws://127.0.0.1:8082"); } catch { setTimeout(hwConnect, 3000); return; }
+  ws.onopen = () => { hwWs = ws; hwSent = ""; hwKeys(); };
+  ws.onclose = () => { if (hwWs === ws) hwWs = null; setTimeout(hwConnect, 2000); };
+  ws.onmessage = (e) => {
+    let m; try { m = JSON.parse(e.data); } catch { return; }
+    if (m.type === "key" && m.k >= 0 && m.k < 15) { if (m.down) deckDown(m.k, "h" + m.k); else deckUp(m.k, "h" + m.k); }
+    else if (m.type === "midi" && Array.isArray(m.data)) { if (!(m.box && boxMidi(m.data))) send({ type: "midi", data: [m.data[0], m.data[1] | 0, m.data[2] | 0] }); }
+  };
+}
+let hwXY = { x: 64, y: 64, on: false };
+function boxMidi(d) {                                      // the Pico's messages the page acts on itself: true = done
+  const st = d[0] & 0xF0, ch = d[0] & 15, v = d[2] | 0;
+  if (ch === 0 && (st === 0x90 || st === 0x80) && d[1] >= 48 && d[1] <= 60) {
+    const id = "hn" + d[1];
+    if (st === 0x90 && v) keyBy.set(id, d[1] - 48); else keyBy.delete(id);
+    syncKeys();
+    return true;
+  }
+  if (ch !== 15 || st !== 0xB0) return false;
+  switch (d[1]) {
+    case 20: {                                             // the encoder: pushed and turned = the volume
+      const n = v - 64;
+      if (hwPush) { hwPushTurned = true; turn(wheelEls[3], n); boxKnobDraw(); } else boxTurn(n);
+      return true;
+    }
+    case 21:
+      if (v) { hwPush = true; hwPushTurned = false; } else { if (hwPush && !hwPushTurned) boxClick(); hwPush = false; }
+      return true;
+    case 12: hwXY.x = v; break;
+    case 13: hwXY.y = v; break;
+    case 14:
+      if (v) { hwXY.on = true; const k = G ? G.sel : 0; if (padK !== k) { padK = k; if (padAt[1]) padSend(1); } }
+      else { hwXY.on = false; padRelease(0); return true; }
+      break;
+    case 22: send({ type: "batt", level: v }); return true;
+    case 23: hwBattLow = true; boxSay("BATTERY LOW: plug in the power, or the box turns itself off soon."); return true;
+    case 119: if (v) safeOff(); return true;
+    default: return false;
+  }
+  if (hwXY.on) { padAt[0] = { x: hwXY.x, y: hwXY.y }; padSend(0); }
+  return true;
+}
+let boxSayT = null;
+function boxSay(t, ms = 6000) {                            // a line over the box's screen
+  let el = $("boxsay");
+  if (!el) { el = document.createElement("div"); el.id = "boxsay"; $("boxpanel").append(el); }
+  el.textContent = t; el.hidden = false;
+  clearTimeout(boxSayT); if (ms) boxSayT = setTimeout(() => { el.hidden = true; }, ms);
+}
+async function safeOff() {                                 // SAFE OFF: stop, save, then the Pi powers off
+  boxSay("SAVING · TURNING OFF…", 0);
+  if (G && G.play) { tapButton(B.PLAY); await new Promise((r) => setTimeout(r, 300)); }
+  try { const m = await ask("save"); if (m.sectors) saveFlash(m.sectors); } catch {}
+  boxSay("OFF IN A MOMENT: wait for the screen to go dark.", 0);
 }
 function boxFit() {
   if (!document.body.classList.contains("boxv")) return;

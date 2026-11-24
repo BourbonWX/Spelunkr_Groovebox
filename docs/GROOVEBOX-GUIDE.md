@@ -14,9 +14,13 @@ saves in this browser, and a link shares it.
 
 **The Spelunkr Box** (the line about a future standalone device, at the very bottom of the page): the same
 groovebox laid out like the faceplate of the standalone box we're building, at its real proportions. Everything works:
-the XY glass is the FX pad, the 13-key octave plays, the 15 keys on the right do what the screen needs (their names
-follow it; tap SHIFT for the second set: scale, envelope, wobble, arp, mute, redo, tempo and tap), the yellow knob is
-the volume (drag or scroll), the stick bends the pitch side to side and adds wobble pushed up. **BACK TO THE
+the XY glass is the FX pad, the 13-key octave plays, and the yellow knob above the pad is an encoder: it turns the
+screen card its readout names (drag or scroll), a click moves it to the next card, SHIFT + turn is the volume. On the
+15 keys the top two rows stay put (scroll, HOME, play, record, SHIFT); the nine under them change with the screen:
+the glitches while FX KEYS is on, up / down / left / right and BEAT, RANDOM, VARY, CLEAR on STEPS, a mute a track on
+the MIXER, patterns A–F on PATTERNS and SONG, drum pads while you record a drum track, the cards on a page of cards
+(tap one and the encoder turns it), else the main buttons. Tap SHIFT for the second set (scale, envelope, wobble,
+arp, mute, redo, tempo and tap). The stick bends the pitch side to side and adds wobble pushed up. **BACK TO THE
 GROOVEBOX** returns.
 
 **Two scenes**, switched at the top left:
