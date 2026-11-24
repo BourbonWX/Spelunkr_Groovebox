@@ -148,17 +148,20 @@ body.boxv footer { margin-bottom: 16px; }
 .dkey.lit { box-shadow: inset 0 0 0 calc(.7 * var(--mm)) var(--yellow), 0 0 calc(2.5 * var(--mm)) rgba(255, 225, 58, .6); }
 .dkey.down, .dkey.held { filter: brightness(1.35); transform: scale(.96); }
 .dkey.blank { background: #15123a !important; cursor: default; }
-.bknob { border-radius: 50%; background: radial-gradient(circle at 40% 35%, #ffe98a, #f5c93a 55%, #b58a12); cursor: ns-resize;
-  box-shadow: 0 calc(1.5 * var(--mm)) 0 #6b5207, 0 0 0 calc(1.2 * var(--mm)) #1a0f45; }
-.bknob i { position: absolute; left: 50%; top: 8%; width: calc(1.4 * var(--mm)); height: 34%; margin-left: calc(-.7 * var(--mm)); background: #1C0A57;
-  border-radius: 2px; transform-origin: 50% 123%; transform: rotate(var(--a, 0deg)); }
-.bknob.down { filter: brightness(.9); transform: translateY(calc(.5 * var(--mm))); }
-.bread { background: #050314; border: 1px solid #3a2a7a; border-radius: calc(1 * var(--mm)); display: flex; justify-content: space-between; align-items: center;
-  gap: calc(1 * var(--mm)); padding: 0 calc(1.2 * var(--mm)); font: calc(3 * var(--mm))/1 var(--head); color: var(--yellow); white-space: nowrap; overflow: hidden; pointer-events: none; }
-.bread b { font-weight: normal; overflow: hidden; text-overflow: ellipsis; } .bread span { color: #fff; }
-.dkey.small i { font-size: calc(4.2 * var(--mm)); }
-.dkey.queued { animation: dkq .5s steps(2) infinite; }
-@keyframes dkq { 50% { box-shadow: inset 0 0 0 calc(.7 * var(--mm)) #fff; } }
+.bano { border-radius: 50%; background: #2a2440; box-shadow: 0 calc(1 * var(--mm)) 0 #0d0a20, 0 0 0 calc(.8 * var(--mm)) #1a0f45; cursor: grab; touch-action: none; }
+.bano > * { position: absolute; pointer-events: none; text-decoration: none; }
+.bano .wheel { left: 16.7%; top: 16.7%; width: 66.6%; height: 66.6%; border-radius: 50%; box-sizing: border-box;
+  background: repeating-conic-gradient(from var(--a, 0deg), #f5c93a 0 9deg, #c99c12 9deg 15deg); box-shadow: inset 0 0 0 calc(.4 * var(--mm)) #8a6a08; }
+.bano .ctr { left: 38.2%; top: 38.2%; width: 23.6%; height: 23.6%; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #4b4370, #241f3d); box-shadow: 0 0 0 calc(.5 * var(--mm)) #15112a; }
+.bano.pushed .ctr { background: var(--yellow); }
+.bano s { font: calc(2.6 * var(--mm))/1 var(--head); color: #f5c93a; }
+.bano .up { left: 50%; top: 2.5%; transform: translateX(-50%); } .bano .dn { left: 50%; bottom: 2.5%; transform: translateX(-50%); }
+.bano .lf { left: 3%; top: 50%; transform: translateY(-50%); } .bano .rt { right: 3%; top: 50%; transform: translateY(-50%); }
+.bano.d-up .up, .bano.d-down .dn, .bano.d-left .lf, .bano.d-right .rt { color: #fff; text-shadow: 0 0 6px #fff; }
+.boled { background: #000; border: calc(.5 * var(--mm)) solid #15112a; border-radius: calc(.5 * var(--mm)); overflow: hidden; pointer-events: none;
+  padding: calc(.4 * var(--mm)) calc(.8 * var(--mm)) 0; font: calc(2.3 * var(--mm))/1.1 "VT323", monospace; color: #dff1ff; }
+.boled p { margin: 0; white-space: pre; overflow: hidden; }
+.boled em { position: absolute; left: 0; bottom: 0; height: calc(.6 * var(--mm)); background: #dff1ff; width: 0; }
 .bstick { border-radius: 50%; background: #0b0920; box-shadow: inset 0 0 0 calc(1 * var(--mm)) #3a2a7a; cursor: grab; }
 .bstick i { position: absolute; left: 50%; top: 50%; width: 78%; height: 78%; margin: -39% 0 0 -39%; border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #5a5a6a, #222 60%, #111); box-shadow: 0 calc(1 * var(--mm)) 0 #000; pointer-events: none; }
@@ -629,7 +632,7 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   <div class="boxhead"><div><b>THE SPELUNKR BOX</b><span>A preview of the standalone groovebox: the same software, laid out like its faceplate. Everything here works.</span></div>
     <button class="btn" id="boxback" type="button">&#9664; BACK TO THE GROOVEBOX</button></div>
   <div class="plate" id="plate"></div>
-  <p class="boxnote">Left hand: the FX pad and the octave. Above the pad, the encoder: it turns the screen card its readout names (drag or scroll), a click moves to the next card, SHIFT + turn is the volume. Right hand: the 15 keys (the bottom nine change with the screen: the glitches with FX KEYS on, the tracker's moves on STEPS, mutes on the MIXER, A–F on PATTERNS, drum pads while recording drums, the cards on a page of cards; tap SHIFT for the second set) and the stick (pitch side to side, mod up). The screen is a touch screen.<span class="phone"> Turn your phone sideways for a bigger box.</span></p>
+  <p class="boxnote">Left hand: the FX pad and the octave. Above the pad, the readout and the ANO wheel: turn its yellow ring for what the readout names, press the centre for the next card, the arrows on its outer ring scroll and change track (on the tracker they move round the steps), hold the centre and turn for the volume. Right hand: the 15 keys (the bottom nine change with the screen: the glitches with FX KEYS on, the tracker's moves on STEPS, mutes on the MIXER, A–F on PATTERNS, drum pads while recording drums, the cards on a page of cards; tap SHIFT for the second set) and the stick (pitch side to side, mod up). On the box the screen isn't touch: the wheel and the keys drive it.<span class="phone"> Turn your phone sideways for a bigger box.</span></p>
 </section>
 <div id="boxpanel"></div>
 
@@ -756,7 +759,7 @@ const ICON = ["D", "1", "2", "3", "P"];
 
 let node = null, btnMask = 0, keyMask = 0, latched = 0, masterValue = 700, lastLeds = [0, 0, 0, 0, 0], power = false, G = null;
 const btnBy = new Map(), keyBy = new Map();
-let hwWs = null, hwSent = "", hwBattLow = false, hwPush = false, hwPushTurned = false;   // (the box's hardware: see hwConnect)
+let hwWs = null, hwSent = "", hwBattLow = false;   // (the box's hardware: see hwConnect)
 let boxKeyEls = [], boxDeckEls = [], boxKnob = null;      // (the device view's octave, 15 keys and knob: filled further down)
 const send = (m) => { if (node) node.port.postMessage(m); };
 try { power = localStorage.getItem(POWER) === "1"; } catch {}
@@ -2057,10 +2060,10 @@ setInterval(() => {
 // the 15 keys as a third screen ... use the Top Faceplate CAD ... laid out how the actual device will be laid out"):
 // the standalone box's faceplate (rev v13) at its real proportions, every control working. The footer's line about the
 // future device opens it (?box=1); BACK returns. ?box=panel: the screen alone, the whole window (the box's own kiosk).
-// rev v13 (Ed, Nov 24: the XY lower, the knob above it as a clicking encoder, a 5" screen): the YX 5.08" 720 x 720
-// (91.37 mm active) in the middle, the XY glass lowered to sit on the keys, the encoder over it, the stick over the deck.
-// The numbers are the CAD's (spelunkr_box_v13.scad: view_at, xy_c, enc_c, stick_c)
-const BOX = { view: [83.81, 56.31, 91.37], xy: [12, 50, 60, 58], deck: [184, 10, 72, 108], knob: [42, 138], stick: [220, 143.5],
+// rev v14 (Ed, Nov 24): the YX 5.08" 720 x 720 (91.37 mm active, no touch) in the middle, the XY touch pad on the
+// keys, the readout and the ANO wheel above it, the stick over the deck. The numbers are the CAD's
+// (spelunkr_box_v14.scad: view_at, xy_c, oled_c, ano_c, stick_c)
+const BOX = { view: [83.81, 56.31, 91.37], xy: [12, 50, 60, 58], deck: [184, 10, 72, 108], ano: [42, 145], oled: [42, 117.8], stick: [220, 143.5],
   keys: [12, 10], pitch: 19.05 };
 const plate = $("plate"), bezel = document.querySelector(".bezel"), bezelHome = bezel.parentElement;
 function boxAt(el, x, y, w, h) {                         // place by the CAD: mm from the plate's front-left corner
@@ -2075,11 +2078,10 @@ function boxPart(cls, x, y, w, h, html = "", tag = "div") {
 }
 const boxScreen = boxPart("bscreen", BOX.view[0], BOX.view[1], BOX.view[2], BOX.view[2]);
 boxPart("silk big", 80, 155.5, 96, 6, "SPELUNKR GROOVEBOX");
-// the XY glass: the FX PAD's first pad (FILTER × GATE), on the picked track, springing back
+// the XY touch pad (no screen): the FX PAD's first pad (FILTER × GATE), on the picked track, springing back
 {
   const xy = boxPart("bxy", ...BOX.xy, '<span class="dot"></span>'), dot = xy.firstChild;
-  xy.title = "The XY glass: the FX pad (filter × gate) on the picked track. Hold and drag; let go and it springs back.";
-  boxPart("silk", 12, 109.5, 60, 4, "FX PAD · FILTER × GATE");
+  xy.title = "The XY touch pad: the FX pad (filter × gate) on the picked track. Hold and drag; let go and it springs back.";
   let held = null;
   const move = (e) => {
     const r = xy.getBoundingClientRect();
@@ -2119,16 +2121,18 @@ boxPart("silk big", 80, 155.5, 96, 6, "SPELUNKR GROOVEBOX");
     boxKeyEls.push(el);
   }
 }
-// the encoder (Ed, Nov 24: "a contextual encoder knob, preferably with a click-down button"): it turns the screen card
-// it is on (the readout under it says which); a click moves it to the next card (SHIFT + click: back one); on a page of
-// cards the 3 × 3 picks one too. SHIFT + turn: the volume. A screen with no cards: it scrolls. Drag up / down or scroll.
-let boxCard = 0, boxRead = null, boxFreeA = 0;
+// the navigation wheel (v14, Ed, Nov 24: "the ANO wheel for the contextual encoder", "a small screen ... so the user
+// knows what the ANO wheel is doing"): the Adafruit ANO wheel, and the readout under it. Turn: the screen card the
+// readout names. Push (the centre): the next card (on STEPS: the step's own job, EDIT's). Up / down: scroll (STEPS:
+// the row). Left / right: the track (STEPS: the column): the arrow keys' jobs (ARROWS / GRID_ARROWS). Pushed + turned
+// (or SHIFT + turn): the volume. A screen with no cards: turning scrolls. The box's Pico sends the same (boxMidi).
+let boxCard = 0, boxFreeA = 0, anoPushed = false, anoPushTurned = false, boxRead = null, boxReadSent = "";
 const boxCards = () => (G && G.knobs ? G.knobs.map((k, i) => (k.label ? i : -1)).filter((i) => i >= 0) : []);
 function boxCardNow() { const c = boxCards(); return c.length ? (c.includes(boxCard) ? boxCard : c[0]) : -1; }
 const cardName = (k) => (power ? k.label : KNOB_PLAIN[k.label] || k.label);
 function boxTurn(n) {
   if (!n) return;
-  if (boxShift) { turn(wheelEls[3], n); boxShiftUsed = true; }
+  if (anoPushed || boxShift) { turn(wheelEls[3], n); if (anoPushed) anoPushTurned = true; else boxShiftUsed = true; }
   else {
     const c = boxCardNow();
     if (c >= 0) { boxCard = c; turn(knobEls[c], n); } else turn(wheelEls[2], n);
@@ -2136,38 +2140,88 @@ function boxTurn(n) {
   }
   boxKnobDraw();
 }
-function boxClick() {
-  const c = boxCards();
-  if (c.length) { const i = c.indexOf(boxCardNow()); boxCard = c[(i + (boxShift ? c.length - 1 : 1)) % c.length]; }
+function boxClick() {                                      // the centre pushed and let go without turning
+  if (gridMode()) tapButton(B.EDIT);                       // (the tracker: the step's own job)
+  else {
+    const c = boxCards();
+    if (c.length) { const i = c.indexOf(boxCardNow()); boxCard = c[(i + (boxShift ? c.length - 1 : 1)) % c.length]; }
+  }
   if (boxShift && boxShiftPtr === null) boxShift = false;
   deckDraw(); boxKnobDraw();
 }
+function anoPush(down) {
+  if (down) { anoPushed = true; anoPushTurned = false; }
+  else { if (anoPushed && !anoPushTurned) boxClick(); anoPushed = false; }
+  boxKnobDraw();
+}
+const ANO_KEY = { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" };
+const anoRep = {};
+function anoDir(dir, down) {                               // held: again after 380 ms, then every 90
+  clearTimeout(anoRep[dir]);
+  if (!down) return;
+  const step = () => { const [r, n] = (gridMode() ? GRID_ARROWS : ARROWS)[ANO_KEY[dir]]; send({ type: "enc", role: r, n }); };
+  step();
+  const again = () => { step(); anoRep[dir] = setTimeout(again, 90); };
+  anoRep[dir] = setTimeout(again, 380);
+}
 {
-  boxKnob = boxPart("bknob", BOX.knob[0] - 10, BOX.knob[1] - 10, 20, 20, "<i></i>");
-  boxRead = boxPart("bread", BOX.knob[0] - 22, BOX.knob[1] - 20.5, 44, 6.5, "<b></b><span></span>");
-  boxPart("silk", BOX.knob[0] - 22, BOX.knob[1] + 12, 44, 4, "TURN · PUSH = NEXT");
-  boxKnob.title = "The encoder: turn it (drag up or down, or scroll) to change the screen card the readout names; click it for the next card. SHIFT + turn: the volume.";
-  let y0 = null, moved = false;
-  boxKnob.addEventListener("pointerdown", (e) => { if (e.button) return; e.preventDefault(); boxKnob.setPointerCapture(e.pointerId); y0 = e.clientY; moved = false; boxKnob.classList.add("down"); });
-  boxKnob.addEventListener("pointermove", (e) => {
-    if (y0 === null) return;
-    const n = Math.trunc((y0 - e.clientY) / 6);
-    if (n) { y0 -= n * 6; moved = true; boxTurn(n); }
+  const R = 34.4 / 2;
+  boxKnob = boxPart("bano", BOX.ano[0] - R, BOX.ano[1] - R, 34.4, 34.4,
+    '<b class="ring"></b><i class="wheel"></i><s class="up">▲</s><s class="dn">▼</s><s class="lf">◀</s><s class="rt">▶</s><u class="ctr"></u>');
+  boxKnob.title = "The ANO wheel: turn the yellow ring (drag round it, or scroll) to change what the readout names; " +
+    "press the centre for the next card; the arrows on the outer ring scroll (up / down) and change track (left / right). " +
+    "On the tracker they move round the steps. Hold the centre and turn: the volume.";
+  boxRead = boxPart("boled", BOX.oled[0] - 12, BOX.oled[1] - 3.75, 24, 7.5, "<p></p><p></p><em></em>");
+  boxPart("silk", BOX.oled[0] - 22, BOX.oled[1] - 8.2, 44, 3.4, "XY TOUCH PAD · FILTER × GATE");
+  let drag = null;
+  const at = (e) => { const r = boxKnob.getBoundingClientRect(); const x = e.clientX - r.left - r.width / 2, y = e.clientY - r.top - r.height / 2;
+    return { d: Math.hypot(x, y) / (r.width / 2), a: Math.atan2(y, x) }; };
+  boxKnob.addEventListener("pointerdown", (e) => {
+    if (e.button) return;
+    e.preventDefault(); boxKnob.setPointerCapture(e.pointerId);
+    const p = at(e);
+    if (p.d < 8.1 / 34.4 * 1.3) { drag = { kind: "push" }; boxKnob.classList.add("pushed"); anoPush(true); }
+    else if (p.d < 22.9 / 34.4) drag = { kind: "turn", a: p.a };
+    else {
+      const deg = p.a * 180 / Math.PI, dir = deg > -135 && deg <= -45 ? "up" : deg > -45 && deg <= 45 ? "right" : deg > 45 && deg <= 135 ? "down" : "left";
+      drag = { kind: "dir", dir }; boxKnob.classList.add("d-" + dir); anoDir(dir, true);
+    }
   });
-  boxKnob.addEventListener("pointerup", () => { if (y0 !== null && !moved) boxClick(); y0 = null; boxKnob.classList.remove("down"); });
-  boxKnob.addEventListener("pointercancel", () => { y0 = null; boxKnob.classList.remove("down"); });
+  boxKnob.addEventListener("pointermove", (e) => {
+    if (!drag || drag.kind !== "turn") return;
+    let da = at(e).a - drag.a;
+    if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI;
+    const n = Math.trunc(da / (Math.PI / 12));             // (24 clicks a turn, as the ANO)
+    if (n) { drag.a += n * Math.PI / 12; boxTurn(n); }
+  });
+  const up = () => {
+    if (!drag) return;
+    if (drag.kind === "push") { boxKnob.classList.remove("pushed"); anoPush(false); }
+    if (drag.kind === "dir") { boxKnob.classList.remove("d-" + drag.dir); anoDir(drag.dir, false); }
+    drag = null;
+  };
+  boxKnob.addEventListener("pointerup", up); boxKnob.addEventListener("pointercancel", up);
   boxKnob.addEventListener("wheel", (e) => { e.preventDefault(); boxTurn(e.deltaY < 0 ? 1 : -1); }, { passive: false });
 }
-function boxKnobDraw() {
+const ascii = (t) => String(t).replace(/[·•]/g, " ").replace(/−/g, "-").replace(/›/g, ">").replace(/‹/g, "<").replace(/×/g, "x").replace(/[^\x20-\x7e]/g, "");
+function boxKnobDraw() {                                    // the wheel's ring turns; the readout says what it does
   if (!boxKnob) return;
-  const c = boxCardNow(), k = c >= 0 ? G.knobs[c] : null;
-  let a, head, val;
-  if (boxShift) { a = -135 + 270 * masterValue / 1023; head = "VOLUME"; val = Math.round(masterValue / 10.23) + "%"; }
-  else if (k) { a = k.frac < 0 ? boxFreeA : -135 + 270 * Math.max(0, Math.min(1000, k.frac)) / 1000; head = `${c + 1}·${cardName(k)}`; val = k.val || ""; }
-  else { a = boxFreeA; head = "SCROLL"; val = ""; }
+  const cs = boxCards(), c = boxCardNow(), k = c >= 0 ? G.knobs[c] : null;
+  let a, name, val, g = -1;
+  if (anoPushed || boxShift) { a = -135 + 270 * masterValue / 1023; name = "VOLUME"; val = Math.round(masterValue / 10.23) + "%"; g = Math.round(masterValue / 10.23); }
+  else if (k) {
+    a = k.frac < 0 ? boxFreeA : -135 + 270 * Math.max(0, Math.min(1000, k.frac)) / 1000;
+    name = ascii(cardName(k)); val = ascii(k.val || "");
+    if (cs.length > 1) name = name.slice(0, 16).padEnd(17) + `${cs.indexOf(c) + 1}/${cs.length}`;
+    if (k.frac >= 0) g = Math.round(k.frac / 10);
+  } else { a = boxFreeA; name = "SCROLL"; val = ascii(G ? G.page || "" : ""); }
   boxKnob.style.setProperty("--a", a + "deg");
-  if (boxRead.firstChild.textContent !== head) boxRead.firstChild.textContent = head;
-  if (boxRead.lastChild.textContent !== val) boxRead.lastChild.textContent = val;
+  const [l1, l2, bar] = boxRead.children;
+  if (l1.textContent !== name) l1.textContent = name;
+  if (l2.textContent !== val) l2.textContent = val;
+  bar.style.width = (g < 0 ? 0 : g) + "%";
+  const j = JSON.stringify([name, val, g]);                 // the box's own readout (the Pico draws it)
+  if (j !== boxReadSent && hwWs && hwWs.readyState === 1) { boxReadSent = j; hwWs.send(JSON.stringify({ type: "readout", name, value: val, gauge: g })); }
 }
 // the thumbstick: pitch bend side to side, modulation pushed up (MIDI, as the box's Pico sends them); springs back
 {
@@ -2380,7 +2434,7 @@ function deckUp(i, id) {
 // k, down}). It also passes on the MIDI it hears ({type: "midi", data, box}: box = from the Pico, "Spelunkr Box"), so
 // the kiosk needs no Web MIDI permission. The Pico (pico/code.py): channel 1 notes 48..60 = the octave (played as the
 // page's own keys, so FX KEYS and PATTERNS work on them), its bend / CC 1 / CC 64 to the device; channel 16: CC 20 the
-// encoder (64 +- steps), CC 21 its push, CC 12 / 13 / 14 the XY glass, CC 22 the battery (1..127, 0 on DC), CC 23
+// ANO wheel (64 +- steps), CC 21 its centre, CC 24 - 27 up / down / left / right, CC 12 / 13 / 14 the XY touch pad, CC 22 the battery (1..127, 0 on DC), CC 23
 // battery low, CC 119 SAFE OFF (the Pi's helper powers off a few seconds later: the music is saved first).
 const HW_ICON = { PLAY: "play", REC: "rec", HOME: "home" };
 function deckFaces() {
@@ -2399,7 +2453,7 @@ function hwKeys() {
 function hwConnect() {
   let ws;
   try { ws = new WebSocket("ws://127.0.0.1:8082"); } catch { setTimeout(hwConnect, 3000); return; }
-  ws.onopen = () => { hwWs = ws; hwSent = ""; hwKeys(); };
+  ws.onopen = () => { hwWs = ws; hwSent = ""; boxReadSent = ""; hwKeys(); boxKnobDraw(); };
   ws.onclose = () => { if (hwWs === ws) hwWs = null; setTimeout(hwConnect, 2000); };
   ws.onmessage = (e) => {
     let m; try { m = JSON.parse(e.data); } catch { return; }
@@ -2418,14 +2472,12 @@ function boxMidi(d) {                                      // the Pico's message
   }
   if (ch !== 15 || st !== 0xB0) return false;
   switch (d[1]) {
-    case 20: {                                             // the encoder: pushed and turned = the volume
-      const n = v - 64;
-      if (hwPush) { hwPushTurned = true; turn(wheelEls[3], n); boxKnobDraw(); } else boxTurn(n);
-      return true;
-    }
-    case 21:
-      if (v) { hwPush = true; hwPushTurned = false; } else { if (hwPush && !hwPushTurned) boxClick(); hwPush = false; }
-      return true;
+    case 20: boxTurn(v - 64); return true;                 // the ANO wheel: turned (pushed + turned: the volume)
+    case 21: anoPush(!!v); return true;                    // its centre
+    case 24: anoDir("up", !!v); return true;
+    case 25: anoDir("down", !!v); return true;
+    case 26: anoDir("left", !!v); return true;
+    case 27: anoDir("right", !!v); return true;
     case 12: hwXY.x = v; break;
     case 13: hwXY.y = v; break;
     case 14:
