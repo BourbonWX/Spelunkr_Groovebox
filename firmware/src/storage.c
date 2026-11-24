@@ -29,7 +29,9 @@
  * The FM6 voice bank (1.4.1, fm6_vbank.c): 0xE7000, the sector above the autosave, with a commit record of the same
  * kind (type OBJ_FM6VB, not an st_load object); a new bank is first staged in the autosave's older copy (fm6_vbank.c). */
 enum { OBJ_SETTINGS, OBJ_PROJECT0, OBJ_UPRESET0 = OBJ_PROJECT0 + 4, OBJ_FM6BANK = OBJ_UPRESET0 + 2, OBJ_UPFM6,
-       OBJ_AUTOSAVE, OBJ_BANK0, OBJ_COUNT = OBJ_BANK0 + (RONDO_LAYOUT ? 6 : 0) };
+       OBJ_AUTOSAVE, OBJ_BANK0, OBJ_LEAD = OBJ_BANK0 + (RONDO_LAYOUT ? 6 : 0), OBJ_COUNT = OBJ_LEAD + (SPK_NU ? 1 : 0) };
+/* (the Spelunkr web build, SPK_NU: OBJ_LEAD, LEAD's sound and lanes (lead.c), in the FM-1's user sample slot 0's first
+ * two sectors 0xA0000 / 0xA1000, which the web never writes: its samples live in RAM) */
 /* RONDO: the PATTERN BANK's A..F (song_bank.c), an A/B pair each in the top 48 KiB of user sample slot 3
  * (eng_sample.c SMP_USER_TOP: 0xD0000..0xDBFFF; that slot keeps its first 32 KiB for a sample) */
 #define ST_BANK_BASE 0xD0000u
@@ -72,6 +74,8 @@ static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy 
         return copy ? 0xFE000u : 0x9F000u;
     if (obj == OBJ_AUTOSAVE)
         return 0xE5000u + copy * ST_SECTOR;
+    if (SPK_NU && obj == OBJ_LEAD)
+        return 0xA0000u + copy * ST_SECTOR;
     if (obj >= OBJ_BANK0)
         return ST_BANK_BASE + (obj - OBJ_BANK0) * 2u * ST_SECTOR + copy * ST_SECTOR;
     if (obj >= OBJ_UPRESET0)

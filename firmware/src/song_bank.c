@@ -234,6 +234,168 @@ static void arr_toggle(void)
 static int chain_busy(void);
 static int bank_has(uint32_t p) { return p < NBANK && ((bank.used >> p) & 1u); }
 static void bank_name(char *b, uint32_t p) { b[0] = (char)('A' + p % NBANK); b[1] = 0; }
+#if SPK_NU
+/* the Spelunkr Groovebox (Ed, Nov 24: "copy 1 of the 6 patterns by accident, pressing the undo button could undo
+ * that"): UNDO (felucca_web.c web_undo) takes back the last pattern copy or clear when it was the last undoable thing
+ * done (bank_ulast; a sound loaded, a row tool, LEAD's take clear it). kind 1: pattern p's contents replaced (OCT+ held
+ * + a key: copied into; OCT- held + a key: cleared); kind 2: p made as a copy of the current one (an empty pattern's
+ * key, the page's pattern blocks) and the current one since: undone, p is gone and old is the current one again. UNDO
+ * again: redo */
+static struct { uint8_t ok, kind, p, old, used; chain_pattern_t pat; } bundo;
+static uint8_t bank_ulast;
+static void bank_snap(uint32_t kind, uint32_t p)
+{
+    bundo.ok = 1;
+    bundo.kind = (uint8_t)kind;
+    bundo.p = (uint8_t)p;
+    bundo.old = bank.cur;
+    bundo.used = (uint8_t)bank_has(p);
+    bundo.pat = bank_pat[p % NBANK];
+    bank_ulast = 1;
+    lead_ulast = 0;
+}
+static int bank_undo(void)                              /* main: 1 done */
+{
+    uint32_t p = bundo.p, f;
+    char m[24] = "UNDO: PATTERN A";
+    if (!bundo.ok || !bank_ulast || chain_busy() || p >= NBANK)
+        return 0;
+    f = motion_guard();                                 /* (the web build: the audio runs between these calls, not in them) */
+    if (bundo.kind == 1) {                              /* its contents swapped with the copy */
+        chain_pattern_t now = bank_pat[p];
+        uint8_t used = (uint8_t)bank_has(p);
+        bank_pat[p] = bundo.pat;
+        bank.used = (uint8_t)(bundo.used ? bank.used | 1u << p : bank.used & ~(1u << p));
+        bundo.pat = now;
+        bundo.used = used;
+        if (bank.queue == p) bank.queue = CHAIN_OFF;
+        if (p == bank.cur)
+            bank_give(p);                               /* (the one playing: its tracks as it was) */
+    } else if (bank.cur == p && bank_has(bundo.old)) {  /* made: back to the one it came from, p gone */
+        bank_switch(bundo.old);                         /* (p's last state stored first: kept for the redo) */
+        bundo.pat = bank_pat[p];
+        memset(&bank_pat[p], 0, sizeof bank_pat[p]);
+        bank.used &= (uint8_t)~(1u << p);
+        str_cpy(m, "UNDO: NO PATTERN A", sizeof m);
+        m[17] = (char)('A' + p);
+        p = NBANK;
+    } else if (!bank_has(p) && bank.cur == bundo.old) { /* the redo: p back, the current one */
+        bank_pat[p] = bundo.pat;
+        bank.used |= (uint8_t)(1u << p);
+        bank_switch(p);
+        str_cpy(m, "REDO: PATTERN A", sizeof m);
+    } else {                                            /* (something else changed them since: no undo) */
+        bundo.ok = 0;
+        motion_unguard(f);
+        return 0;
+    }
+    bank.dirty |= (uint8_t)(1u << bundo.p | 1u << bundo.old);
+    motion_unguard(f);
+    if (p < NBANK)
+        m[14] = (char)('A' + p);
+    ui_message(m);
+    return 1;
+}
+#define BANK_SNAP(kind, p) bank_snap(kind, p)
+/* (Ed, Nov 24: "hold the corresponding key of the pattern you want to copy and then clicking the key associated to the
+ * spot you want to copy it to. Just clicking an empty spot should generate an empty pattern") A pattern key acts when it
+ * is let go (bank_hold_poll), unless another pattern key was pressed while it was held: then that one got a copy of it
+ * (bank_press). An empty one tapped: a new empty pattern there (its tracks' lengths as the current one's), the current
+ * one (stopped) or the next (playing). OCT+ / OCT- held with a key: as before (the current one copied there / cleared) */
+static void step_clear(step_t *st);                    /* (ui.c) */
+static int bank_key(uint32_t p);
+static int bank_new_empty(uint32_t p)
+{
+    chain_pattern_t *c = &bank_pat[p % NBANK];
+    char b[2];
+    uint32_t k, i, f;
+    if (p >= NBANK || bank_has(p))
+        return 1;
+    if (chain_busy()) {
+        ui_message("ORBIT PLAYING");
+        return 1;
+    }
+    bank_name(b, p);
+    f = motion_guard();
+    BANK_SNAP(song.playing ? 1u : 2u, p);               /* (playing: it's only queued; stopped: the current one now) */
+    bank_keep();
+    bank_take(p);                                       /* the current one's shape (lengths, speed, swing) .. */
+    for (k = 0; k < NTRK; k++)                          /* .. with no steps, no automation, no prints */
+        for (i = 0; i < NSTEP; i++)
+            step_clear(&c->step[k][i]);
+    memset(&c->motion, 0, sizeof c->motion);
+    memset(&c->fxp, 0, sizeof c->fxp);
+    bank.dirty |= (uint8_t)(1u << p);
+    if (song.playing) {
+        bank.clk = (uint8_t)bank_clock();
+        RING_PUBLISH();
+        bank.queue = (uint8_t)p;
+        ui_say("NEW EMPTY NEXT: ", b);
+    } else {
+        bank_switch(p);
+        ui_say("NEW EMPTY PATTERN ", b);
+    }
+    motion_unguard(f);
+    return 0;
+}
+static int bank_copy_from(uint32_t src, uint32_t dst)  /* pattern src copied into dst (either may be the current one) */
+{
+    char b[8] = "A TO A";
+    uint32_t f;
+    if (src >= NBANK || dst >= NBANK || src == dst)
+        return 1;
+    if (chain_busy()) {
+        ui_message("ORBIT PLAYING");
+        return 1;
+    }
+    if (!bank_has(src) && src != bank.cur) {
+        bank_name(b, src);
+        ui_say(b, " IS EMPTY");
+        return 1;
+    }
+    f = motion_guard();
+    bank_keep();                                        /* (the current one's latest edits first) */
+    BANK_SNAP(1u, dst);
+    bank_pat[dst] = bank_pat[src];
+    bank.used |= (uint8_t)(1u << dst);
+    bank.dirty |= (uint8_t)(1u << dst);
+    if (dst == bank.cur)
+        bank_give(dst);                                 /* (copied onto the one playing: its tracks now) */
+    if (bank.queue == dst) bank.queue = CHAIN_OFF;
+    motion_unguard(f);
+    b[0] = (char)('A' + src);
+    b[5] = (char)('A' + dst);
+    ui_say("COPIED ", b);
+    return 0;
+}
+static uint8_t bk_src = 0xFFu, bk_did;
+static void bank_press(uint32_t p)                      /* a pattern key down (no OCT held) */
+{
+    if (bk_src < NBANK && bk_src != p) {
+        bank_copy_from(bk_src, p);
+        bk_did = 1;
+        return;
+    }
+    bk_src = (uint8_t)p;
+    bk_did = 0;
+}
+static int bank_hold_poll(uint32_t held)                /* main, every pass: held = the pattern keys down (bit p); 1 acted */
+{
+    uint32_t p = bk_src;
+    if (p >= NBANK || ((held >> p) & 1u))
+        return 0;
+    bk_src = 0xFFu;
+    if (bk_did)
+        return 0;
+    if (!bank_has(p) && p != bank.cur)
+        bank_new_empty(p);
+    else
+        bank_key(p);
+    return 1;
+}
+#else
+#define BANK_SNAP(kind, p) ((void)0)
+#endif
 /* a white key A..F: go there (stopped), next (playing), back to staying (the queued one, the current one); an empty
  * one: the current pattern copied in, the current one from now. 0 done, 1 refused */
 static int bank_key(uint32_t p)
@@ -255,8 +417,13 @@ static int bank_key(uint32_t p)
             ui_say("PLAYING ", a);
         return 0;
     }
+#if SPK_NU
+    if (!bank_has(p))                                    /* (the web, the box: an empty one is a new empty pattern) */
+        return bank_new_empty(p);
+#endif
     if (!bank_has(p)) {                                  /* an empty key: a copy of this one, the current one now */
         uint32_t f = motion_guard();
+        BANK_SNAP(2u, p);
         bank_keep();
         bank_take(p);
         bank.dirty |= (uint8_t)(1u << p);
@@ -293,6 +460,7 @@ static int bank_copy(uint32_t p)
         return 1;
     }
     uint32_t f = motion_guard();
+    BANK_SNAP(1u, p);
     bank_take(p);
     bank.dirty |= (uint8_t)(1u << p);
     if (bank.queue == p) bank.queue = CHAIN_OFF;
@@ -322,6 +490,7 @@ static int bank_clear(uint32_t p)
         return 1;
     }
     uint32_t f = motion_guard();
+    BANK_SNAP(1u, p);
     bank.used &= (uint8_t)~(1u << p);
     bank.dirty |= (uint8_t)(1u << p);
     if (bank.queue == p) bank.queue = CHAIN_OFF;

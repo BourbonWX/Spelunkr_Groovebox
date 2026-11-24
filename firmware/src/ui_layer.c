@@ -892,7 +892,11 @@ static void layer_key(uint32_t l, uint32_t k)
                 bank_clear(p);
                 lys.loaded = 1;                         /* (OCT- let go then: no forgetting) */
             } else
+#if SPK_NU
+                bank_press(p);                          /* (acts when let go; another key meanwhile: a copy there) */
+#else
                 bank_key(p);
+#endif
             ui.force = 1;
         }
     } else if (l == LAYER_ARP) {                        /* RONDO: black keys 1..4, the track whose effect KNOB 1..4 ride */
@@ -1667,10 +1671,24 @@ static void bank_page_keys(uint32_t notes)
         else if ((fm1_in.buttons >> panel.btn[B_OCTDN]) & 1u)
             bank_clear(p);
         else
+#if SPK_NU
+            bank_press(p);
+#else
             bank_key(p);
+#endif
         ui.force = 1;
     }
 }
+#if SPK_NU
+static uint32_t bank_held_keys(void)                    /* the pattern keys down now (bit p) */
+{
+    uint32_t k, m = 0, p;
+    for (k = 0; k < 27u; k++)
+        if (((fm1_in.notes >> k) & 1u) && !key_black(k) && (p = key_place(k)) < NBANK)
+            m |= 1u << p;
+    return m;
+}
+#endif
 /* .. its key LEDs: the current pattern lit, the next one flashing, the stored ones in *br (breathing; br may be 0) */
 static uint32_t bank_page_leds(uint32_t *br)
 {
@@ -1707,7 +1725,7 @@ static void layer_env(void)
     static const char *const NOTE[NBANK] = {"C3", "D3", "E3", "F3", "G3", "A3"};
 #endif
     uint32_t p, k;
-    char b[32], a[2] = {0, 0}, c[2] = {0, 0};
+    char b[40], a[2] = {0, 0}, c[2] = {0, 0};
     for (p = 0; p < NBANK; p++) {
         int32_t x = LE_X(p % 3u), y = 4 + 46 * (int32_t)(p / 3u), lx = x + 6, lw = LE_W - 12;
         uint32_t st = p == bank.cur ? LS_SEL : p == bank.queue ? ((fm1_ms / 250u) % 2u ? LS_WAIT : LS_OFF) :
@@ -1745,7 +1763,11 @@ static void layer_env(void)
         str_cpy(b + str_len(b), " AT ITS END", sizeof b - str_len(b));
     } else {
         str_cpy(b, a, sizeof b);
+#if SPK_NU
+        str_cpy(b + str_len(b), song.playing ? " NOW. KEY: NEXT. HOLD+TAP: COPY" : " NOW. KEY: GO. HOLD+TAP: COPY", sizeof b - str_len(b));
+#else
         str_cpy(b + str_len(b), song.playing ? " NOW. A KEY: NEXT" : " NOW. A KEY: GO", sizeof b - str_len(b));
+#endif
     }
     GFX_HOOK_ALIGN(3, 96, 237, 118, AL_HV, "pattern bank status centred");
     cv_text_in(3, 96 + CAP_IN(S, 22), 234, &AF_S, b, T_MID, T_SURF);

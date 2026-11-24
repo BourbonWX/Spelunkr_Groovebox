@@ -30,16 +30,19 @@ export function restoreSectors(nor, sectors) {
 
 export const HOLD_MS = 24;
 // a song for a link (felucca_web.c "the share link"): [id, bytes] for the music's storage objects, id 0 the autosave
-// (the FEEDs, their sounds, the song), 1..6 FREQ A..F; a pattern not stored goes as the bank's cleared record, so
-// opening the link clears the visitor's own there
-export const SONG_IDS = 7;
+// (the FEEDs, their sounds, the song), 1..6 FREQ A..F, 7 LEAD (its sound and recorded lanes: lead.c); a pattern not
+// stored goes as the bank's cleared record, LEAD as an empty one, so opening the link clears the visitor's own there
+export const SONG_IDS = 8;
+const LEAD_ID = 7;
 const BANK_MAGIC = 0x4B4E4252;
-function songObj(ex, id) { return id ? ex.web_obj_bank0() + id - 1 : ex.web_obj_autosave(); }
+function songObj(ex, id) { return id === LEAD_ID ? ex.web_obj_lead() : id ? ex.web_obj_bank0() + id - 1 : ex.web_obj_autosave(); }
 export function getSong(ex) {
   const out = [];
   for (let id = 0; id < SONG_IDS; id++) {
+    if (id === LEAD_ID && !ex.web_obj_lead) continue;      // (a build before LEAD)
     const n = ex.web_obj_get(songObj(ex, id));
     if (n > 0) out.push([id, new Uint8Array(ex.memory.buffer, ex.web_obj_buf(), n).slice()]);
+    else if (id === LEAD_ID) out.push([id, new Uint8Array(8)]);
     else if (id) {
       const b = new Uint8Array(8);
       new DataView(b.buffer).setUint32(0, BANK_MAGIC, true);
@@ -50,7 +53,8 @@ export function getSong(ex) {
   return out;
 }
 export function putSong(ex, song) {
-  for (const [id, bytes] of song) {
+  if (ex.web_obj_lead && !song.some(([id]) => id === LEAD_ID)) song = [...song, [LEAD_ID, new Uint8Array(8)]];   // (a song from
+  for (const [id, bytes] of song) {                                                       // before LEAD: none here either)
     if (id < 0 || id >= SONG_IDS || bytes.length > ex.web_obj_max()) continue;
     new Uint8Array(ex.memory.buffer, ex.web_obj_buf(), bytes.length).set(bytes);
     ex.web_obj_put(songObj(ex, id), bytes.length);
@@ -196,7 +200,7 @@ if (typeof registerProcessor === "function") {
         try {
           const module = await WebAssembly.compile(m.wasm);
           const ex = (await WebAssembly.instantiate(module, WASI_STUB)).exports;
-          try {                                         // the warm-up's copy (process() plays it a slice at a time)
+          if (!m.nowarm) try {                          // the warm-up's copy (process() plays it a slice at a time)
             const wx = (await WebAssembly.instantiate(module, WASI_STUB)).exports;
             wx._initialize();
             wx.web_nor_erase();
@@ -246,6 +250,8 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "mute") { ex.web_mute(m.k);
       } else if (m.type === "solo") { ex.web_solo_toggle(m.k);
       } else if (m.type === "tool") { ex.web_tool(m.k, m.which);   // (the page's shortcuts: felucca_web.c)
+      } else if (m.type === "leadfocus") { if (ex.web_lead_focus) ex.web_lead_focus(m.on ? 1 : 0);   // (LEAD: lead.c)
+      } else if (m.type === "leadclear") { if (ex.web_lead_clear) ex.web_lead_clear();
       } else if (m.type === "undo") { ex.web_undo();
       } else if (m.type === "touch") { if (ex.web_touch) ex.web_touch(m.phase, m.x, m.y);
       } else if (m.type === "midisel") { if (ex.web_midi_sel_set) ex.web_midi_sel_set(m.on ? 1 : 0);
@@ -262,6 +268,8 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "xy") { ex.web_xy(m.j, m.x, m.y, m.on ? 1 : 0, m.k ?? 255);
       } else if (m.type === "play") {                 // the shared song, once switched on: the song, else the pattern
         ex.web_bounce_go(ex.web_song_sections() ? 1 : 0, 0);
+      } else if (m.type === "stop") {                 // (the playlist's player: the next song)
+        ex.web_bounce_stop();
       } else if (m.type === "info") {                 // the studio's export dialog: what there is to bounce
         this.port.postMessage({ type: "info", id: m.id, sections: ex.web_song_sections(), bpm: ex.web_bpm(),
                                 loop: ex.web_pattern_frames() / ex.web_sample_rate() });

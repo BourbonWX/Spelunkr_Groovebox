@@ -66,9 +66,17 @@ static const uint8_t GEN_MOD[8][4] = {
 static const uint8_t GEN_CAR[8] = {8, 8, 8, 8, 10, 14, 14, 15};
 static const int16_t GEN_NORM[5] = {0, 32767, 23170, 18919, 16384};   /* the carriers' sum: 1 / sqrt(n) */
 
+#if SPK_NU
+static track_t *gen_xt;                                   /* (the Spelunkr web build: LEAD's voice, outside trk[]: lead.c) */
+static gen_note_t gen_xn[1];
+#endif
 static gen_note_t *gen_note_of(track_t *t, voice_t *v)
 {
     uint32_t i;
+#if SPK_NU
+    if (t == gen_xt && t)
+        return v == t->v ? gen_xn : 0;
+#endif
     if (t < &trk[0] || t >= &trk[NPART])
         return 0;
     i = (uint32_t)(v - t->v);

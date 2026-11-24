@@ -20,6 +20,21 @@
 #define PC_PHANTOM_C 1
 
 static track_t ph_trk;                                 /* PHANTOM's sound and its one voice (v[0]) */
+/* the Spelunkr Groovebox (web, SPK_NU): PHANTOM is LEAD (Ed, Nov 24: "broaden that track and engine"): recorded into the
+ * song (lead.c: a lane of notes a pattern, played back through the keys 27.. here) and more sounds than MORPH's
+ * SIGNALs (FM's, SAMPLE's, GENESIS's presets: lead.c lead_sound). The FM-1's PHANTOM is unchanged (SPK_NU 0) */
+#define PH_LIVE 27u                                    /* the keys 0..26 are the player's; 27.. the recorded lane's */
+#if SPK_NU
+#define PH_NKEY (PH_LIVE + 13u)
+static void lead_rec_key(uint32_t note, int on);       /* lead.c */
+static void lead_tick(void);
+static uint32_t lead_snd;                              /* LEAD's sound: 0..SIG_N - 1 MORPH's SIGNALs, then lead.c's list */
+static uint8_t lead_ulast;                             /* the last undoable thing was LEAD's (lead.c; ui.c load_begin clears) */
+static int lead_theremin(void);                        /* MORPH: the theremin's envelope and legato; else lead.c's ADSR */
+static int lead_recording(void);                       /* REC armed on LEAD, playing: its keys go into the lane */
+#else
+#define PH_NKEY PH_LIVE
+#endif
 static volatile uint8_t ph_keys;                       /* main: the keys play PHANTOM (= ph_focus, ui_input.c) */
 static uint8_t ph_focus;                               /* main: ALGORITHM's fifth stop: KNOB 1..4, PRESETS on PHANTOM */
 static uint8_t ph_page;                                /* main: its knobs: 0 SCAN WARP FOLD CLARITY, 1 GLIDE VIBRATO SUB LEVEL
@@ -31,7 +46,8 @@ static struct {
     int32_t cur, tgt;                                  /* the pitch, Q8 of a 1/16 semitone */
     uint32_t vph;                                      /* the vibrato's phase */
     uint32_t held;                                     /* blocks since the fresh attack (the vibrato's delay) */
-    uint8_t key[27];                                   /* the note each key started, 0 none */
+    uint8_t key[PH_NKEY];                              /* the note each key started, 0 none */
+    uint8_t stage;                                     /* (LEAD, not the theremin: 0 attack, 1 decay / sustain) */
 } ph;
 static int32_t ph_buf[CTL];
 
@@ -61,9 +77,17 @@ static void ph_signal(uint32_t k)
     ph_trk.eng_req = (uint8_t)ENGI_MORPH;               /* (the ISR switches: phantom_render) */
 }
 /* PRESETS on PHANTOM: the 16 SIGNALs; its sound's place on that line, its name */
+#if SPK_NU
+static uint32_t ph_voice_at(void);                     /* lead.c: LEAD's whole list */
+static void ph_voice(uint32_t k);
+static const char *ph_voice_name(void);
+static uint32_t ph_voice_n(void);
+#else
 static uint32_t ph_voice_at(void) { return (uint32_t)clamp(ph_trk.p[P_E0], 0, SIG_N - 1); }
 static void ph_voice(uint32_t k) { ph_signal(k); }
 static const char *ph_voice_name(void) { return SIG_NAME[clamp(ph_trk.p[P_E0], 0, SIG_N - 1)]; }
+static uint32_t ph_voice_n(void) { return SIG_N; }
+#endif
 /* power-on and a project without PHANTOM: the theremin. CARRIER near its sine, the low-pass a little closed */
 static void phantom_init(void)
 {
@@ -95,6 +119,23 @@ static void phantom_note(uint32_t note)
         ph.cur = ph.tgt;
         ph.started = 1;
     }
+#if SPK_NU
+    if (!lead_theremin()) {                            /* LEAD's other sounds: every key a new note (gliding there if
+                                                        * GLIDE is up), its sample or operators struck again */
+        voice_t *v = &ph_trk.v[0];
+        v->note = (uint8_t)note;
+        v->vel = 100;
+        v->pitch16 = v->pitch_cur = (int16_t)clamp((ph.cur >> 8), 0, 2047);
+        v->gate = 1;
+        ph_trk.engine = ph_trk.eng_req;
+        ENGINES[eng_idx(ph_trk.engine)]->note_on(&ph_trk, v);
+        v->active = 1;
+        ph.gate = 1;
+        ph.held = 0;
+        ph.stage = 0;
+        return;
+    }
+#endif
     if (!ph.gate) {                                    /* a fresh phrase: attack from where the last one faded to */
         if (!ph_trk.v[0].active || ph.env == 0) {
             ph_trk.engine = ph_trk.eng_req;
@@ -111,9 +152,13 @@ static uint8_t ph_och = 5u;                            /* (0.10: channel 6; FEED
 static void ph_key_on(uint32_t k, uint32_t note)
 {
     uint32_t i, j = 0;
-    if (k >= 27u)
+    if (k >= PH_NKEY)
         return;
-    if (!ph.n) {                                        /* M6: a PHANTOM accent (a phrase's first note, not a legato
+#if SPK_NU
+    if (k < PH_LIVE)
+        lead_rec_key(note, 1);                         /* (recording: into LEAD's lane) */
+#endif
+    if (!ph.n && k < PH_LIVE) {                         /* M6: a PHANTOM accent (a phrase's first note, not a legato
                                                          * slide): the screen breaks up a moment, HOME's starfield
                                                          * sends a shockwave (gfx.c, ui_graph.c graph_stars) */
         jit_kick(1u);
@@ -135,11 +180,15 @@ static void ph_key_on(uint32_t k, uint32_t note)
 static void ph_key_off(uint32_t k)
 {
     uint32_t i, j = 0, note;
-    if (k >= 27u || !ph.key[k])
+    if (k >= PH_NKEY || !ph.key[k])
         return;
     note = ph.key[k] - 1u;
     ph.key[k] = 0;
-    for (i = 0; i < 27u; i++)                          /* (another key still holds the same note) */
+#if SPK_NU
+    if (k < PH_LIVE)
+        lead_rec_key(note, 0);
+#endif
+    for (i = 0; i < PH_NKEY; i++)                      /* (another key still holds the same note) */
         if (ph.key[i] == note + 1u)
             return;
     for (i = 0; i < ph.n; i++)
@@ -148,14 +197,17 @@ static void ph_key_off(uint32_t k)
     ph.n = (uint8_t)j;
     if (ph.n)
         ph.tgt = (int32_t)ph.stack[ph.n - 1u] * 16 * 256;   /* legato back to the one still held */
-    else
+    else {
         ph.gate = 0;                                   /* the release */
+        ph_trk.v[0].gate = 0;                          /* (an engine with its own envelopes: they release too) */
+    }
 }
 static void ph_all_off(void)                           /* ISR: every key let go at once (power, a layer) */
 {
     memset(ph.key, 0, sizeof ph.key);
     ph.n = 0;
     ph.gate = 0;
+    ph_trk.v[0].gate = 0;
 }
 
 /* ISR (fx.c mix_block): n samples into the dry mix and the delay and reverb sends */
@@ -167,6 +219,30 @@ static void phantom_render(int32_t *l, int32_t *r, int32_t *sd, int32_t *sv, uin
     int32_t e0 = ph.env, g, p, vib, fine, lvl, d, rv, tune, tune_fine;
     if (!v->active)
         return;
+#if SPK_NU
+    if (!lead_theremin()) {                            /* LEAD's other sounds: the sound's own ATTACK DECAY SUSTAIN
+                                                        * RELEASE (an engine with its own envelopes: held full, they shape it) */
+        const engine_t *en = ENGINES[eng_idx(ph_trk.eng_req)];
+        int32_t a = clamp(ph_trk.p[P_ATK], 0, 127), dc = clamp(ph_trk.p[P_DEC], 0, 127), su = clamp(ph_trk.p[P_SUS], 0, 127) * 258,
+                rl = clamp(ph_trk.p[P_REL], 0, 127);
+        if (en->ownenv) {
+            a = dc = 0;
+            su = 32767;
+        }
+        if (ph.gate && ph.stage == 0) {
+            ph.env += a ? 32767 / (1 + a * a / 8) + 1 : 32767;
+            if (ph.env >= 32767) {
+                ph.env = 32767;
+                ph.stage = 1;
+            }
+        } else if (ph.gate) {
+            ph.env -= (ph.env - su) / (1 + dc * dc / 16);
+        } else {
+            int32_t f = ph.env / (1 + rl * rl / 32) + 2;
+            ph.env = ph.env > f ? ph.env - f : 0;
+        }
+    } else
+#endif
     if (ph.gate)                                       /* the envelope: a soft linear rise, a long fall */
         ph.env = ph.env + PH_ATK_STEP < 32767 ? ph.env + PH_ATK_STEP : 32767;
     else
@@ -210,6 +286,9 @@ static void phantom_render(int32_t *l, int32_t *r, int32_t *sd, int32_t *sv, uin
     m.cutoff = 0;
     m.shape = 64 << 8;
     v->pitch_cur = m.pitch16;
+#if SPK_NU
+    v->pitch16 = m.pitch16;
+#endif
     for (i = 0; i < n; i++)
         ph_buf[i] = 0;
     ENGINES[eng_idx(ph_trk.engine)]->render(&ph_trk, v, ph_buf, n, &m);
@@ -287,6 +366,16 @@ static const param_desc_t *ph_param(uint32_t k, int16_t **vp)
 {
     static const uint8_t ID[2][4] = {{P_E1, P_E2, P_E3, P_E4}, {PH_GLIDE, PH_VIB, P_E7, P_LEVEL}};
     uint32_t id = ID[ph_page & 1u][k & 3u];
+#if SPK_NU
+    if (ph_trk.eng_req != ENGI_MORPH) {               /* LEAD's other sounds: the engine's own HOME knobs, then GLIDE
+                                                        * VIBRATO REVERB LEVEL */
+        const engine_t *en = ENGINES[eng_idx(ph_trk.eng_req)];
+        id = ph_page & 1u ? (k & 3u) == 2u ? (uint32_t)P_REV : ID[1][k & 3u] : en->knob[k & 3u];
+        *vp = &ph_trk.p[id];
+        return id == PH_GLIDE ? &PH_GLIDE_D : id == PH_VIB ? &PH_VIB_D : id == P_LEVEL ? &PH_LEVEL_D
+             : id >= P_E0 && id < P_E0 + 8u ? &en->edit[id - P_E0] : &TP[id];
+    }
+#endif
     *vp = &ph_trk.p[id];
     return id == PH_GLIDE ? &PH_GLIDE_D : id == PH_VIB ? &PH_VIB_D : id == P_LEVEL ? &PH_LEVEL_D : &ENG_MORPH.edit[id - P_E0];
 }

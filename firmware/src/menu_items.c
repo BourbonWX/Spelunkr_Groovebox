@@ -105,10 +105,27 @@ static const uint8_t MI_TAB[MI_COUNT] = {
 #define TUNE_MIN (-50)
 #define TUNE_N 101u
 typedef char mtab_fits_ui[sizeof ui.menu_row >= MTAB_COUNT ? 1 : -1];   /* (ui.c: the row last picked per tab) */
+/* the Spelunkr Groovebox (web, the box: SPK_NU; Ed, Nov 24: "remove things that are ONLY specific to the FM-1's
+ * hardware"): rows that only set the FM-1's own parts are not shown (their values stay as they are): SCREEN OFF and
+ * SCREEN WAKE (its screen's sleep), SPEAKER EQ (its little speaker), USB SERIAL (its USB console), 2ND CORE (its
+ * chip), CALIBRATION (its knobs). Kept: what the page or the box use (LEDS and SCALE LEDS light the page's buttons and
+ * keys; KNOB ACCEL the wheels; the MIDI tab: MIDI keyboards on the page and the box, a channel a track) */
+static uint32_t mi_tab(uint32_t row)                   /* a row's tab as shown (MTAB_HIDDEN: none) */
+{
+#if SPK_NU
+    if (row == MI_SCROFF || row == MI_LOWCUT || row == MI_SCRWAKE || row == MI_SERIAL || row == MI_PANEL
+#if FELUCCA_CPU2
+        || row == MI_CPU2
+#endif
+        )
+        return MTAB_HIDDEN;
+#endif
+    return row < MI_COUNT ? MI_TAB[row] : (uint32_t)MTAB_HIDDEN;
+}
 static uint32_t mtab_first(uint32_t t)                 /* a tab's first row */
 {
     uint32_t i = 0;
-    while (i < MI_COUNT && MI_TAB[i] != t)
+    while (i < MI_COUNT && mi_tab(i) != t)
         i++;
     return i;
 }
@@ -116,7 +133,22 @@ static uint32_t mtab_rows(uint32_t t)                  /* .. and how many it has
 {
     uint32_t i, n = 0;
     for (i = 0; i < MI_COUNT; i++)
-        n += MI_TAB[i] == t;
+        n += mi_tab(i) == t;
+    return n;
+}
+static uint32_t mtab_row(uint32_t t, uint32_t k)       /* its k-th row (a tab's rows need not follow each other) */
+{
+    uint32_t i;
+    for (i = 0; i < MI_COUNT; i++)
+        if (mi_tab(i) == t && !k--)
+            return i;
+    return mtab_first(t);
+}
+static uint32_t mtab_pos(uint32_t row)                 /* a row's place in its tab */
+{
+    uint32_t i, n = 0, t = mi_tab(row);
+    for (i = 0; i < row && i < MI_COUNT; i++)
+        n += mi_tab(i) == t;
     return n;
 }
 /* STYLE (ui_style, gfx.c ST_*): FLAT the filled cards; LINE black areas divided by 1 px rules (#50, #57: the 0.9 look)

@@ -42,7 +42,8 @@ open one), **FILE** (save and open a project) and **HELP** (the tour, this guide
 - **SONG ▸ NEW SONG** and **SONG ▸ 🎲 RANDOM SONG**: a blank song, or a whole random one to play with (lo-fi,
   chillwave, electro or chiptune). Both ask first.
 - **↶ UNDO** takes back the last thing you did to the music (a NEW SONG or RANDOM, a sound picked, a row's BEAT /
-  RANDOM / VARY / CLEAR); click it again to put it back.
+  RANDOM / VARY / CLEAR, a pattern copied, cleared or made by accident, LEAD's last take); click it again to put it
+  back.
 - **The song bar** under the top buttons: **TEMPO** (◀ ▶, hold to keep going, or **TAP** along 3 or 4 times),
   **SWING** (0 % straight, 30–50 % a lo-fi bounce) and **KEY**: the home note and the scale; tick **keys stay in key**
   and every key you play lands in the scale. RANDOM songs set the key they're in.
@@ -88,8 +89,9 @@ open one), **FILE** (save and open a project) and **HELP** (the tour, this guide
    a bass on **SYNTH 2**.
 4. **Shape it**: the four controls change the track's sound. **SOUND** shows more of its settings.
 5. **More patterns**: a pattern is a loop of every track. Tap **MIX**: patterns A to F are on the white keys C to A
-   (computer keys Z to N). Press **D** (X) for pattern B: it starts as a copy of A. Change it: a fill, a chorus, a
-   drop.
+   (computer keys Z to N). Tap an empty one, **D** (X), for a new, empty pattern B. To start from a copy instead, hold
+   the key of the pattern to copy (**C**, Z, for A) and tap the key it should go to (**D**, X). Change it: a fill, a
+   chorus, a drop. **UNDO** takes back a pattern made, copied or cleared by mistake.
 6. **Arrange**: tap **MIX** again for the SONG screen. Tap **RECORD**, press **PLAY**, and click the patterns in the
    grid as the music goes (each one starts when the loop comes round). **PLAY** stops it, and what you played becomes
    the song's parts. **PLAY** on the SONG screen plays the song.
@@ -104,6 +106,20 @@ open one), **FILE** (save and open a project) and **HELP** (the tour, this guide
   warbly tape), **AGE** (hiss and grit).
 - **GENESIS** and **SID**: the sound chips of old game consoles and computers.
 - **ANALOG** and **MORPH**: classic and strange synths. **GLORP** and **FM**: wobbly and bell-like ones.
+
+## LEAD: the voice over it all
+
+After the last track there's one more: **LEAD**, a voice you play over everything else. Press **TRACK ▶** past the
+last track (or click the **LEAD** row under the tracks), then play the keys.
+
+- **Its sound**: **SOUNDS ◀ ▶** picks it. It starts on the theremin-like MORPH waves (it slides from note to note),
+  then FM bells, the SAMPLE instruments (piano, EP, vibes, sax, glass) and the GENESIS chip sounds.
+- **Its knobs**: the sound's own four; **KNOBS 2** (EDIT) swaps them for GLIDE (how far notes slide), VIBRATO, REVERB
+  and LEVEL.
+- **Record it**: with LEAD picked, tap **RECORD** and play. What you play is kept in the pattern that's playing and
+  plays back every time it comes round, even when you've gone back to the other tracks. Record again to add more.
+- **CLEAR** on the LEAD row takes this pattern's LEAD notes away; **UNDO** brings back the last take or clear.
+- LEAD is saved with the song and goes along in exports and song codes.
 
 ## Your own samples
 
@@ -158,6 +174,11 @@ locked pad is part of the song: it's still there next time, in a SAVE file and i
 - **AUDIO ▸ RECORD LIVE** records what you hear, live, to a WAV (the AUDIO button turns red and counts; STOP
   RECORDING in the same menu saves it).
 - **FILE ▸ SAVE PROJECT** downloads everything as a project file, your samples too; **FILE ▸ OPEN PROJECT** loads one.
+
+**SHARE ▸ PLAYLIST** plays up to 10 song codes back to back, like an album: paste the codes, put them in order with
+▲ ▼, and press **PLAY ALL**. Each song plays its song through once (one without a song plays its pattern 4 times).
+**NEXT** and **BACK** skip; your own song isn't touched, and pressing PLAY on the groovebox stops the playlist. The
+playlist is kept in this browser, but the codes still expire after a month: an expired one is skipped.
 
 ## POWER USER
 

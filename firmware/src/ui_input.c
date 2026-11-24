@@ -5,6 +5,9 @@
 /* ----------------------------------------------------------- LEDs --- */
 /* The LED picture is built off-line and copied one byte per column: clearing
  * and relighting would let the 10 kHz scan catch the dark gap and flicker. */
+#if SPK_NU && RONDO_LAYOUT
+static uint32_t bank_held_keys(void);                  /* (ui_layer.c) */
+#endif
 static uint8_t led_pos[41];                        /* (col << 3) | row bit, 0xFF = none */
 
 static void led_pos_init(void)
@@ -2021,6 +2024,10 @@ static void ui_input(void)
         slice_keys_pick(notes);
 #endif
     lock_keys();                                        /* (a grid key on a hit let go: the hit goes) */
+#if SPK_NU && RONDO_LAYOUT
+    if (bank_hold_poll(bank_held_keys()))               /* a pattern key let go: it acts now (song_bank.c bank_press) */
+        ui.force = 1;
+#endif
     if (song.grid == 3u) {
         song_keys(notes);
 #if RONDO_LAYOUT
@@ -2070,7 +2077,7 @@ static void ui_input(void)
             ui_message("FILTR GATE ECHO FLANG");
             ui.force = 1;
         } else if (ph_focus) {                            /* PHANTOM: its SIGNAL (GLIDE VIBRATO kept) */
-            uint32_t k = (uint32_t)clamp((int32_t)ph_voice_at() + (s > 0 ? 1 : -1), 0, SIG_N - 1);
+            uint32_t k = (uint32_t)clamp((int32_t)ph_voice_at() + (s > 0 ? 1 : -1), 0, (int32_t)ph_voice_n() - 1);
             if (k != ph_voice_at()) {
                 ph_voice(k);
                 ui_message(ph_voice_name());

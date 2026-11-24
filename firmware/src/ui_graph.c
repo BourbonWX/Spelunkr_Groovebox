@@ -2148,7 +2148,7 @@ static void strip_extra_row(uint32_t c, uint32_t k, int32_t y, uint32_t large)
     if (k == STRIP_PH) {
         char b[16];
         str_cpy(b, "PHANTOM ", sizeof b);
-        str_cpy(b + 8, sig_name(ENGI_MORPH, ph_trk.p[P_E0]), sizeof b - 8u);
+        str_cpy(b + 8, ph_voice_name(), sizeof b - 8u);
         GFX_HOOK_ALIGN(0, TR_NY(large), 0, TR_NY(large) + ch, AL_V, "tracks row name line");
         cv_free_text(24, TR_NY(large) - (large ? AF_M_CAP_Y : AF_S_CAP_Y), large ? &AF_M : &AF_S, b, sel ? T_INK : T_TEXT,
                      bg, TR_MX - 30);
@@ -2519,6 +2519,25 @@ static void graph_phantom(uint16_t c)
 {
     char a[32];
     int32_t x, w;
+#if SPK_NU                                             /* LEAD (lead.c): its sound of the whole list, recording */
+    uint32_t sg = ph_voice_at();
+    int rec = lead_recording(), sig = ENG_SIG(ph_trk.eng_req % NENGINES);
+    x = cv_text_on(PANEL_X0, 4, &AF_M, "PHANTOM > ", T_MID, T_SURF);
+    str_cpy(a, "No 00 ", sizeof a);
+    a[3] = (char)('0' + (sg + 1u) / 10u % 10u);
+    a[4] = (char)('0' + (sg + 1u) % 10u);
+    str_cpy(a + 6, ph_voice_name(), sizeof a - 6u);
+    cv_free_text(x, 4, &AF_M, a, T_ACCENT, T_SURF, PANEL_X0 + PANEL_W - x);
+    cv_text_on(PANEL_X0, 22, &AF_M, rec ? "[\x86 INGEST]" : ph.gate ? "[LIVE]" : "[OPEN CHANNEL]", rec ? T_REC : ph.gate ? T_ACCENT : T_DIM,
+               T_SURF);
+    str_cpy(a, ph_page ? (sig ? "EDIT: SCAN.." : "EDIT: SOUND..") : "EDIT: GLIDE..", sizeof a);
+    w = text_w(&AF_S, a);
+    cv_text_on(PANEL_X0 + PANEL_W - w, 24, &AF_S, a, T_DIM, T_SURF);
+    if (sig)
+        graph_cycle_in(&ph_trk, c, 42, 74);
+    else
+        graph_stars(c, 42, 74);
+#else
     uint32_t sg = (uint32_t)clamp(ph_trk.p[P_E0], 0, SIG_N - 1);
     x = cv_text_on(PANEL_X0, 4, &AF_M, "PHANTOM > ", T_MID, T_SURF);
     str_cpy(a, "SIG 00 ", sizeof a);
@@ -2531,6 +2550,7 @@ static void graph_phantom(uint16_t c)
     w = text_w(&AF_S, a);
     cv_text_on(PANEL_X0 + PANEL_W - w, 24, &AF_S, a, T_DIM, T_SURF);
     graph_cycle_in(&ph_trk, c, 42, 74);
+#endif
 }
 static void graph_home(uint16_t c)
 {

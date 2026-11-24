@@ -174,7 +174,14 @@ body.boxpanel > *:not(#boxpanel):not(dialog) { display: none !important; }
 body.boxpanel #boxpanel { display: grid; position: fixed; inset: 0; place-items: center; background: #000; }
 #boxpanel .bezel { width: min(100vw, 100vh); height: min(100vw, 100vh); padding: 0; border: 0; border-radius: 0; }
 #boxpanel #screen { width: 100%; height: 100%; }
-body.boxpanel #screen, body.boxv #screen { cursor: default; touch-action: auto; }   /* (the box's screen is not touch) */
+/* the box's screen: no touch, but a mouse works (USB): a crosshair, hidden while the mouse is still (.mouseidle) */
+body.boxpanel, body.boxpanel #screen, body.boxv #screen, .boxpg { --xhair: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><g fill='none' stroke-linecap='round'><circle cx='16' cy='16' r='9' stroke='%231C0A57' stroke-width='4'/><path d='M16 1v7M16 24v7M1 16h7M24 16h7' stroke='%231C0A57' stroke-width='4.5'/><circle cx='16' cy='16' r='9' stroke='%23FFE13A' stroke-width='1.6'/><path d='M16 1.5v6.5M16 24v6.5M1.5 16h6.5M24 16h6.5' stroke='%23FFE13A' stroke-width='2'/></g><circle cx='16' cy='16' r='2.4' fill='%23E2741F' stroke='%231C0A57' stroke-width='1.2'/></svg>") 16 16, crosshair; }
+body.boxpanel #screen, body.boxv #screen, .boxpg { cursor: var(--xhair); touch-action: auto; }
+body.boxpanel { cursor: none; }
+body.boxpanel.mouseidle, body.boxpanel.mouseidle * { cursor: none !important; }
+.boxpg [data-k], .boxpg .bp-big.go, .boxpg .bp-wave { cursor: var(--xhair); }
+.boxpg [data-k]:hover { filter: brightness(1.15); }
+#boxsay { pointer-events: none; }
 /* the box's own pages over the screen (VAPOR, SAMPLES): the screen's look, sized from its width (--u = 1 %) */
 .boxpg { position: absolute; inset: 0; z-index: 3; background: #0A104E; color: #f4f4ff; font: calc(var(--u) * 3.6)/1.2 "VT323", monospace;
   padding: calc(var(--u) * 3); display: flex; flex-direction: column; gap: calc(var(--u) * 1.4); overflow: hidden; }
@@ -331,6 +338,8 @@ body.boxpanel #screen, body.boxv #screen { cursor: default; touch-action: auto; 
 .grow.sel { outline: 3px solid var(--yellow); outline-offset: -3px; z-index: 1; }
 .ghd { width: 430px; flex: 0 0 430px; display: flex; align-items: center; gap: 10px; padding: 0 10px; background: var(--panel); cursor: pointer; border: 0; text-align: left; }
 .grow.sel .ghd { background: linear-gradient(90deg, var(--orange), var(--rust)); }
+.grow.lead .ghd .n { font-size: 30px; }
+.grow.lead .lead-tools { margin-left: auto; }
 .ghd .n { font: 46px/.9 var(--head); width: 46px; color: var(--yellow); }
 .ghd .ic { width: 34px; height: 34px; border-radius: 6px; background: var(--indigo); border: 2px solid var(--yellow); color: var(--yellow);
            display: grid; place-items: center; font: 22px/1 var(--head); flex: none; }
@@ -387,6 +396,20 @@ dialog input[type=number] { width: 4em; font: inherit; background: var(--night);
 dialog small { color: var(--soft); }
 dialog progress { width: 100%; }
 dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+/* the playlist (SHARE > PLAYLIST) */
+#playdlg { max-width: 34em; }
+#pllist { margin: 0 0 8px; padding: 0; list-style: none; display: grid; gap: 5px; counter-reset: pl; }
+#pllist li { display: grid; grid-template-columns: 2em 1fr auto auto auto; gap: 5px; align-items: center; counter-increment: pl; }
+#pllist li::before { content: counter(pl); font: 24px var(--head); color: var(--yellow); text-align: right; }
+#pllist li.now { outline: 2px solid var(--yellow); outline-offset: 2px; background: linear-gradient(90deg, var(--orange), var(--rust)); }
+#pllist input { font: 20px var(--mono); background: var(--night); color: #fff; border: 2px solid var(--rule2); padding: 2px 6px; min-width: 0; text-transform: uppercase; }
+#pllist li small { grid-column: 2 / -1; color: var(--soft); }
+#pllist li.bad small { color: #ff9a8a; }
+#pllist .btn { padding: 2px 8px; min-width: 0; }
+#plnow { margin-top: 10px; display: grid; gap: 4px; }
+#plnow b { font: 22px var(--head); color: var(--yellow); font-weight: normal; }
+#plnow .bar { height: 6px; background: var(--night); }
+#plnow .bar i { display: block; height: 100%; width: 0; background: var(--yellow); }
 #sharecode { font: 52px/1 var(--head); color: var(--yellow); letter-spacing: 2px; margin: 4px 0 10px; user-select: all; }
 #codein { width: 100%; font: 28px var(--head); letter-spacing: 1px; padding: 6px 10px; background: var(--night); color: #fff; border: 2px solid var(--rule2); text-transform: uppercase; }
 #sharelink, #codein { box-sizing: border-box; }
@@ -528,6 +551,7 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
       <div class="ddm" id="ddsharem" role="menu" aria-label="Share" hidden>
         <button class="btn ddi" id="share" type="button" role="menuitem" title="A link that plays this song in anyone's browser">SHARE THIS SONG<small>a code and a link, for a month</small></button>
         <button class="btn ddi" id="codebtn" type="button" role="menuitem" title="Open a song someone shared with a code">OPEN A CODE<small>a song someone shared</small></button>
+        <button class="btn ddi" id="playlistbtn" type="button" role="menuitem" title="Up to 10 song codes, played back to back like an album">PLAYLIST<small>up to 10 codes, back to back</small></button>
       </div>
     </div>
     <div class="dd">
@@ -743,6 +767,19 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   </form>
 </dialog>
 
+<dialog id="playdlg">
+  <form method="dialog">
+    <h2>PLAYLIST</h2>
+    <p style="margin:0 0 8px">Up to 10 song codes, played back to back like an album. Each one plays its song through
+      once (one that has no song yet plays its pattern 4 times), then the next starts. The song you have open stays as it
+      is. Codes last a month from when they were shared, so an expired one is skipped.</p>
+    <ol id="pllist"></ol>
+    <button class="btn" type="button" id="pladd">+ ADD A CODE</button>
+    <div id="plnow"><b>NOT PLAYING</b><span class="bar"><i></i></span></div>
+    <div class="buttons"><button class="btn" value="close">CLOSE</button><button class="btn" type="button" id="plprev" title="The song before">&#9198; BACK</button><button class="btn orange" type="button" id="plgo">&#9654; PLAY ALL</button><button class="btn" type="button" id="plnext" title="The next song">NEXT &#9197;</button></div>
+  </form>
+</dialog>
+
 <dialog id="codedlg">
   <form method="dialog">
     <h2>OPEN A CODE</h2>
@@ -788,7 +825,12 @@ const KNOB_PLAIN = { HBT: "TEMPO", SWG: "SWING", CLK: "CLOCK", FILTR: "FILTER", 
   ATK: "ATTACK", DEC: "DECAY", SUS: "SUSTAIN", REL: "RELEASE", RES: "RESONANCE", RESO: "RESONANCE", CUT: "CUTOFF",
   LRATE: "SPEED", RATE: "SPEED", DPTH: "DEPTH", REV: "REVERB", DLY: "DELAY", "No.": "SOUND", ENG: "ENGINE", FAV: "FAVORITE",
   OCT: "OCTAVE", TRN: "TRANSPOSE", GLD: "GLIDE", VCE: "VOICE", PROB: "CHANCE", RATCH: "REPEATS", NDG: "NUDGE",
-  SET: "SOUND", BITS: "CRUNCH", DRV: "DRIVE", SCAN: "WAVE", WARP: "BEND", CLARITY: "TONE", BD: "KICK", SD: "SNARE", HH: "HAT", OH: "OPEN HAT", PC: "PERC", CP: "CLAP" };
+  SET: "SOUND", BITS: "CRUNCH", DRV: "DRIVE", SCAN: "WAVE", WARP: "BEND", CLARITY: "TONE", BD: "KICK", SD: "SNARE", HH: "HAT", OH: "OPEN HAT", PC: "PERC", CP: "CLAP",
+  CG: "CONGA", CHRD: "CHORD", QNT: "SNAP", QNTZ: "QUANTIZE", SHP: "SHAPE", DTUNE: "DETUNE", FB: "FEEDBACK", FLT: "FILTER", LVL: "LEVEL",
+  PIT: "PITCH", VOIC: "VOICING", ALG: "ALGORITHM", ESYNC: "ENV SYNC", ORD: "ORDER", VARI: "VARY", FLAG: "MARK", SIGNAL: "ENGINE",
+  SCL: "SCALE", VEL: "VELOCITY", VELO: "VELOCITY", MUL1: "RATIO 1", MUL2: "RATIO 2", MUL3: "RATIO 3", MUL4: "RATIO 4",
+  "INS A": "FX A", "INS B": "FX B", "INS C": "FX C", "OUT L": "OUT LEFT", "OUT R": "OUT RIGHT", "1 KIT": "KIT 1", "2 KIT": "KIT 2",
+  "1 SOUND": "SOUND 1", "2 SOUND": "SOUND 2", FLASH: "MEMORY", PHANTOM: "LEAD" };
 const ROLE = ["DRUMS", "SYNTH 1", "SYNTH 2", "SYNTH 3", "PERC"];   // by track index (NTRK order); shown by pos
 const ICON = ["D", "1", "2", "3", "P"];
 
@@ -953,6 +995,7 @@ function turn(k, n) {
   if (k.role === "master") {
     masterValue = Math.max(0, Math.min(1023, masterValue + n * 16));
     send({ type: "master", value: masterValue });
+    if (pl.n) pl.n.port.postMessage({ type: "master", value: masterValue });   // (the playlist's player: the same volume)
     setAngle(k, -135 + 270 * masterValue / 1023);
     k.val.textContent = Math.round(masterValue / 10.23) + "%";
     boxKnobDraw();
@@ -1170,7 +1213,7 @@ const canvas = $("screen"), ctx = canvas.getContext("2d");
   let acc = [0, 0];
   const step = (role, n) => { if (n) send({ type: "enc", role, n }); };
   canvas.addEventListener("wheel", (e) => {
-    if (!gridMode() || boxMode()) return;               // (the box's screen is not touch: its wheel is the ANO)
+    if (!gridMode()) return;                            // (on the box: a mouse's wheel, if one is plugged in)
     e.preventDefault();
     const f = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1;
     let dx = e.deltaX * f, dy = e.deltaY * f;
@@ -1195,7 +1238,7 @@ const canvas = $("screen"), ctx = canvas.getContext("2d");
     return [Math.round((e.clientX - r.left) / r.width * 240), Math.round((e.clientY - r.top) / r.height * 240)];
   };
   canvas.addEventListener("pointerdown", (e) => {
-    if (!node || boxMode() || (e.pointerType === "mouse" && e.button !== 0)) return;   // (the box's screen: no touch)
+    if (!node || (boxMode() && e.pointerType !== "mouse") || (e.pointerType === "mouse" && e.button !== 0)) return;   // (the box: a mouse, never a finger)
     tid = e.pointerId;
     try { canvas.setPointerCapture(e.pointerId); } catch {}
     const [x, y] = at(e);
@@ -1315,15 +1358,24 @@ function recAsk(g) {
   $("recwith").focus();
 }
 
+let mainPlayed = false;
 function showGuide(g) {
+  if (g.play && !mainPlayed && pl.n) plStop("STOPPED: your own song is playing");   // (PLAY on the groovebox: the playlist stops)
+  mainPlayed = !!g.play;
   G = g;
   const pos = (k) => g.tracks[k].pos, order = [...g.tracks.keys()].sort((a, b) => pos(a) - pos(b));
   const sel = g.tracks[g.sel], letter = (p) => "ABCDEF"[p] ?? "-";
   songBar(g);
   recAsk(g);
-  $("tnum").textContent = "TRACK " + String(pos(g.sel) + 1).padStart(2, "0");
-  $("twho").textContent = ROLE[g.sel] + (sel.b ? " +B" : "");
-  $("twhat").textContent = sel.sound ? `${sel.sound} · ${sel.engine}` : sel.engine;
+  if (g.lead && g.lead.f) {                               // LEAD focused (TRACK past the last track: lead.c)
+    $("tnum").textContent = power ? "PHANTOM" : "LEAD";
+    $("twho").textContent = "";
+    $("twhat").textContent = `${g.lead.snd} · ${g.lead.eng}`;
+  } else {
+    $("tnum").textContent = "TRACK " + String(pos(g.sel) + 1).padStart(2, "0");
+    $("twho").textContent = ROLE[g.sel] + (sel.b ? " +B" : "");
+    $("twhat").textContent = sel.sound ? `${sel.sound} · ${sel.engine}` : sel.engine;
+  }
   $("tstate").textContent = g.play ? "PLAYING" : "STOPPED";
   $("tpage").textContent = g.page;
   if (g.b && JSON.stringify(g.b) !== JSON.stringify(btnCtx)) { btnCtx = g.b; names(); }
@@ -1366,7 +1418,7 @@ function showGuide(g) {
   const cols = song ? g.song.rows.map((r, i) => ({ label: "PART " + (i + 1), sub: "×" + r[0], pats: r.slice(1), now: g.song.running && g.song.row === i, w: r[0] }))
     : [0, 1, 2, 3, 4, 5].filter((p) => (g.used >> p) & 1 || p === g.cur).map((p) => ({ label: "PATTERN " + letter(p), sub: "", pats: g.tracks.map(() => p), now: p === g.cur, queued: p === g.queue, w: 1, p }));
   const sig = JSON.stringify([cols.map((c) => [c.label, c.sub, c.pats, c.w]), order, g.sel, song, power,
-                              g.tracks.map((t) => [t.sound, t.engine, t.mute, t.solo, t.b, t.pats])]);
+                              g.tracks.map((t) => [t.sound, t.engine, t.mute, t.solo, t.b, t.pats]), g.lead]);
   if (sig !== guideSig) {
     guideSig = sig;
     const head = $("ghead");
@@ -1382,7 +1434,7 @@ function showGuide(g) {
     rows.innerHTML = "";
     for (const k of order) {
       const t = g.tracks[k], row = document.createElement("div");
-      row.className = "grow" + (k === g.sel ? " sel" : "");
+      row.className = "grow" + (k === g.sel && !(g.lead && g.lead.f) ? " sel" : "");
       row.dataset.k = k;
       const hd = document.createElement("div");
       hd.className = "ghd";
@@ -1427,8 +1479,36 @@ function showGuide(g) {
       });
       rows.append(row);
     }
+    if (g.lead) {                                         // LEAD: the voice played over it all (lead.c), recorded per pattern
+      const L = g.lead, row = document.createElement("div"), hd = document.createElement("div");
+      row.className = "grow lead" + (L.f ? " sel" : "");
+      hd.className = "ghd";
+      hd.innerHTML = `<span class="n">LD</span><span class="ic" aria-hidden="true">✦</span><span class="nm"><b>LEAD</b><span></span></span>`;
+      hd.querySelector(".nm span").textContent = `${L.snd} · ${L.eng}`;
+      hd.title = "LEAD: the voice you play over everything. Click to play it on the keys; arm RECORD while the music plays and what you play is kept in this pattern. SOUNDS picks its sound.";
+      hd.addEventListener("click", () => send({ type: "leadfocus", on: 1 }));
+      const tools = document.createElement("span"), b = document.createElement("button");
+      tools.className = "tools lead-tools";
+      b.type = "button"; b.className = "btn tl"; b.textContent = "CLEAR";
+      b.title = "CLEAR: LEAD's notes in this pattern gone. UNDO takes it back.";
+      b.addEventListener("click", (e) => { e.stopPropagation(); send({ type: "leadclear" }); });
+      tools.append(b);
+      hd.append(tools);
+      row.append(hd);
+      cols.forEach((c, i) => {
+        const p = order.map((k) => c.pats[k]).find((x) => x >= 0) ?? -1, n = p >= 0 ? L.n[p] || 0 : 0, bl = document.createElement("button");
+        bl.type = "button";
+        bl.className = "blk" + (n ? "" : " rest");
+        bl.style.flexGrow = c.w;
+        bl.innerHTML = n ? `<span class="lt">${letter(p)}</span><span class="bar"><i style="width:${Math.min(100, n * 4)}%"></i></span>` : `<span class="lt">${p >= 0 ? letter(p) + " · " : ""}—</span>`;
+        bl.title = n ? `LEAD in ${c.label}: ${n} note${n === 1 ? "" : "s"} recorded.` : `LEAD has nothing recorded in ${c.label}.`;
+        bl.addEventListener("click", () => { send({ type: "leadfocus", on: 1 }); if (p >= 0) send({ type: "cue", p }); });
+        row.append(bl);
+      });
+      rows.append(row);
+    }
     if (!song && cols.length <= 1)
-      rows.insertAdjacentHTML("beforeend", `<div class="gempty">One pattern so far. Tap ${power ? "GLO" : "MIX"} for the patterns page and press D3 (X) to copy it into B; E3 to A3 for C–F. Then put them in order on the song page (tap ${power ? "GLO" : "MIX"} again).</div>`);
+      rows.insertAdjacentHTML("beforeend", `<div class="gempty">One pattern so far. Tap ${power ? "GLO" : "MIX"} for the patterns page and tap D3 (X) for a new, empty B, or hold C3 (Z) and tap D3 (X) to copy A into B; E3 to A3 for C–F. Then put them in order on the song page (tap ${power ? "GLO" : "MIX"} again).</div>`);
   }
   // live: the playing column, the queued one, the playhead in each row
   const heads = $("ghead").children;
@@ -1609,6 +1689,15 @@ $("go").addEventListener("click", () => switchOn(!!sharedSong));
 // the box powers up straight into the groovebox: its kiosk runs Chromium with --autoplay-policy=no-user-gesture-required,
 // so no tap is needed. Its screen is not touch, so SWITCH ON can't be tapped: if the sound can't start it says so and tries
 // again every 3 s; the keys and the Pico are connected from the start either way.
+if (boxMode() === "panel") {                             // the crosshair shows while a mouse moves, gone 2.5 s after
+  let idleT = 0;
+  document.body.classList.add("mouseidle");
+  addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse") return;
+    document.body.classList.remove("mouseidle");
+    clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add("mouseidle"), 2500);
+  });
+}
 if (boxMode() === "panel") addEventListener("load", () => {
   hwConnect();
   setTimeout(() => { if (!node) $("go").click(); }, 300);
@@ -2371,6 +2460,7 @@ function deckCtx() {
   if (!G || !btnCtx) return ["face", DECK_FACE];
   const fx = btnCtx[B.FX], page = G.page || "";
   if (fx && /OFF/.test(fx[0])) return ["fx", DECK_FXK];
+  if (G.lead && G.lead.f) return ["lead", deckLead()];
   if (G.rec && (ROLE[G.sel] === "DRUMS" || ROLE[G.sel] === "PERC")) return ["drums", DECK_DRUMS];   // (core.h trk_is_kit)
   if (page === "STEPS" && gridMode()) return ["steps", DECK_STEPS];
   if (page === "MIXER") return ["mixer", DECK_MIXER];
@@ -2380,6 +2470,15 @@ function deckCtx() {
     return ["cards", [card(0), card(1), card(2), card(3), { bit: fam, col: "face" }, UNDO, ...OCTROW]];
   }
   return ["face", DECK_FACE];
+}
+// LEAD focused (lead.c): its sound, its knob pages, CLEAR (twice: this pattern's notes gone), UNDO, back to the tracks
+let leadClearAt = 0;
+function deckLead() {
+  const sure = performance.now() - leadClearAt < 3000;
+  return [{ wheel: 0, n: -1, icon: "◀", lab: "SOUND", col: "nav" }, { wheel: 0, n: 1, icon: "▶", lab: "SOUND", col: "nav" }, { bit: "EDIT", col: "face" },
+    { fn: () => { if (sure) { send({ type: "leadclear" }); leadClearAt = 0; } else { leadClearAt = performance.now(); setTimeout(deckDraw, 3100); } deckDraw(); },
+      icon: "✕", lab: sure ? "SURE? AGAIN" : "CLEAR LEAD", col: "rec" },
+    UNDO, { fn: () => send({ type: "leadfocus", on: 0 }), icon: "↩", lab: "TRACKS", col: "util" }, ...OCTROW];
 }
 let boxShift = false, boxShiftPtr = null, boxShiftUsed = false, deckMap = DECK_FACE, deckMapName = "face";
 const deckKey = (i) => (i < 6 ? DECK_TOP[i][boxShift ? 1 : 0] : (boxShift ? (boxPg && boxPg.shift ? boxPg.shift() : DECK_SHIFT) : deckMap)[i - 6]);
@@ -2529,6 +2628,7 @@ function boxPgOpen(pg) {
   if (!boxPgEl) {
     boxPgEl = document.createElement("div");
     boxPgEl.className = "boxpg";
+    boxPgMouse(boxPgEl);
     $("screen").parentNode.append(boxPgEl);
   }
   boxPgEl.hidden = false;
@@ -2536,6 +2636,22 @@ function boxPgOpen(pg) {
   boxPgFit();
   pg.enter && pg.enter();
   boxPgDraw();
+}
+// a mouse on the box's pages (no touch): click what the wheel and keys would pick, the wheel turns. A page's mouse(kind,
+// el, e) handles its own [data-k] / .bp-big.go / .bp-wave; anything else falls back to turn / nothing.
+function boxPgMouse(root) {
+  root.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse" || e.button !== 0 || !boxPg) return;
+    const el = e.target.closest("[data-k], .bp-big.go, .bp-wave");
+    if (el && boxPg.mouse) { e.preventDefault(); boxPg.mouse("click", el, e); boxPgDraw(); }
+  });
+  root.addEventListener("wheel", (e) => {
+    if (!boxPg) return;
+    e.preventDefault();
+    const n = e.deltaY < 0 ? 1 : -1;
+    if (boxPg.mouse && boxPg.mouse("wheel", e.target, e, n)) return;
+    boxPg.turn(n);
+  }, { passive: false });
 }
 function boxPgClose() {
   if (!boxPg) return;
@@ -2563,6 +2679,11 @@ const PG_VAPOR = {
   click() { $("vapgo").click(); boxPgDraw(); },
   dir(d) { vapPick = d === "left" ? (vapPick + 3) % 4 : d === "right" ? (vapPick + 1) % 4 : (vapPick + 2) % 4; boxPgDraw(); },
   read() { const e = vapEls[vapPick]; return [e.d.lab, e.d.show(e.v), Math.round(e.v / 1.27)]; },
+  mouse(kind, el, e, n) {                                  // a card: pick it (the wheel over one turns it); the line: on / off
+    const k = el.closest && el.closest("[data-k]");
+    if (kind === "wheel") { if (!k) return false; vapPick = +k.dataset.k; this.turn(n); return true; }
+    if (k) vapPick = +k.dataset.k; else this.click();
+  },
   keys() {
     const pick = (k) => pgKey(String(Math.round(vapEls[k].v / 1.27)), VAPOR[k].lab, "vap", () => { vapPick = k; boxPgDraw(); }, () => vapPick === k);
     return [pick(0), pick(1), pick(2), pick(3), pgKey("☁", vapOn() ? "CLEAN" : "VAPORIZE", "fx", () => this.click(), vapOn), BACK,
@@ -2570,11 +2691,11 @@ const PG_VAPOR = {
   },
   draw(el) {
     el.innerHTML = `<h3>VAPOR <small>the whole mix, live</small></h3><div class="bp-cards"></div>
-      <p class="bp-big"></p><p class="bp-help">TURN: the amount · ◀ ▶ ▲ ▼: pick one · PUSH: ${vapOn() ? "CLEAN" : "VAPORIZE"} · HOME: back</p>`;
+      <p class="bp-big go"></p><p class="bp-help">TURN: the amount · ◀ ▶ ▲ ▼: pick one · PUSH: ${vapOn() ? "CLEAN" : "VAPORIZE"} · HOME: back</p>`;
     const cards = el.querySelector(".bp-cards");
     vapEls.forEach((e, k) => {
       const c = document.createElement("div");
-      c.className = "bp-card" + (k === vapPick ? " on" : "");
+      c.className = "bp-card" + (k === vapPick ? " on" : ""); c.dataset.k = k;
       c.innerHTML = `<b></b><span></span><i style="width:${Math.round(e.v / 1.27)}%"></i><em></em>`;
       c.querySelector("b").textContent = e.d.lab; c.querySelector("span").textContent = e.d.show(e.v); c.querySelector("em").textContent = e.d.tip;
       cards.append(c);
@@ -2596,6 +2717,7 @@ const PG_RECASK = {
   click() { this.answer(RQ[rqPick][2]); },
   dir(d) { if (d === "left" || d === "up") this.turn(-1); else this.turn(1); },
   read() { return ["RECORD?", RQ[rqPick][0], -1]; },
+  mouse(kind, el) { if (kind === "click") { const k = el.closest("[data-k]"); if (k) this.answer(RQ[+k.dataset.k][2]); } return false; },
   keys() {
     const k = (i, col) => pgKey(RQ[i][1], RQ[i][0], col, () => this.answer(RQ[i][2]), () => rqPick === i);
     const no = pgKey("", "", "util", () => {});
@@ -2610,7 +2732,7 @@ const PG_RECASK = {
     cards.style.gridTemplateColumns = "1fr 1fr 1fr"; cards.style.flex = "0 0 auto";
     RQ.forEach(([lab, icon], i) => {
       const c = document.createElement("div");
-      c.className = "bp-card" + (i === rqPick ? " on" : "");
+      c.className = "bp-card" + (i === rqPick ? " on" : ""); c.dataset.k = i;
       c.innerHTML = "<span></span><b></b>";
       c.querySelector("span").textContent = icon; c.querySelector("b").textContent = lab;
       cards.append(c);
@@ -2792,6 +2914,21 @@ const PG_SAMPLES = {
     boxPgDraw();
   },
   note(k, down) { if (down && bsMode === "edit") { bsHearSlice(k); boxPgDraw(); } },
+  mouse(kind, el, e) {                                     // a slot, a file (again: load it), the wave (again at the cursor: a slice), RECORD
+    if (kind !== "click") return false;
+    if (el.classList.contains("bp-wave")) {
+      const s = bsS(); if (!s) return;
+      bsFixView();
+      const r = el.getBoundingClientRect(), at = Math.round(bsView.a + (e.clientX - r.left) / r.width * (bsView.b - bsView.a));
+      if (Math.abs(at - bsCur) <= Math.max(64, (bsView.b - bsView.a) / 60)) this.click();
+      else { bsCur = at; bsFixView(); bsMsg = "click again here: a slice in / out"; }
+      return;
+    }
+    if (el.classList.contains("bp-big")) { this.click(); return; }
+    const k = +el.dataset.k;
+    if (el.dataset.slot !== undefined) { if (k !== smpSel) { linDisarm(); if (bsMode === "rec") bsMode = "edit"; bsSlot(k - smpSel); } return; }
+    if (bsMode === "files") { if (k === bsFilePick) bsLoadPicked(); else bsFilePick = k; }
+  },
   read() {
     if (bsMode === "files") { const f = bsFiles[bsFilePick]; return [f ? `FILE ${bsFilePick + 1}/${bsFiles.length}` : "USB", f ? f.name : "no files", -1]; }
     if (bsMode === "rec") return ["INPUT LEVEL", Math.round(linLevel / 1.27) + "%" + (lineIn && lineIn.on ? " REC" : ""), Math.round(linLevel / 1.27)];
@@ -2832,18 +2969,18 @@ const PG_SAMPLES = {
   },
   draw(el) {
     const s = bsS();
-    const slots = smp.map((x, k) => `<span class="${k === smpSel ? "on" : ""}${x ? "" : " empty"}">${k + 1}<b>${x ? escHtml(x.name) : "·"}</b></span>`).join("");
+    const slots = smp.map((x, k) => `<span data-k="${k}" data-slot class="${k === smpSel ? "on" : ""}${x ? "" : " empty"}">${k + 1}<b>${x ? escHtml(x.name) : "·"}</b></span>`).join("");
     let body = "";
     if (bsMode === "files") {
       const top = Math.max(0, Math.min(bsFilePick - 4, bsFiles.length - 9));
       body = `<p class="bp-sub">LOAD INTO SLOT ${smpSel + 1} FROM USB</p><ul class="bp-list">` +
-        bsFiles.slice(top, top + 9).map((f, i) => `<li class="${top + i === bsFilePick ? "on" : ""}">${escHtml(f.name)}<small>${escHtml(f.dir)} · ${(f.size / 1048576).toFixed(1)} MB</small></li>`).join("") +
+        bsFiles.slice(top, top + 9).map((f, i) => `<li data-k="${top + i}" class="${top + i === bsFilePick ? "on" : ""}">${escHtml(f.name)}<small>${escHtml(f.dir)} · ${(f.size / 1048576).toFixed(1)} MB</small></li>`).join("") +
         `</ul><p class="bp-msg">${escHtml(bsFilesWhy)}</p><p class="bp-help">TURN / ▲ ▼: pick · PUSH / ▶: load · ◀: back</p>`;
     } else if (bsMode === "rec") {
       const t = lineIn && lineIn.on ? (lineIn.n / lineIn.ac.sampleRate) : 0, pk = lineIn ? lineIn.peak : 0;
       body = `<p class="bp-sub">RECORD FROM LINE IN INTO SLOT ${smpSel + 1}</p>
         <div class="bp-meter"><i style="width:${Math.min(100, pk * 100).toFixed(1)}%" class="${pk > 0.98 ? "clip" : ""}"></i></div>
-        <p class="bp-big">${lineIn && lineIn.on ? "● RECORDING " + t.toFixed(1) + " s / " + SPK.MAX_SECONDS : lineIn && lineIn.ac ? "READY: PUSH TO RECORD" : "…"}</p>
+        <p class="bp-big go">${lineIn && lineIn.on ? "● RECORDING " + t.toFixed(1) + " s / " + SPK.MAX_SECONDS : lineIn && lineIn.ac ? "READY: PUSH TO RECORD" : "…"}</p>
         <p class="bp-msg">${escHtml(lineIn && lineIn.why ? lineIn.why : `Level ${Math.round(linLevel / 1.27)}% (turn the wheel)${linHw ? " · the box's input" : linHw === false ? " · this computer's input" : ""}: keep the meter out of the red.`)}</p>
         <p class="bp-help">PUSH: record / stop (${SPK.MAX_SECONDS} s at most) · TURN: level · ◀: back</p>`;
     } else {
@@ -3140,7 +3277,7 @@ const TIPS = {
   "#codebtn": "CODE: open a song someone shared, by its code (SPGB_…) or its link.",
   "#midibtn": "MIDI: your keyboard's state. Click it to connect (the browser asks first).",
   "#midiroute": "What a MIDI keyboard plays: the track you picked (whatever its channel), or each track on its own channel (1 DRUMS, 2 SYNTH 1, 3 SYNTH 2, 4 SYNTH 3).",
-  "#undobtn": "UNDO: take back the last thing you did to the music: a NEW SONG or RANDOM, a sound you picked, BEAT / RANDOM / VARY / CLEAR on a track. Click again to put it back.",
+  "#undobtn": "UNDO: take back the last thing you did to the music: a NEW SONG or RANDOM, a sound you picked, BEAT / RANDOM / VARY / CLEAR on a track, a pattern copied, cleared or made by accident, LEAD's last take. Click again to put it back.",
   "#bpmdn": "Slower (hold to keep going; the mouse wheel over the number too).",
   "#bpmup": "Faster (hold to keep going; the mouse wheel over the number too).",
   "#bpm": "The tempo, in beats a minute.",
@@ -3220,7 +3357,7 @@ function tipsInit() {
 function screenTip() {                                   // the screen's tip: the Web App's touch screen, or the box's (no touch)
   const e = $("screen");
   if (!e.dataset.tipWeb) { if (!e.dataset.tip) return; e.dataset.tipWeb = e.dataset.tip; }
-  e.dataset.tip = boxMode() ? "The box's screen. It isn't a touch screen: the ANO wheel (left) and the 15 keys (right) drive it." : e.dataset.tipWeb;
+  e.dataset.tip = boxMode() ? "The box's screen. It isn't a touch screen: the ANO wheel (left) and the 15 keys (right) drive it, or a USB mouse (the crosshair)." : e.dataset.tipWeb;
   e.setAttribute("aria-label", e.dataset.tip);
 }
 const tipBox = $("tip");
@@ -3334,7 +3471,7 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "<kbd>SOUND</kbd> shows more of its settings; <kbd>POWER USER</kbd> at the top shows everything (envelope, wobble, arpeggio, scale) "
       + "and the device's own names." },
   { t: "10 · MORE PATTERNS", el: btnSel("GLO"), x: () => "A pattern is a loop of every track. Tap <kbd>MIX</kbd>: patterns A to F on the white keys "
-      + (phoneMQ.matches ? "C to A" : "C to A (computer keys Z to N)") + ". Press D (X) for pattern B: it starts as a copy of A. "
+      + (phoneMQ.matches ? "C to A" : "C to A (computer keys Z to N)") + ". Tap D (X) for a new, empty pattern B, or hold C (Z) and tap D (X) to copy A into B. "
       + "Change it (a fill, a chorus, a drop). The columns below show your patterns: click one to play it next." },
   { t: "11 · ARRANGE THE SONG", el: btnSel("GLO"), x: () => "Tap <kbd>MIX</kbd> again: the SONG screen. Easiest way: tap <kbd>RECORD</kbd> there, "
       + "press <kbd>PLAY</kbd>, and click the patterns below as the music goes (each one starts when the loop comes round); press <kbd>PLAY</kbd> to stop. "
@@ -3531,6 +3668,149 @@ $("sharecopy").addEventListener("click", async (e) => {
   $("sharecopy").textContent = "COPIED";
   setTimeout(() => { $("sharecopy").textContent = "COPY LINK"; }, 1500);
 });
+
+// ------------------------------------------------------------------ the playlist (Ed, Nov 24: "up to 10 song codes ...
+// back to back like an album"; his picks: codes only (fetched when they play: an expired one is skipped), a song with no
+// song yet plays its pattern 4 times, no album codes). Kept in this browser (localStorage). Played by a player of its own:
+// a second device (the same worklet, an empty flash, the code's music put in before it boots, its samples and locked pads
+// sent after), so the song open in the groovebox is never touched; the groovebox's own transport stops while it plays.
+// A song: PLAY SONG through once (the player stops at its end), else the pattern 4 times; then the next code.
+const PLKEY = "spelunkr-groovebox-playlist", PL_MAX = 10;
+let plCodes = [];
+try { plCodes = (JSON.parse(localStorage.getItem(PLKEY) || "[]") || []).filter((c) => typeof c === "string").slice(0, PL_MAX); } catch {}
+const pl = { i: -1, n: null, t0: 0, len: 0, mode: "", started: false, timer: 0, run: 0, note: {} };
+const plSave = () => { try { localStorage.setItem(PLKEY, JSON.stringify(plCodes)); } catch {} };
+function plDraw() {
+  const ol = $("pllist");
+  ol.innerHTML = "";
+  plCodes.forEach((c, i) => {
+    const li = document.createElement("li"), inp = document.createElement("input");
+    li.className = (i === pl.i && pl.n ? "now" : "") + (pl.note[i] && pl.note[i].bad ? " bad" : "");
+    inp.value = c; inp.placeholder = "SPGB_"; inp.spellcheck = false; inp.autocomplete = "off";
+    inp.setAttribute("aria-label", `Song ${i + 1}'s code`);
+    inp.addEventListener("keydown", (e) => e.stopPropagation());
+    inp.addEventListener("change", () => { plCodes[i] = codeOf(inp.value) || inp.value.trim().toUpperCase(); delete pl.note[i]; plSave(); plDraw(); });
+    const mk = (t, tip, fn, off) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = t; b.title = tip; b.disabled = !!off; b.addEventListener("click", fn); return b; };
+    const swap = (j) => { [plCodes[i], plCodes[j]] = [plCodes[j], plCodes[i]]; [pl.note[i], pl.note[j]] = [pl.note[j], pl.note[i]]; plSave(); plDraw(); };
+    li.append(inp, mk("▲", "Earlier in the playlist", () => swap(i - 1), i === 0), mk("▼", "Later in the playlist", () => swap(i + 1), i === plCodes.length - 1),
+      mk("✕", "Take it off the playlist", () => { plCodes.splice(i, 1); pl.note = {}; plSave(); plDraw(); }));
+    const sm = document.createElement("small");
+    sm.textContent = pl.note[i] ? pl.note[i].text : c && !codeOf(c) ? "that isn't a song code (SPGB_ and 7 letters or numbers)" : "";
+    li.append(sm);
+    ol.append(li);
+  });
+  $("pladd").disabled = plCodes.length >= PL_MAX;
+  $("pladd").textContent = plCodes.length >= PL_MAX ? "10 IS THE MOST" : "+ ADD A CODE";
+  $("plgo").innerHTML = pl.n ? "&#9632; STOP" : "&#9654; PLAY ALL";
+  $("plprev").disabled = $("plnext").disabled = !pl.n;
+}
+const plMMSS = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+function plNow(text, frac) {
+  $("plnow").querySelector("b").textContent = text;
+  $("plnow").querySelector(".bar i").style.width = (frac >= 0 ? Math.min(100, frac * 100) : 0) + "%";
+}
+function plStopNode() {
+  clearTimeout(pl.timer);
+  pl.run++;
+  if (pl.n) { try { pl.n.port.postMessage({ type: "off" }); pl.n.disconnect(); pl.n.port.onmessage = null; } catch {} }
+  pl.n = null; pl.started = false;
+}
+function plStop(text) {
+  plStopNode();
+  pl.i = -1;
+  plNow(text || "NOT PLAYING", -1);
+  plDraw();
+}
+async function plPlay(i) {
+  plStopNode();
+  const run = pl.run;
+  while (i < plCodes.length && !codeOf(plCodes[i])) i++;           // (a line that isn't a code: passed over)
+  if (i < 0 || i >= plCodes.length) { plStop(plCodes.length ? "THE END: PLAY ALL starts it again" : "NOT PLAYING"); return; }
+  pl.i = i; plDraw();
+  const code = codeOf(plCodes[i]);
+  plNow(`${i + 1} / ${plCodes.length} · ${code} · LOADING…`, -1);
+  let o;
+  try { o = await fetchCode(code); } catch (err) {
+    if (run !== pl.run) return;
+    pl.note[i] = { bad: 1, text: `skipped: ${err && err.message || err}` };
+    plDraw();
+    pl.timer = setTimeout(() => plPlay(i + 1), 1200);
+    return;
+  }
+  if (run !== pl.run) return;
+  try {
+    if (!node) await switchOn(false);                             // (the groovebox's sound: the player shares it)
+    if (!ac || !wasmBytes) throw new Error("the sound didn't start");
+    if (G && G.play) tapButton(B.PLAY);                          // (your own song stops while the playlist plays)
+    const n = new AudioWorkletNode(ac, "felucca", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
+    const info = await new Promise((res, rej) => {
+      n.port.onmessage = (e) => {
+        const m = e.data;
+        if (m.type === "ready") n.port.postMessage({ type: "info", id: 1 });
+        else if (m.type === "info") res(m);
+        else if (m.type === "error") rej(new Error(m.message));
+        else if (m.type === "frame" && m.guide && pl.n === n) {   // (only whether it plays: its screen isn't shown)
+          let g; try { g = JSON.parse(dec.decode(m.guide)); } catch { return; }
+          if (g.play) pl.started = true;
+          else if (pl.started && pl.mode === "song") plPlay(pl.i + 1);   // (PLAY SONG through: the player stopped)
+        }
+      };
+      n.port.postMessage({ type: "load", wasm: wasmBytes.slice(0), sectors: {}, song: o.song, master: masterValue, plain: !power, nowarm: true });
+    });
+    if (run !== pl.run) { n.port.postMessage({ type: "off" }); return; }
+    for (const s of o.samples || []) {                            // the code's samples, into the player only
+      if (!(s.k >= 0 && s.k < SPK.NSLOT) || typeof s.pcm16 !== "string") continue;
+      try {
+        const u8 = SPK.u8of(s.pcm16), sm = unstored({ ...s, pcm16: new Int16Array(u8.buffer, 0, u8.length >> 1) }), b = smpBuilt(sm);
+        n.port.postMessage({ type: "spk", k: s.k, data: b.data, meta: b.meta, name: sm.name });
+      } catch {}
+    }
+    if (o.pads && Array.isArray(o.pads.p))                         // (its locked FX pads)
+      o.pads.p.forEach((v, j) => { if (j < 2 && Array.isArray(v)) n.port.postMessage({ type: "xy", j, x: v[0] | 0, y: v[1] | 0, on: 1, k: o.pads.k }); });
+    n.port.postMessage({ type: "visible", on: false });           // (its frames 4 a second: only whether it plays)
+    n.connect(ac.destination);
+    pl.n = n;
+    pl.mode = info.sections ? "song" : "loop";
+    pl.len = info.sections ? 0 : info.loop * 4;
+    pl.t0 = ac.currentTime;
+    n.port.postMessage({ type: "play" });
+    pl.note[i] = { text: info.sections ? `playing its song (${info.sections} part${info.sections > 1 ? "s" : ""}) · ${info.bpm} BPM` : `no song yet: its pattern 4 times · ${info.bpm} BPM` };
+    plDraw();
+    const tick = () => {
+      if (run !== pl.run || !pl.n) return;
+      const t = ac.currentTime - pl.t0;
+      plNow(`${pl.i + 1} / ${plCodes.length} · ${code} · ${plMMSS(t)}${pl.len ? " / " + plMMSS(pl.len) : ""}`, pl.len ? t / pl.len : -1);
+      if (pl.len && t >= pl.len) { plPlay(pl.i + 1); return; }        // (a pattern 4 times through)
+      if (t > 30 * 60) { plPlay(pl.i + 1); return; }                  // (30 minutes at most, as EXPORT)
+      pl.timer = setTimeout(tick, 250);
+    };
+    tick();
+  } catch (err) {
+    if (run !== pl.run) return;
+    pl.note[i] = { bad: 1, text: `skipped: ${err && err.message || err}` };
+    plDraw();
+    pl.timer = setTimeout(() => plPlay(i + 1), 1200);
+  }
+}
+$("playlistbtn").addEventListener("click", () => {
+  if (!SHARE_API) { studioSay("Song codes aren't set up on this copy of the groovebox, so there's no playlist here.", true); return; }
+  plDraw();
+  if (!pl.n) plNow(plCodes.length ? "NOT PLAYING: PLAY ALL starts at the top" : "ADD A CODE to start", -1);
+  $("playdlg").showModal();
+});
+$("pladd").addEventListener("click", () => {
+  if (plCodes.length >= PL_MAX) return;
+  plCodes.push(""); plDraw();
+  const ins = $("pllist").querySelectorAll("input");
+  ins[ins.length - 1].focus();
+});
+$("plgo").addEventListener("click", () => {
+  plCodes = plCodes.map((c) => codeOf(c) || c).filter((c) => c);
+  plSave();
+  if (pl.n || pl.i >= 0) plStop(); else { pl.note = {}; plPlay(0); }
+});
+$("plnext").addEventListener("click", () => { if (pl.i >= 0) plPlay(pl.i + 1); });
+$("plprev").addEventListener("click", () => { if (pl.i >= 0) plPlay(Math.max(0, pl.i - 1)); });
 </script>
 </body>
 </html>

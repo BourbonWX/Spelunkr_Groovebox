@@ -1638,6 +1638,9 @@ static void events_block(uint32_t n)
 #endif
     for (i = 0; i < NTRK; i++)
         seq_tick(&trk[i], seq_n);
+#if SPK_NU && RONDO_LAYOUT
+    lead_tick();                                      /* the Spelunkr Groovebox: LEAD's recorded notes (lead.c) */
+#endif
     if (cin_flush)
         cin_record();
     if (song.playing)

@@ -45,6 +45,13 @@ LABELS = [("PRESETS", "PRESETS"), ("SELECT", "SELECT"), ("ALGO", "ALGO"), ("OCTD
           ("FX", "FX"), ("K14", "K1-4"), ("SCL", "SCL"), ("OCTPM", "OCT-/+"),
           ("LFO", "LFO"), ("ENV", "ENV")]   # (1.5: HELP's hints, src/ui_help.c)
 
+# the Spelunkr Groovebox (Ed, Nov 24: "simple plain language for everything that would otherwise be confusing"): the
+# same pills in the page's plain words, drawn instead while gfx.c ui_plain is on (KC_PLAIN maps a pill to its plain one;
+# itself where the word is already plain)
+PLAIN = {"PRESETS": "SOUNDS", "SELECT": "SCROLL", "ALGO": "TRACK", "REC": "RECORD", "EDIT": "SOUND", "SEQ": "STEPS",
+         "GLO": "MIX", "SCL": "SCALE", "LFO": "WOBBLE", "ENV": "ENVELOPE", "FX": "FX KEYS", "K1": "KNOB 1",
+         "K2": "KNOB 2", "K3": "KNOB 3", "K4": "KNOB 4", "K14": "KNOBS"}
+
 KNOBS = [("BIG", 17), ("SMALL", 10)]   # outer radius; the ring is 2 px
 
 
@@ -160,7 +167,7 @@ def main():
     font = ar.open_font(FONT + f"@{KC_WGHT}", KC_PX)
     font2 = ar.open_font(FONT + f"@{KC_WGHT}", KC_PX * sc)
     data, rows = bytearray(), []
-    for cname, label in LABELS:
+    for cname, label in LABELS + [("P_" + c, PLAIN[c]) for c, _ in LABELS if c in PLAIN]:
         w, b = keycap(font, label) if sc == 1 else keycap2(font, font2, label, sc)
         rows.append((cname, label, len(data), w))
         data += b
@@ -170,10 +177,15 @@ def main():
              " 5 fill, 6..15 label */",
              f"#define KC_H {KC_H}", f"#define KC_SCALE {sc}   /* a pill KC_H x w layout pixels, made at KC_SCALE pixels a pixel */",
              "enum {"]
-    lines += [f"    KC_{c},   /* {l} */" for c, l, _, _ in rows]
-    lines += ["    KC_COUNT", "};", "/* kc_t {off, w, label} (src/gfx.c) */", "static const kc_t KC[KC_COUNT] = {"]
+    n = len(LABELS)
+    lines += [f"    KC_{c},   /* {l} */" for c, l, _, _ in rows[:n]]
+    lines += ["    KC_COUNT", "};", f"#define KC_ALL {len(rows)}   /* the pills: KC_COUNT, then the plain ones */",
+              "/* kc_t {off, w, label} (src/gfx.c) */", "static const kc_t KC[KC_ALL] = {"]
     lines += [f'    {{{off}, {w}, "{l}"}},' for _, l, off, w in rows]
-    lines += ["};", ar.c_array("KC_DATA", "uint8_t", list(data), fmt="0x{:02x}"), ""]
+    idx = {c: i for i, (c, _, _, _) in enumerate(rows)}
+    lines += ["};", "/* a pill's plain one (gfx.c kc_plain, ui_plain on) */",
+              "static const uint8_t KC_PLAIN[KC_COUNT] = {" + ", ".join(str(idx.get("P_" + c, i)) for i, (c, _) in enumerate(LABELS)) + "};",
+              ar.c_array("KC_DATA", "uint8_t", list(data), fmt="0x{:02x}"), ""]
     knob_bytes = 0
     lines.append(f"#define KNOB_SCALE {sc}   /* the arcs' quadrants at KNOB_SCALE pixels a layout pixel (R x KNOB_SCALE a side) */")
     for name, r in KNOBS:

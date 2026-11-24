@@ -72,7 +72,7 @@ static void touch_menu_row(uint32_t k, uint32_t row)
     if (ui.menu != 1)
         return;
     if (row != ui.menu_sel) {
-        uint32_t t = MI_TAB[row % MI_COUNT];
+        uint32_t t = mi_tab(row % MI_COUNT);
         ui.menu_sel = (uint8_t)row;
         if (t < sizeof ui.menu_row)
             ui.menu_row[t] = (uint8_t)k;

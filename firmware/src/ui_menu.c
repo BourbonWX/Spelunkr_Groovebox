@@ -36,6 +36,11 @@ static void draw_about_qr(int32_t x, int32_t y)
 enum { MC_TEXT, MC_TITLE, MC_URL };
 typedef struct { const char *text; uint8_t kind; } menu_credit_t;
 static const menu_credit_t MENU_CREDITS[] = {
+#if SPK_NU                                     /* (the Spelunkr Groovebox: built on Phantom Tracker) */
+    {"PHANTOM TRACKER", MC_TITLE},
+    {"Bourbon Weather / GPL-3.0", MC_TEXT},
+    {"", MC_TEXT},
+#endif
     {"DUNGEON TRACKER", MC_TITLE},             /* Phantom Cosmonaut is its fork */
     {"Bourbon Weather / GPL-3.0", MC_TEXT},
     {"https://github.com/BourbonWX/Dungeon-Tracker", MC_URL},
@@ -116,8 +121,8 @@ static int32_t menu_document(int32_t y, int draw)
 {
     uint32_t i;
     if (draw) {
-        cv_text(6, y + 2, &AF_L, "PHANTOM", T_THEME);   /* (a fork of Dungeon Tracker and Felucca, credited below) */
-        cv_text(6, y + 38, &AF_S, "TRACKER, a Felucca fork", T_TEXT);
+        cv_text(6, y + 2, &AF_L, SPK_NU ? "SPELUNKR" : "PHANTOM", T_THEME);   /* (a fork of Dungeon Tracker and Felucca, credited below) */
+        cv_text(6, y + 38, &AF_S, SPK_NU ? "GROOVEBOX, a Felucca fork" : "TRACKER, a Felucca fork", T_TEXT);
         cv_text(6, y + 58, &AF_M, FELUCCA_VERSION, T_THEME);
         cv_text_r(232, y + 61, &AF_S, __DATE__, T_MID, T_BG);
         cv_text(6, y + 82, &AF_S, "(C) 2026 Leo Kuroshita", T_TEXT);
@@ -210,7 +215,7 @@ static const uint16_t MTAB_ICON[MTAB_COUNT] = {ICON_X_EYE, ICON_X_KNOB, ICON_X_S
 #define MR_VR 224                                      /* its value's right edge */
 #define MK_Y 224                                       /* the key hints */
 static int menu_large(void) { return (ui_prefs & PREF_LARGE) != 0u; }
-static uint32_t menu_tab(void) { return MI_TAB[ui.menu_sel % MI_COUNT]; }
+static uint32_t menu_tab(void) { return mi_tab(ui.menu_sel % MI_COUNT); }
 /* the shown tab's rows: 24 px (LARGE 28, a tab of up to 5 rows), 2 px apart (a tab of 6: 1 px, its panel then ends
  * 6 px above the key hints as the others do; the rule between two rows is that gap row; 1.2, a tab of 7: 21 px rows
  * 1 px apart, its panel then ends 4 px lower, LARGE too; 1.3, a tab of 8: 18 px rows 1 px apart, the same end) */
@@ -496,7 +501,7 @@ static void draw_menu(void)
             cv_rrect(4, MP_Y, 232, mr_y(n) - mr_gap() + MP_PAD - MP_Y, 8, T_SURF, T_BG);
         for (k = 0; k < n; k++)
             if (mr_y(k) + mr_h() > top_y && mr_y(k) - 1 < top_y + (int32_t)cv_h)
-                menu_row(k, first + k);
+                menu_row(k, mtab_row(menu_tab(), k));
         if (pass)
             cv_key_row(8, 232, MK_Y, KEYS[ui.menu_sel == MI_LCLEAR ? 2 : !menu_valued(ui.menu_sel)], 3, 7u, T_BG);
         cv_oy = 0;
@@ -526,35 +531,35 @@ static void menu_close(void)
  * tab's first (and back), round */
 static void menu_walk(int32_t s)
 {
-    uint32_t t = menu_tab(), f = mtab_first(t), n = mtab_rows(t), r = ui.menu_sel - f;
+    uint32_t t = menu_tab(), n = mtab_rows(t), r = mtab_pos(ui.menu_sel);
     if (s > 0) {
         if (r + 1u < n) {
-            ui.menu_sel++;
+            ui.menu_sel = (uint8_t)mtab_row(t, r + 1u);
         } else {
             t = (t + 1u) % MTAB_COUNT;
             ui.menu_sel = (uint8_t)mtab_first(t);
         }
     } else if (r) {
-        ui.menu_sel--;
+        ui.menu_sel = (uint8_t)mtab_row(t, r - 1u);
     } else {
         t = (t + MTAB_COUNT - 1u) % MTAB_COUNT;
-        ui.menu_sel = (uint8_t)(mtab_first(t) + mtab_rows(t) - 1u);
+        ui.menu_sel = (uint8_t)mtab_row(t, mtab_rows(t) - 1u);
     }
-    ui.menu_row[menu_tab()] = (uint8_t)(ui.menu_sel - mtab_first(menu_tab()));
+    ui.menu_row[menu_tab()] = (uint8_t)mtab_pos(ui.menu_sel);
 }
 static void menu_move(int32_t s)                       /* PRESETS: the next / previous row of the tab */
 {
-    uint32_t t = menu_tab(), f = mtab_first(t), n = mtab_rows(t), k = (ui.menu_sel - f + (s > 0 ? 1u : n - 1u)) % n;
-    ui.menu_sel = (uint8_t)(f + k);
+    uint32_t t = menu_tab(), n = mtab_rows(t), k = (mtab_pos(ui.menu_sel) + (s > 0 ? 1u : n - 1u)) % n;
+    ui.menu_sel = (uint8_t)mtab_row(t, k);
     ui.menu_row[t] = (uint8_t)k;
 }
 static void menu_tab_go(int32_t s)                     /* ALGORITHM: the next / previous tab, at its last row */
 {
     uint32_t t = menu_tab(), k;
-    ui.menu_row[t] = (uint8_t)(ui.menu_sel - mtab_first(t));
+    ui.menu_row[t] = (uint8_t)mtab_pos(ui.menu_sel);
     t = (t + (s > 0 ? 1u : MTAB_COUNT - 1u)) % MTAB_COUNT;
     k = ui.menu_row[t] < mtab_rows(t) ? ui.menu_row[t] : 0u;
-    ui.menu_sel = (uint8_t)(mtab_first(t) + k);
+    ui.menu_sel = (uint8_t)mtab_row(t, k);
 }
 static void menu_input(uint32_t oct)                  /* oct: ui_input.c oct_taps */
 {

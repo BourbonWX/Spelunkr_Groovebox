@@ -677,18 +677,27 @@ static const char *const PLAIN_CARD[][2] = {      /* a card's label (ui_draw.c d
     {"ACC", "ACCENT"}, {"VL", "VELO"}, {"CHN", "CHANCE"}, {"PROB", "CHANCE"}, {"RATCH", "REPEAT"}, {"NDG", "NUDGE"},
     {"LEN", "LENGTH"}, {"DIV", "SPEED"}, {"OCT", "OCTAVE"}, {"TRN", "TRANSP"}, {"GLD", "GLIDE"}, {"VCE", "VOICE"},
     {"SIG", "SOURCE"}, {"SCAN", "WAVE"}, {"WARP", "BEND"}, {"CLARITY", "TONE"}, {"BITS", "CRUNCH"}, {"MODL", "MODEL"},
-    {"SET", "SOUND"},
+    {"SET", "SOUND"}, {"CHRD", "CHORD"}, {"QNT", "SNAP"}, {"QNTZ", "QUANTIZE"}, {"SHP", "SHAPE"}, {"DTUNE", "DETUNE"},
+    {"FB", "FEEDBK"}, {"FLT", "FILTER"}, {"LVL", "LEVEL"}, {"PIT", "PITCH"}, {"VOIC", "VOICING"}, {"ALG", "ALGO"},
+    {"ESYNC", "SYNC"}, {"ORD", "ORDER"}, {"VARI", "VARY"}, {"FLAG", "MARK"}, {"SIGNAL", "ENGINE"}, {"BD", "KICK"},
+    {"SD", "SNARE"}, {"HH", "HAT"}, {"CP", "CLAP"}, {"CG", "CONGA"}, {"MUL1", "RATIO 1"}, {"MUL2", "RATIO 2"},
+    {"MUL3", "RATIO 3"}, {"MUL4", "RATIO 4"}, {"INS A", "FX A"}, {"INS B", "FX B"}, {"INS C", "FX C"}, {"FLASH", "MEMORY"}, {"SCL", "SCALE"},
 };
 static const char *const PLAIN_TITLE[][2] = {     /* a page's title (ui_graph.c, the footer: plain_title) */
     {"ORBIT", "SONG"}, {"GRID", "STEPS"}, {"SCL", "SCALE"}, {"LFO", "WOBBLE"}, {"LFO 2", "WOBBLE 2"},
     {"LFO DEST", "WOBBLE TO"}, {"ENV DEST", "ENV TO"}, {"EDIT 1", "SOUND 1"}, {"EDIT 2", "SOUND 2"},
     {"PRESETS", "BROWSE"}, {"PROJECT", "SAVE SONG"}, {"USER", "SAVE SOUND"}, {"DLY", "DELAY"}, {"CLOCK", "TEMPO"},
+    {"SIGNAL", "WAVE"}, {"ENV", "ENVELOPE"},
 };
 static const char *const PLAIN_EXACT[][2] = {     /* a whole string anywhere (the transmission's state, messages) */
     {"[STANDBY]", "[STOPPED]"}, {"[RECEIVING]", "[PLAYING]"}, {"ORBIT PLAYING", "SONG PLAYING"},
     {"ORBIT CLEARED", "SONG CLEARED"}, {"ORBIT FULL: 16 SECTIONS", "SONG FULL: 16 PARTS"},
     {"ORBIT FREQ CHANGES", "SONG PATTERN CHANGES"}, {"RELAY LOCK", "STEPS FROZEN"}, {"RELAY OPEN", "STEPS LIVE"},
-    {"NO ATTRITION PRINTS", "NO GLITCHES PRINTED"},
+    {"NO ATTRITION PRINTS", "NO GLITCHES PRINTED"}, {"[\x86 INGEST]", "[\x86 RECORDING]"},
+    {"[OPEN CHANNEL]", "[READY]"}, {"[LIVE]", "[PLAYING]"},
+    {"LEDS", "LIGHTS"}, {"SCALE LEDS", "SCALE LIGHTS"}, {"KNOB ACCEL", "FAST KNOBS"}, {"SELECT", "SCROLL"},   /* (MENU) */
+    {"STRIP PAGE 1", "MIXER PAGE 1"}, {"STRIP PAGE 2", "MIXER PAGE 2"},
+    {"NOISE", "KIT"}, {"NOIS", "KIT"}, {"ENGINE NOISE", "ENGINE KIT"}, {"B SIDE NOISE", "B SIDE KIT"},   /* (the drum engine) */
 };
 static const char *plain_of(const char *const (*t)[2], uint32_t n, const char *s)
 {
@@ -705,7 +714,8 @@ static const char *plain_of(const char *const (*t)[2], uint32_t n, const char *s
 }
 #define plain_card(s) plain_of(PLAIN_CARD, sizeof PLAIN_CARD / sizeof PLAIN_CARD[0], s)
 #define plain_title(s) plain_of(PLAIN_TITLE, sizeof PLAIN_TITLE / sizeof PLAIN_TITLE[0], s)
-static const char *const PLAIN_WORD[][2] = {{"FEED", "TRACK"}, {"FREQ", "PAT"}, {"HBT", "BPM"}, {"ATTRITION", "GLITCH"}};
+static const char *const PLAIN_WORD[][2] = {{"FEED", "TRACK"}, {"FREQ", "PAT"}, {"HBT", "BPM"}, {"ATTRITION", "GLITCH"},
+                                            {"SIG", "WAVE"}, {"SECTION", "PART"}, {"SECTIONS", "PARTS"}, {"PHANTOM", "LEAD"}};
 static int plain_alnum(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'); }
 static const char *plain_text(const char *s)
 {
@@ -753,6 +763,29 @@ static const char *plain_text(const char *s)
     return hit ? o : s;
 }
 
+#ifdef TEXT_LOG                                    /* (a debug build only: every string drawn, once, for the word lint) */
+static char text_log[1u << 17];
+static uint32_t text_log_n, text_log_h[8192];
+static void text_log_add(const char *s)
+{
+    uint32_t h = 2166136261u, n = 0, i;
+    for (i = 0; s[i]; i++)
+        h = (h ^ (uint8_t)s[i]) * 16777619u;
+    if (!h || !s[0])
+        return;
+    for (i = h & 8191u; text_log_h[i]; i = (i + 1u) & 8191u)
+        if (text_log_h[i] == h)
+            return;
+    text_log_h[i] = h;
+    while (s[n])
+        n++;
+    if (text_log_n + n + 2u >= sizeof text_log)
+        return;
+    for (i = 0; i < n; i++)
+        text_log[text_log_n++] = s[i];
+    text_log[text_log_n++] = '\n';
+}
+#endif
 static int32_t text_w(const aafont_t *f, const char *s)
 {
     int32_t pen = 0;
@@ -771,6 +804,10 @@ static int32_t text_w(const aafont_t *f, const char *s)
 static int32_t text_run(int32_t x, int32_t y, const aafont_t *f, const char *s, const uint16_t *rv, int32_t *bb)
 {
     s = plain_text(s);                               /* (Spelunkr: the plain words, as text_w measures them) */
+#ifdef TEXT_LOG
+    if (rv)
+        text_log_add(s);
+#endif
     int32_t pen = 0, err = 0, x0 = 0x7FFF, y0 = 0x7FFF, x1 = -0x7FFF, y1 = -0x7FFF;
     const int32_t step = 16 >> f->psh;
     uint32_t prev = 0;
@@ -974,12 +1011,17 @@ static const uint16_t *kc_ramp(uint16_t under, uint16_t fill, uint16_t ink)
     }
     return v;
 }
-static int32_t kc_w(uint32_t id) { return id < KC_COUNT ? KC[id].w : 0; }
+#ifdef KC_ALL                                       /* (the plain pills: ui_plain on, gen_aa_keycaps.py PLAIN) */
+static uint32_t kc_plain(uint32_t id) { return ui_plain && id < KC_COUNT ? KC_PLAIN[id] : id; }
+#else
+#define kc_plain(id) (id)
+#endif
+static int32_t kc_w(uint32_t id) { return id < KC_COUNT ? KC[kc_plain(id)].w : 0; }
 /* keycap / badge `id` with its top-left at (x, y), KC_H tall: fill and label tinted with tokens, `under` what lies
  * behind its corners; returns its right edge */
 static int32_t cv_keycap(int32_t x, int32_t y, uint32_t id, uint16_t fill, uint16_t ink, uint16_t under)
 {
-    const kc_t *k = &KC[id < KC_COUNT ? id : 0u];
+    const kc_t *k = &KC[id < KC_COUNT ? kc_plain(id) : 0u];
     const uint16_t *rv = kc_ramp(under, fill, ink);
     tz_add(x - 2, y - 3, k->w + 4, KC_H + 6, TZ_KEY, id, 0);   /* (a finger's margin round it) */
 #if KC_SCALE > 1                                     /* (Spelunkr: the pill made at the drawn size: 1:1) */

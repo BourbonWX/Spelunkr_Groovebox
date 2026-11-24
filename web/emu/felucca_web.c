@@ -275,6 +275,7 @@ static void fl_plain_window_init(void) {}
 #include "../../firmware/src/upreset.c"
 #include "../../firmware/src/project.c"
 #include "../../firmware/src/boot_song.c"      /* Dungeon Tracker: the power-on song (main.c) */
+#include "../../firmware/src/lead.c"           /* the Spelunkr Groovebox: LEAD, PHANTOM recorded and with more sounds */
 
 /* ------------------------------------------------- main.c and its HAL --- */
 #if FELUCCA_CPU2
@@ -366,6 +367,7 @@ static void web_power_on(void)
         ui_prefs = prefs;
 #if RONDO_LAYOUT
         bank_boot();                      /* main.c: RONDO's PATTERN BANK */
+        lead_boot();                      /* LEAD's sound and lanes (lead.c) */
 #endif
         (void)restored;                   /* main.c: none of the user's: the default song (1.0: no roll) */
     }
@@ -389,6 +391,8 @@ static void web_frame(void)
 #if RONDO_LAYOUT
     bank_poll();
     morph_poll();
+    if (!web_headless)
+        lead_poll();
 #endif
     if (web_headless)                                     /* (a bounce: no screen, no lights) */
         return;
@@ -625,6 +629,14 @@ EXPORT uint32_t web_tool(uint32_t k, uint32_t which)
     const char *m;
     if (k >= NTRK || which > 3u)
         return 0;
+    if (ph_focus && which == 3u) {                       /* LEAD focused: CLEAR its lane of this pattern (lead.c) */
+        ui_message("LEAD CLEARED");
+        (void)lead_clear();
+        ui.force = 1;
+        return 1;
+    }
+    lead_ulast = 0;
+    bank_ulast = 0;
     if (k != song.sel)
         track_select(k);
     if (!tl_cell(&trk[k], TL[which])) {
@@ -643,6 +655,15 @@ EXPORT uint32_t web_undo(void)
     if (chain_busy()) {
         ui_message("STOP TO UNDO");
         return 0;
+    }
+    if (bank_undo()) {                                   /* a pattern copied / cleared / made the last thing done */
+        ui.force = 1;
+        return 1;
+    }
+    if (lead_undo()) {                                   /* LEAD's take or CLEAR the last thing done (lead.c) */
+        ui_message("LEAD: UNDO");
+        ui.force = 1;
+        return 1;
     }
     if (!new_undo())
         undo_swap();
@@ -713,6 +734,7 @@ EXPORT void web_new_song(uint32_t random)
         random_song();
     } else
         new_song(1);
+    lead_clear_all();                              /* (LEAD's lanes: the old song's) */
     ui.force = 1;
 }
 
@@ -1144,6 +1166,20 @@ EXPORT uint8_t *web_obj_buf(void) { return web_obj; }
 EXPORT uint32_t web_obj_max(void) { return ST_PAYLOAD_MAX; }
 EXPORT uint32_t web_obj_autosave(void) { return OBJ_AUTOSAVE; }
 EXPORT uint32_t web_obj_bank0(void) { return OBJ_BANK0; }
+EXPORT uint32_t web_obj_lead(void) { return OBJ_LEAD; }          /* (LEAD's sound and lanes: lead.c; a song's id 7) */
+/* LEAD focused from the page (1) or back to the track it came from (0): as TRACK past the last track does */
+EXPORT void web_lead_focus(uint32_t on)
+{
+    if (on && !ph_focus) {
+        if (!ui.home)
+            go_home();
+        ph_focus = 1;
+        ph_page = 0;
+    } else if (!on && ph_focus)
+        ph_focus = 0;
+    ui.force = 1;
+}
+EXPORT uint32_t web_lead_clear(void) { uint32_t p = lead_clear(); ui_message("LEAD CLEARED"); ui.force = 1; return p; }
 EXPORT uint32_t web_obj_count(void) { return OBJ_COUNT; }
 /* the object's current copy into web_obj: its length, or -1 (none) */
 EXPORT int32_t web_obj_get(uint32_t obj) { return obj < OBJ_COUNT ? st_load(obj, web_obj, sizeof web_obj) : -1; }
@@ -1228,7 +1264,7 @@ EXPORT const char *web_guide(void)
         wj("\"pos\":%u,\"sound\":", (unsigned)fd_pos(k));
         wj_str(nm);
         wj(",\"engine\":");
-        wj_str(ENGINES[t->eng_req % NENGINES]->name);
+        wj_str(plain_text(ENGINES[t->eng_req % NENGINES]->name));   /* (plain: the drum engine is KIT) */
         wj(",\"mute\":%d,\"solo\":%d,\"b\":%d,\"step\":%u,\"len\":%d,\"vox\":%u,\"pats\":[", t->p[P_MUTE] ? 1 : 0,
            (web_solo >> k) & 1u, k < NTRK && b_on(t) ? 1 : 0, (unsigned)t->seq_idx, t->p[P_SLEN], (unsigned)trk_cap(k));
         for (p = 0; p < NBANK; p++)
@@ -1244,20 +1280,42 @@ EXPORT const char *web_guide(void)
         wj(k ? ",{\"label\":" : "{\"label\":");
         wj_str(on ? web_card_now[k].label : "");
         wj(",\"val\":");
-        wj_str(full);
+        wj_str(plain_text(full));                           /* (plain: 120 BPM, not HBT) */
         wj(",\"frac\":%d}", on && web_card_now[k].ratio >= 0 ? web_card_now[k].ratio : -1);
     }
     wj("],\"xy\":[%u,%u,%u,%u,%u,%u],\"xyk\":%d", xy_live[0].x, xy_live[0].y, xy_live[0].on, xy_live[1].x, xy_live[1].y, xy_live[1].on,
        web_pad ? (int)web_pad_k : -1);
     wj(",\"vapor\":[%u,%u,%u,%u]", vap_get(0), vap_get(1), vap_get(2), vap_get(3));
+    {   /* LEAD (lead.c): focused, its sound, its engine, recording, the lane playing, the notes a pattern */
+        uint32_t p;
+        wj(",\"lead\":{\"f\":%d,\"rec\":%d,\"pat\":%u,\"snd\":", ph_focus ? 1 : 0, lead_recording() ? 1 : 0, (unsigned)lead_pat());
+        wj_str(ph_voice_name());
+        wj(",\"eng\":");
+        wj_str(plain_text(ENGINES[ph_trk.eng_req % NENGINES]->name));
+        wj(",\"n\":[");
+        for (p = 0; p < LEAD_PATS; p++)
+            wj(p ? ",%u" : "%u", (unsigned)lead_count(p));
+        wj("]}");
+    }
     web_buttons_json();
     wj("}");
     web_js[web_jn] = 0;
     return web_js;
 }
 EXPORT uint32_t web_guide_len(void) { return web_jn; }
+#ifdef TEXT_LOG                                          /* (the debug build's word lint: gfx.c text_log) */
+EXPORT const char *web_text_log(void) { text_log[text_log_n] = 0; return text_log; }
+EXPORT uint32_t web_text_log_n(void) { return text_log_n; }
+#endif
 /* the page's controls */
-EXPORT void web_track(uint32_t k) { if (k < NTRK && k != song.sel) { track_select(k); ui.force = 1; } }
+EXPORT void web_track(uint32_t k)
+{
+    if (k < NTRK && ph_focus) {                          /* (from LEAD: back to the tracks) */
+        ph_focus = 0;
+        ui.force = 1;
+    }
+    if (k < NTRK && k != song.sel) { track_select(k); ui.force = 1; }
+}
 EXPORT void web_mute(uint32_t k) { if (k < NTRK) { trk[k].p[P_MUTE] = (int16_t)!trk[k].p[P_MUTE]; ui.force = 1; } }
 EXPORT void web_solo_toggle(uint32_t k) { if (k < NTRK) { web_solo ^= (unsigned char)(1u << k); ui.force = 1; } }
 EXPORT uint32_t web_cue(uint32_t p) { uint32_t rc = p < NBANK ? (uint32_t)bank_key(p) : 1u; ui.force = 1; return rc; }
@@ -1331,6 +1389,10 @@ static void web_btn(uint32_t b, char *act, char *sub)
     uint32_t f = WEB_BTN_FAM[b];
     act[0] = sub[0] = 0;
     str_cpy(sub, WEB_HOLD[b], 48);
+    if (b == B_EDIT && ui.home && ph_focus && !ui.menu) {   /* LEAD (PHANTOM): EDIT flips its knobs' two pages */
+        str_cpy(act, ph_page ? "KNOBS 1" : "KNOBS 2", 24);
+        return;
+    }
     /* the dialogs and pickers first: there OCT- / OCT+ say no / yes */
     if (b == B_OCTDN || b == B_OCTUP) {
         int up = b == B_OCTUP;
