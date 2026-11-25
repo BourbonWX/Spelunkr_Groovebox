@@ -79,6 +79,15 @@ is a plain button.
   clear or allow the MIDI permission, and reload the page. **NO KEYBOARD** means MIDI is allowed but nothing is plugged in:
   check the cable and that the keyboard is switched on.
 
+  **LEARN** (next to the MIDI button) links the knobs, faders and pads on your controller to the page. Click
+  LEARN: everything you can link gets a dashed outline. Click one, then move a knob or fader, or press a pad, on
+  your controller, and they're linked (a small yellow tag shows which). You can link the mixer's faders, M and S,
+  any ◀ ▶ control (VAPOR, POLISH, VOLUME and the CONTROLS knobs), TEMPO and SWING, the buttons beside the screen
+  (a pad held holds the button), the side menu, POLISH's ON buttons and choices, and an FX PAD (two knobs: left-right
+  first, then up-down). KNOB 1-4 follow the screen, like on a real groovebox: link one once and it turns whatever
+  that knob means on the page you're on. Right-click a linked control while learning to forget it; **CLEAR ALL**
+  forgets them all; **DONE** (or Esc) finishes. The links stay in this browser, from song to song (not in the song).
+
 ## Make a song, start to finish
 
 1. **Start**: **NEW SONG** (a blank page) or **RANDOM**.

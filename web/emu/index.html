@@ -411,6 +411,18 @@ body.boxpanel.mouseidle, body.boxpanel.mouseidle * { cursor: none !important; }
 }
 @media (max-width: 720px) { .pmods { grid-template-columns: minmax(0, 1fr); padding: 8px; } }
 
+/* MIDI LEARN (Ed, Nov 25): click a control, move a knob */
+#midilearn[aria-pressed="true"] { background: var(--yellow); color: var(--night); border-color: var(--litedge); }
+.mlbar { flex-wrap: wrap; gap: 8px; }
+.mlbar[hidden] { display: none !important; }
+#mlstat { color: var(--yellow); font-size: 19px; }
+#mlclear, #mldone { min-height: 34px; font-size: 18px; padding: 2px 10px; }
+body.mlearn :is(.stepper, .mstrip, #face .btn, .pad, #bpm, #swing, .pon, .chip, #vapgo, #poloff, .tab[data-pane], #tprev, #tnext) {
+  outline: 2px dashed var(--yellow); outline-offset: 2px; cursor: copy; }
+body.mlearn .mlpick { outline: 3px solid var(--orange) !important; animation: breath 1s ease-in-out infinite; }
+.mlb { position: absolute; top: -8px; right: -6px; z-index: 3; padding: 1px 5px; font: 13px/1.2 var(--mono); color: var(--night);
+       background: var(--yellow); border-radius: 4px; pointer-events: none; white-space: nowrap; }
+:is(.stepper, .mstrip, .pad, .chip, .pon, #face .btn, .tab, #bpm, #swing, #vapgo, #poloff, #tprev, #tnext):has(> .mlb) { position: relative; }
 /* the guide */
 .guide { overflow-x: auto; }
 .guide .inner { min-width: 980px; }
@@ -1133,7 +1145,9 @@ body.keyshid .tour { bottom: 52px; }
   <span class="sb"><b>KEY</b><select id="keyroot" aria-label="The key's note"></select><select id="keyscale" aria-label="The scale"></select>
     <label class="sbchk"><input type="checkbox" id="keysnap"> keys stay in key</label></span>
   <span class="sb"><b>MIDI</b><button class="btn" id="midibtn" type="button">CONNECT</button>
-    <select id="midiroute" aria-label="What a MIDI keyboard plays"><option value="1">plays the picked track</option><option value="0">by channel</option></select></span>
+    <select id="midiroute" aria-label="What a MIDI keyboard plays"><option value="1">plays the picked track</option><option value="0">by channel</option></select>
+    <button class="btn" id="midilearn" type="button" aria-pressed="false">LEARN</button></span>
+  <span class="sb mlbar" id="mlbar" hidden><span id="mlstat"></span><button class="btn quiet" id="mlclear" type="button">CLEAR ALL</button><button class="btn" id="mldone" type="button">DONE</button></span>
 </div>
 
 <main>
@@ -2397,6 +2411,7 @@ function mixerShow(g, order) {
       d.append(msb);
       box.append(d);
     }
+    mlBadges();                                           // (MIDI LEARN's badges on the new strips)
   }
   const drag = performance.now() - mixTouched < 700;
   [...box.children].forEach((d, i) => {
@@ -2443,6 +2458,7 @@ function midiBind() {
     input.onmidimessage = (e) => {
       const d = e.data;
       if (d.length >= 2 && d[0] >= 0x80 && d[0] < 0xF0) {
+        if (mlMidi(d)) return;                            // (MIDI LEARN: being learned, or a learned control's)
         send({ type: "midi", data: [d[0], d[1], d[2] || 0] });
         if ((d[0] & 0xF0) === 0x90 && d[2]) {             // (a note: the button lights)
           $("midibtn").classList.add("hit"); clearTimeout(midiHitT);
@@ -2483,6 +2499,176 @@ $("midiroute").addEventListener("change", () => {
   send({ type: "midisel", on: $("midiroute").value === "1" });
   midiBind();
 });
+
+
+// ------------------------------------------------------------------ MIDI LEARN (Ed, Nov 25: "click on something then move
+// the knob you want to control that thing"). LEARN (the song bar) lights what can be learned; click one, then move a knob
+// or fader, or press a pad or key, on the controller: linked. Steppers and faders follow a knob (VAPOR, POLISH, VOLUME,
+// TEMPO, SWING and the mixer by the knob's position; KNOB 1-4 and the browsing wheels by how far it turns, so KNOB 1 is
+// always whatever KNOB 1 means on the screen); buttons follow a pad or key (the face buttons held while it's held);
+// an FX pad takes two knobs, left-right then up-down. Right-click a learned one (while learning) to forget it. Kept in
+// this browser (not the song): your controller stays set up from song to song.
+const MLKEY = "spelunkr-groovebox-midimap";
+let mlMap = [], mlOn = false, mlPick = null, mlForgot = ["", 0];
+const mlLast = new Map(), mlDown = new Map(), mlPadV = [{ x: 64, y: 64 }, { x: 64, y: 64 }];
+try { mlMap = JSON.parse(localStorage.getItem(MLKEY) || "[]").filter((m) => m && typeof m.t === "string"); } catch { mlMap = []; }
+const mlSave = () => { try { localStorage.setItem(MLKEY, JSON.stringify(mlMap)); } catch {} };
+const mlSrc = (m) => `${m.s === 0xB0 ? "CC" : "NOTE"} ${m.n}` + (m.ch ? ` · CH ${m.ch + 1}` : "");
+// a control on the page -> its key, its badge's host, its name
+function mlKeyOf(el) {
+  let h;
+  if ((h = el.closest(".stepper"))) {
+    for (const [arr, pre] of [[knobEls, "knob"], [wheelEls, "wheel"], [vapEls, "vap"]]) { const i = arr.findIndex((k) => k.el === h); if (i >= 0) return pre + i; }
+    const pk = polKnobs.find((k) => k.el === h);
+    return pk ? "pol:" + pk.m + pk.f : null;
+  }
+  if ((h = el.closest(".mstrip"))) { const b = el.closest(".ms"); return b ? b.dataset.w + h.dataset.k : "fader" + h.dataset.k; }
+  if ((h = el.closest("#face .btn"))) { const f = faceEls.find((f) => f.el === h); return f ? "face:" + f.bit : null; }
+  if ((h = el.closest(".pad"))) return "pad" + h.id.slice(3);
+  if (el.closest("#bpm")) return "tempo";
+  if (el.closest("#swing")) return "swing";
+  if ((h = el.closest(".pon"))) return "pon:" + h.dataset.m;
+  if ((h = el.closest(".chip"))) return "chip:" + h.parentElement.id + ":" + [...h.parentElement.children].indexOf(h);
+  if ((h = el.closest(".tab[data-pane]"))) return "tab:" + h.dataset.pane;
+  if ((h = el.closest("#vapgo, #poloff, #tprev, #tnext"))) return "id:" + h.id;
+  return null;
+}
+function mlHost(key) {
+  const [a, b] = key.split(":"), num = (p) => +key.slice(p.length);
+  for (const [pre, arr] of [["knob", knobEls], ["wheel", wheelEls], ["vap", vapEls]]) if (key.startsWith(pre) && /^\d$/.test(key.slice(pre.length))) return arr[num(pre)] && arr[num(pre)].el;
+  if (a === "pol") { const k = polKnobs.find((k) => k.m + k.f === b); return k && k.el; }
+  if (/^fader\d$/.test(key)) return document.querySelector(`.mstrip[data-k="${num("fader")}"]`);
+  if (/^(mute|solo)\d$/.test(key)) { const st = document.querySelector(`.mstrip[data-k="${key.slice(-1)}"]`); return st && st.querySelector(`.ms[data-w="${key.slice(0, 4)}"]`); }
+  if (a === "face") { const f = faceEls.find((f) => f.bit === +b); return f && f.el; }
+  if (/^pad\d[xy]?$/.test(key)) return $("pad" + key[3]);
+  if (key === "tempo") return $("bpm");
+  if (key === "swing") return $("swing");
+  if (a === "pon") return document.querySelector(`.pon[data-m="${b}"]`);
+  if (a === "chip") { const box = $(b); return box && box.children[+key.split(":")[2]]; }
+  if (a === "tab") return document.querySelector(`.tab[data-pane="${b}"]`);
+  if (a === "id") return $(b);
+  return null;
+}
+function mlName(key) {
+  const h = mlHost(key);
+  if (/^pad\d[xy]$/.test(key)) return `FX PAD ${+key[3] + 1} ${key[4] === "x" ? "LEFT-RIGHT" : "UP-DOWN"}`;
+  if (/^fader\d$/.test(key)) return (key.endsWith("5") ? "LEAD" : ROLE[+key.slice(5)]) + " LEVEL";
+  if (!h) return key.toUpperCase();
+  const lab = h.querySelector && (h.querySelector(".lab, .mn, .a") || null);
+  return ((lab ? lab.textContent : h.getAttribute("aria-label") || h.textContent) || key).trim().replace(/\s+/g, " ").toUpperCase().slice(0, 24);
+}
+function mlBadges() {
+  document.querySelectorAll(".mlb").forEach((b) => b.remove());
+  const by = new Map();
+  for (const m of mlMap) { const k = m.t.replace(/^(pad\d)[xy]$/, "$1"); by.set(k, (by.has(k) ? by.get(k) + " " : "") + mlSrc(m).replace(" · ", " ")); }
+  for (const [k, t] of by) { const h = mlHost(k); if (h) { const b = document.createElement("span"); b.className = "mlb"; b.textContent = t; h.append(b); } }
+}
+function mlStat(t) { $("mlstat").textContent = t; }
+function mlSet(on) {
+  mlOn = on; mlPick = null;
+  document.body.classList.toggle("mlearn", on);
+  document.querySelectorAll(".mlpick").forEach((e) => e.classList.remove("mlpick"));
+  $("midilearn").setAttribute("aria-pressed", on);
+  $("mlbar").hidden = !on;
+  if (on) { if (!midiAccess) midiOn(true); mlStat(mlMap.length ? "Click a control, then move a knob or press a pad. Right-click a learned one to forget it." : "Click a control, then move a knob or press a pad."); }
+}
+function mlChoose(key) {
+  document.querySelectorAll(".mlpick").forEach((e) => e.classList.remove("mlpick"));
+  mlPick = /^pad\d$/.test(key) ? key + "x" : key;
+  const h = mlHost(key); if (h) h.classList.add("mlpick");
+  mlStat(`${mlName(mlPick)}: now move a knob or press a pad on your controller.`);
+}
+$("midilearn").addEventListener("click", () => mlSet(!mlOn));
+$("mldone").addEventListener("click", () => mlSet(false));
+$("mlclear").addEventListener("click", () => { mlMap = []; mlSave(); mlBadges(); mlStat("Every link cleared. Click a control, then move a knob."); });
+addEventListener("keydown", (e) => { if (mlOn && e.key === "Escape") mlSet(false); }, true);
+for (const t of ["pointerdown", "click"]) addEventListener(t, (e) => {    // (while learning a click picks, it doesn't press)
+  if (!mlOn || e.target.closest("#mlbar, #midilearn, .ddm, dialog")) return;
+  const key = mlKeyOf(e.target);
+  if (!key) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  if (t === "pointerdown" && e.button === 0) mlChoose(key);
+}, true);
+addEventListener("contextmenu", (e) => {
+  if (!mlOn) return;
+  const key = mlKeyOf(e.target);
+  if (!key) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  const was = mlMap.length;
+  mlMap = mlMap.filter((m) => m.t.replace(/^(pad\d)[xy]$/, "$1") !== key && m.t !== key);
+  if (was > mlMap.length) { mlSave(); mlBadges(); mlStat(`${mlName(key)}: forgotten.`); mlForgot = [key, performance.now()]; }
+  else if (!(mlForgot[0] === key && performance.now() - mlForgot[1] < 500)) mlStat(`${mlName(key)} has no link.`);   // (a
+  // right-click can bring two contextmenu events: the second leaves the first's word)
+}, true);
+// a MIDI message: learned (while one is picked), a learned control's (done here, not sent on), or neither (false)
+function mlMidi(d) {
+  const st = d[0] & 0xF0, ch = d[0] & 15, on = st === 0x90 && d[2] > 0, off = st === 0x80 || (st === 0x90 && !d[2]);
+  const s = st === 0xB0 ? 0xB0 : on || off ? 0x90 : 0;
+  if (!s) return false;
+  if (mlOn && mlPick && (st === 0xB0 || on)) {
+    const t = mlPick;
+    mlMap = mlMap.filter((m) => !(m.s === s && m.ch === ch && m.n === d[1]) && m.t !== t);
+    mlMap.push({ s, ch, n: d[1], t });
+    mlSave(); mlBadges();
+    mlLast.delete(t);
+    if (/^pad\dx$/.test(t)) { mlPick = t.slice(0, 4) + "y"; mlStat(`${mlName(t)} ← ${mlSrc({ s, ch, n: d[1] })}. Now the knob for ${mlName(mlPick)}.`); return true; }
+    mlPick = null;
+    document.querySelectorAll(".mlpick").forEach((e) => e.classList.remove("mlpick"));
+    mlStat(`${mlName(t)} ← ${mlSrc({ s, ch, n: d[1] })}. Click the next one, or DONE.`);
+    return true;
+  }
+  if (mlOn && mlPick) return true;                        // (a note-off while learning: swallowed)
+  const m = mlMap.find((m) => m.s === s && m.ch === ch && m.n === d[1]);
+  if (!m) return false;
+  const v = st === 0xB0 ? d[2] : on ? 127 : 0, down = st === 0xB0 ? d[2] >= 64 : on;
+  mlApply(m.t, v, down);
+  return true;
+}
+function mlApply(key, v, down) {
+  const [a, b] = key.split(":"), was = mlLast.get(key);
+  mlLast.set(key, v);
+  const rel = (k) => { if (was === undefined) return; const dv = Math.max(-8, Math.min(8, v - was)); if (dv) turn(k, dv); };
+  const press = (fn) => { const p = mlDown.get(key); mlDown.set(key, down); if (down && !p) fn(); };
+  if (/^knob\d$/.test(key)) return rel(knobEls[+key[4]]);
+  if (/^wheel\d$/.test(key)) {
+    if (key !== "wheel3") return rel(wheelEls[+key[5]]);
+    masterValue = Math.round(v / 127 * 1023);                 // VOLUME: where the knob is
+    send({ type: "master", value: masterValue });
+    if (pl.n) pl.n.port.postMessage({ type: "master", value: masterValue });
+    setAngle(wheelEls[3], -135 + 270 * masterValue / 1023);
+    wheelEls[3].val.textContent = Math.round(masterValue / 10.23) + "%";
+    return boxKnobDraw();
+  }
+  if (/^vap\d$/.test(key)) return vapSet(+key[3], v);
+  if (a === "pol") { const [lo, hi] = POL_RANGE[b]; return polSet(b[0], b.slice(1), lo + v / 127 * (hi - lo), true); }
+  if (/^fader\d$/.test(key)) {
+    const f = document.querySelector(`.mstrip[data-k="${key.slice(5)}"] .fader`);
+    if (f) { f.value = v; f.dispatchEvent(new Event("input")); }
+    return;
+  }
+  if (/^pad\d[xy]$/.test(key)) {
+    const j = +key[3], pv = mlPadV[j], pad = $("pad" + j), dot = pad.querySelector(".dot");
+    pv[key[4]] = v;
+    if (Math.abs(pv.x - 64) > 3 || Math.abs(pv.y - 64) > 3) {
+      const k = G ? G.sel : 0;
+      if (padK === null || (!padAt[0] && !padAt[1])) padK = k;
+      padAt[j] = { x: pv.x, y: pv.y };
+      pad.classList.add("on");
+      dot.style.left = pv.x / 127 * 100 + "%"; dot.style.top = 100 - pv.y / 127 * 100 + "%";
+      padSend(j);
+    } else if (padAt[j]) padRelease(j);
+    return;
+  }
+  if (key === "tempo") return setBpm(60 + v / 127 * 120);
+  if (key === "swing") return setSwing(Math.round(v / 127 * 100 / 5) * 5);
+  if (a === "face") {                                          // held while the pad is held
+    if (down) btnBy.set("m" + b, +b); else btnBy.delete("m" + b);
+    return syncButtons();
+  }
+  const h = mlHost(key);
+  if (h) press(() => h.click());                               // M, S, ON, chips, tabs, VAPORIZE ..: a tap
+}
+mlBadges();
 
 // ------------------------------------------------------------------ switching on
 const say = (t) => { $("status").textContent = t; };
@@ -4239,6 +4425,9 @@ const TIPS = {
   "#share": "SHARE: a short code and a link that play this song in anyone's groovebox, with the samples it uses.",
   "#codebtn": "CODE: open a song someone shared, by its code (SPGB_…) or its link.",
   "#midibtn": "MIDI: your keyboard's state. Click it to connect (the browser asks first).",
+  "#midilearn": "LEARN: link your controller's knobs, faders and pads. Click LEARN, click a control on the page, then move a knob on your controller.",
+  "#mlclear": "Forget every link to your controller.",
+  "#mldone": "Done learning (Esc too). The links stay in this browser.",
   "#midiroute": "What a MIDI keyboard plays: the track you picked (whatever its channel), or each track on its own channel (1 DRUMS, 2 SYNTH 1, 3 SYNTH 2, 4 SYNTH 3).",
   "#undobtn": "UNDO: take back the last thing you did to the music: a NEW SONG or RANDOM, a sound you picked, BEAT / RANDOM / VARY / CLEAR on a track, a pattern copied, cleared or made by accident, LEAD's last take. Click again to put it back.",
   "#bpmdn": "Slower (hold to keep going; the mouse wheel over the number too).",
