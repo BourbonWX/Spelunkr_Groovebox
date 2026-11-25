@@ -359,6 +359,8 @@ static uint32_t lead_pack(void)
             b[22 + i] = (uint8_t)clamp(ph_trk.p[K[i]], 0, 127);
         b[31] = (uint8_t)clamp(ph_trk.p[PH_GLIDE], 0, 127);
         b[32] = (uint8_t)clamp(ph_trk.p[PH_VIB], 0, 127);
+        b[33] = (uint8_t)(0x80u | (uint32_t)(clamp(ph_trk.p[P_PAN], -64, 63) + 64));   /* (Nov 25: PAN + 64, 0x80 = there; */
+        b[34] = ph_trk.p[P_MUTE] ? 1u : 0u;                                            /*  MUTE; older: 0, centre, on) */
     }
     o = LEAD_HDR;
     for (p = 0; p < LEAD_PATS; p++) {
@@ -399,6 +401,8 @@ static int lead_unpack(const uint8_t *b, uint32_t n)
             ph_trk.p[K[i]] = b[22 + i];
         ph_trk.p[PH_GLIDE] = b[31];
         ph_trk.p[PH_VIB] = b[32];
+        ph_trk.p[P_PAN] = (int16_t)(b[33] & 0x80u ? (int32_t)(b[33] & 0x7Fu) - 64 : 0);
+        ph_trk.p[P_MUTE] = (int16_t)(b[34] == 1u);
     }
     for (p = 0; p < LEAD_PATS; p++)
         for (i = 0; i < cnt[p]; i++, o += 4u) {

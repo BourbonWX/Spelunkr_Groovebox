@@ -422,7 +422,7 @@ body.mlearn :is(.stepper, .mstrip, #face .btn, .pad, #bpm, #swing, .pon, .chip, 
 body.mlearn .mlpick { outline: 3px solid var(--orange) !important; animation: breath 1s ease-in-out infinite; }
 .mlb { position: absolute; top: -8px; right: -6px; z-index: 3; padding: 1px 5px; font: 13px/1.2 var(--mono); color: var(--night);
        background: var(--yellow); border-radius: 4px; pointer-events: none; white-space: nowrap; }
-:is(.stepper, .mstrip, .pad, .chip, .pon, #face .btn, .tab, #bpm, #swing, #vapgo, #poloff, #tprev, #tnext):has(> .mlb) { position: relative; }
+:is(.stepper, .mstrip, .panv, .pad, .chip, .pon, #face .btn, .tab, #bpm, #swing, #vapgo, #poloff, #tprev, #tnext):has(> .mlb) { position: relative; }
 /* the guide */
 .guide { overflow-x: auto; }
 .guide .inner { min-width: 980px; }
@@ -556,7 +556,7 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
 .tip[hidden] { display: none; }
 
 /* first-run help: a card above the keys, the thing it talks about outlined */
-.tour { position: fixed; z-index: 20; left: 50%; bottom: 168px; transform: translateX(-50%); width: min(460px, calc(100vw - 24px));
+.tour { position: fixed; z-index: 40; left: 50%; bottom: 168px; transform: translateX(-50%); width: min(460px, calc(100vw - 24px));
         background: var(--panel); border: 4px solid var(--yellow); box-shadow: 0 0 0 3px var(--night), 0 10px 40px rgba(0, 0, 0, .55); }
 .tour[hidden] { display: none; }
 .tour.high { bottom: auto; top: 76px; }
@@ -663,9 +663,23 @@ body[data-pane] .lowp:not(.on) { display: none !important; }
 .mstrip .lvv { font-size: 19px; color: var(--yellow); }
 .mstrip.sel .lvv { color: #fff; }
 .fader { writing-mode: vertical-lr; direction: rtl; width: 34px; height: 230px; flex: 1 1 auto; min-height: 120px; margin: 0; accent-color: var(--yellow); cursor: ns-resize; }
-.mstrip .msb { display: flex; gap: 3px; }
-.mstrip .ms { width: 28px; height: 28px; font-size: 17px; }
+.mstrip .msb { display: grid; grid-template-columns: repeat(2, minmax(0, 28px)); gap: 3px; width: 100%; justify-content: center; }
+.mstrip .ms { width: auto; min-width: 0; height: 28px; padding: 0; font-size: 17px; }   /* (Nov 25: they share the strip's width: no
+                                                         * spilling onto the next strip in a narrow mixer) */
 .mstrip.muted .fader { opacity: .4; }
+/* PAN and the OUT meter (Nov 25) */
+.mstrip .pan { width: 100%; max-width: 64px; height: 16px; margin: 0; accent-color: var(--orange); cursor: ew-resize; }
+.mstrip .panv { font-size: 15px; line-height: 1; color: var(--soft); min-height: 15px; }
+.mstrip.sel .panv { color: #fff; }
+.mixbody { display: flex; flex: 1 1 auto; min-height: 0; }
+.mixbody .strips { flex: 1 1 auto; min-width: 0; }
+.mout { flex: 0 0 34px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px 12px 0; }
+.mclip { font: 11px/1 var(--mono); color: var(--night); background: var(--rule); border-radius: 3px; padding: 2px 3px; }
+.mout.clip .mclip { background: var(--rec); color: #fff; }
+.mbars { flex: 1 1 auto; display: flex; gap: 3px; min-height: 80px; }
+.mbar { width: 8px; height: 100%; border-radius: 2px; overflow: hidden; background: linear-gradient(0deg, var(--yellow) 0 70%, var(--orange) 85%, var(--rec) 97%); }
+.mbar i { display: block; width: 100%; height: 100%; background: var(--night); }   /* (the unlit part, from the top) */
+.mlab { font: 14px/1 var(--head); color: var(--soft); }
 @media (min-width: 1281px) {
   main, body.jam main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 400px); align-items: stretch;
          grid-template-areas: "dev mix" "msg msg" "low low"; }
@@ -1189,7 +1203,8 @@ body.keyshid .tour { bottom: 52px; }
 
     <section class="panel mixer" id="mixer" aria-label="Mixer">
       <div class="title strip"><b>MIXER</b><span>levels, mute, solo</span></div>
-      <div class="strips" id="mixstrips"></div>
+      <div class="mixbody"><div class="strips" id="mixstrips"></div>
+        <div class="mout" id="mout" title="OUT: how loud the whole song is coming out. The light at the top turns red if it's too loud (clipping): bring the faders or VOLUME down a little."><b class="mclip">CLIP</b><span class="mbars"><span class="mbar"><i></i></span><span class="mbar"><i></i></span></span><span class="mlab">OUT</span></div></div>
     </section>
 
     <section class="panel fxpad lowp" aria-label="FX PAD">
@@ -1350,6 +1365,7 @@ body.keyshid .tour { bottom: 52px; }
     </fieldset>
     <fieldset>
       <label>Let it ring out for up to <input type="number" id="tail" min="0" max="20" value="4"> s</label>
+      <label><input type="checkbox" id="fadeon"> Fade out over the last <input type="number" id="fadesec" min="1" max="30" value="6"> s</label>
       <label><input type="checkbox" id="stems"> Stems too: one WAV per track, in a zip</label>
       <small>Rendered from the top, faster than real time. 24-bit, 44.1 kHz. What you play live isn't in it: use RECORD for that.</small>
     </fieldset>
@@ -2378,11 +2394,24 @@ var sidePlace = () => {};
 // the mixer (Control Room): a fader a track (P_LEVEL, felucca_web.c web_level) and LEAD's, mute / solo, the name picks it
 let mixSig = "", mixTouched = 0;
 const mixShort = (k) => ROLE[k].replace("SYNTH ", "SYN ");
+const panTxt = (v) => v ? (v < 0 ? "L" : "R") + Math.round(Math.abs(v) / 0.64) : "C";   // (L 100 .. C .. R 98: percent)
+// the OUT meter (Nov 25): the output's peaks, L R, from the worklet's frames (m.pk), falling slowly; CLIP lights at the top
+let outPk = [0, 0], outClipT = 0;
+function outMeter(pk) {
+  const box = $("mout");
+  if (!box || !pk) return;
+  const dbh = (a) => a > 0 ? Math.max(0, Math.min(1, (20 * Math.log10(a) + 48) / 48)) : 0;   // -48 .. 0 dB
+  pk.forEach((a, i) => { outPk[i] = Math.max(a, outPk[i] * 0.88); });
+  box.querySelectorAll(".mbar i").forEach((b, i) => { b.style.height = ((1 - dbh(outPk[i])) * 100).toFixed(1) + "%"; });
+  if (pk[0] >= 0.985 || pk[1] >= 0.985) outClipT = performance.now();
+  box.classList.toggle("clip", performance.now() - outClipT < 1500);
+}
 function mixerShow(g, order) {
   const box = $("mixstrips"), lead = g.lead && g.lead.lv !== undefined;
-  const items = order.map((k) => ({ k, name: mixShort(k), long: ROLE[k], lv: g.tracks[k].lv ?? 104, mute: g.tracks[k].mute, solo: g.tracks[k].solo,
+  const items = order.map((k) => ({ k, name: mixShort(k), long: ROLE[k], lv: g.tracks[k].lv ?? 104, pan: g.tracks[k].pan ?? 0, mute: g.tracks[k].mute, solo: g.tracks[k].solo,
     sel: k === g.sel && !(g.lead && g.lead.f) }));
-  if (lead) items.push({ k: g.tracks.length, name: power ? "PHANT" : "LEAD", long: power ? "PHANTOM" : "LEAD", lv: g.lead.lv, lead: true, sel: !!g.lead.f });
+  if (lead) items.push({ k: g.tracks.length, name: power ? "PHANT" : "LEAD", long: power ? "PHANTOM" : "LEAD", lv: g.lead.lv, pan: g.lead.pan ?? 0,
+    mute: g.lead.mute, solo: g.lead.solo, lead: true, sel: !!g.lead.f });
   const sig = items.map((i) => i.k + i.name).join();
   if (sig !== mixSig) {
     mixSig = sig;
@@ -2398,10 +2427,20 @@ function mixerShow(g, order) {
       f.title = `${it.long}'s level: drag it up or down (the mixer page's fader, kept with the song).`;
       f.addEventListener("input", () => { mixTouched = performance.now(); v.textContent = Math.round(f.value / 1.27); send({ type: "level", k: it.k, v: +f.value }); });
       v.className = "lvv";
-      d.append(nm, f, v);
+      // PAN (Nov 25): a small left-right slider under the name; double-click centres it
+      const pn = document.createElement("input"), pv = document.createElement("span");
+      pn.type = "range"; pn.className = "pan"; pn.min = -64; pn.max = 63; pn.step = 1; pn.value = it.pan;
+      pn.setAttribute("aria-label", it.long + " pan");
+      pn.title = `${it.long}'s pan: left or right in the stereo picture (double-click: back to the middle).`;
+      pv.className = "panv";
+      const panSend = () => { mixTouched = performance.now(); pv.textContent = panTxt(+pn.value); send({ type: "pan", k: it.k, v: +pn.value }); };
+      pn.addEventListener("input", panSend);
+      pn.addEventListener("dblclick", () => { pn.value = 0; panSend(); });
+      pv.textContent = panTxt(it.pan);
+      d.append(nm, pn, pv, f, v);
       const msb = document.createElement("span");
       msb.className = "msb";
-      if (!it.lead) for (const [t, ty, tip] of [["M", "mute", "Mute"], ["S", "solo", "Solo"]]) {
+      for (const [t, ty, tip] of [["M", "mute", "Mute"], ["S", "solo", "Solo"]]) {
         const b = document.createElement("button");
         b.type = "button"; b.className = "btn ms"; b.textContent = t; b.dataset.w = ty;
         b.setAttribute("aria-label", `${tip} ${it.long}`); b.title = `${tip} ${it.long}` + (ty === "mute" ? ": silence it (again: back)." : ": hear only this track (again: all).");
@@ -2418,6 +2457,8 @@ function mixerShow(g, order) {
     const it = items[i], f = d.querySelector(".fader");
     d.classList.toggle("sel", it.sel); d.classList.toggle("muted", !!it.mute);
     if (!drag && document.activeElement !== f && +f.value !== it.lv) { f.value = it.lv; d.querySelector(".lvv").textContent = Math.round(it.lv / 1.27); }
+    const pn = d.querySelector(".pan");
+    if (pn && !drag && document.activeElement !== pn && +pn.value !== it.pan) { pn.value = it.pan; d.querySelector(".panv").textContent = panTxt(it.pan); }
     for (const b of d.querySelectorAll(".ms")) { const on = !!it[b.dataset.w]; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); }
   });
 }
@@ -2522,7 +2563,7 @@ function mlKeyOf(el) {
     const pk = polKnobs.find((k) => k.el === h);
     return pk ? "pol:" + pk.m + pk.f : null;
   }
-  if ((h = el.closest(".mstrip"))) { const b = el.closest(".ms"); return b ? b.dataset.w + h.dataset.k : "fader" + h.dataset.k; }
+  if ((h = el.closest(".mstrip"))) { const b = el.closest(".ms"); return b ? b.dataset.w + h.dataset.k : el.closest(".pan, .panv") ? "pan" + h.dataset.k : "fader" + h.dataset.k; }
   if ((h = el.closest("#face .btn"))) { const f = faceEls.find((f) => f.el === h); return f ? "face:" + f.bit : null; }
   if ((h = el.closest(".pad"))) return "pad" + h.id.slice(3);
   if (el.closest("#bpm")) return "tempo";
@@ -2538,6 +2579,7 @@ function mlHost(key) {
   for (const [pre, arr] of [["knob", knobEls], ["wheel", wheelEls], ["vap", vapEls]]) if (key.startsWith(pre) && /^\d$/.test(key.slice(pre.length))) return arr[num(pre)] && arr[num(pre)].el;
   if (a === "pol") { const k = polKnobs.find((k) => k.m + k.f === b); return k && k.el; }
   if (/^fader\d$/.test(key)) return document.querySelector(`.mstrip[data-k="${num("fader")}"]`);
+  if (/^pan\d$/.test(key)) return document.querySelector(`.mstrip[data-k="${num("pan")}"] .panv`);
   if (/^(mute|solo)\d$/.test(key)) { const st = document.querySelector(`.mstrip[data-k="${key.slice(-1)}"]`); return st && st.querySelector(`.ms[data-w="${key.slice(0, 4)}"]`); }
   if (a === "face") { const f = faceEls.find((f) => f.bit === +b); return f && f.el; }
   if (/^pad\d[xy]?$/.test(key)) return $("pad" + key[3]);
@@ -2553,6 +2595,7 @@ function mlName(key) {
   const h = mlHost(key);
   if (/^pad\d[xy]$/.test(key)) return `FX PAD ${+key[3] + 1} ${key[4] === "x" ? "LEFT-RIGHT" : "UP-DOWN"}`;
   if (/^fader\d$/.test(key)) return (key.endsWith("5") ? "LEAD" : ROLE[+key.slice(5)]) + " LEVEL";
+  if (/^pan\d$/.test(key)) return (key.endsWith("5") ? "LEAD" : ROLE[+key.slice(3)]) + " PAN";
   if (!h) return key.toUpperCase();
   const lab = h.querySelector && (h.querySelector(".lab, .mn, .a") || null);
   return ((lab ? lab.textContent : h.getAttribute("aria-label") || h.textContent) || key).trim().replace(/\s+/g, " ").toUpperCase().slice(0, 24);
@@ -2608,7 +2651,8 @@ function mlMidi(d) {
   if (mlOn && mlPick && (st === 0xB0 || on)) {
     const t = mlPick;
     mlMap = mlMap.filter((m) => !(m.s === s && m.ch === ch && m.n === d[1]) && m.t !== t);
-    mlMap.push({ s, ch, n: d[1], t });
+    const small = (v) => v <= 15 || v >= 113 || Math.abs(v - 64) <= 7;
+    mlMap.push(s === 0xB0 && small(d[2]) ? { s, ch, n: d[1], t, lastv: d[2], probe: 1 } : { s, ch, n: d[1], t });   // (probe: maybe an endless knob)
     mlSave(); mlBadges();
     mlLast.delete(t);
     if (/^pad\dx$/.test(t)) { mlPick = t.slice(0, 4) + "y"; mlStat(`${mlName(t)} ← ${mlSrc({ s, ch, n: d[1] })}. Now the knob for ${mlName(mlPick)}.`); return true; }
@@ -2621,11 +2665,47 @@ function mlMidi(d) {
   const m = mlMap.find((m) => m.s === s && m.ch === ch && m.n === d[1]);
   if (!m) return false;
   const v = st === 0xB0 ? d[2] : on ? 127 : 0, down = st === 0xB0 ? d[2] >= 64 : on;
+  // an endless knob (Nov 25) sends steps, not a place: the same small value again and again (1 / 127, or 65 / 63 around 64).
+  // An ordinary knob never sends the same value twice in a row, so a repeat of such a value marks it, kept with the link
+  const small = (x) => x <= 15 || x >= 113 || Math.abs(x - 64) <= 7;
+  if (st === 0xB0 && !m.rel && small(v) && (v === m.lastv || (m.lastv !== undefined && small(m.lastv) && Math.abs(v - m.lastv) > 40))) {
+    m.rel = Math.abs(v - 64) <= 7 ? "off" : "2c";        // (a repeat, or a jump across the ends: only an endless knob does that)
+    delete m.probe; mlSave();
+  }
+  if (st === 0xB0 && m.probe && !m.rel) {                 // (learned on a small value: wait a few messages before moving anything)
+    m.lastv = v;
+    if (++m.probe <= 3) return true;
+    delete m.probe; mlSave();
+  }
+  m.lastv = v;
+  if (st === 0xB0 && m.rel) {
+    const dv = m.rel === "off" ? v - 64 : v < 64 ? v : v - 128;
+    if (dv) mlApply(m.t, 0, dv > 0, dv);
+    return true;
+  }
   mlApply(m.t, v, down);
   return true;
 }
-function mlApply(key, v, down) {
-  const [a, b] = key.split(":"), was = mlLast.get(key);
+// where a control is now, 0..127 (an endless knob moves it from there)
+function mlCur(key) {
+  const [a, b] = key.split(":"), q = (sel) => document.querySelector(sel);
+  if (/^vap\d$/.test(key)) return vapEls[+key[3]].v;
+  if (a === "pol") { const [lo, hi] = POL_RANGE[b]; return (pol[b[0]][b.slice(1)] - lo) / (hi - lo) * 127; }
+  if (/^fader\d$/.test(key)) { const f = q(`.mstrip[data-k="${key.slice(5)}"] .fader`); return f ? +f.value : 64; }
+  if (/^pan\d$/.test(key)) { const f = q(`.mstrip[data-k="${key.slice(3)}"] .pan`); return f ? +f.value + 64 : 64; }
+  if (key === "wheel3") return masterValue / 1023 * 127;
+  if (key === "tempo") return (sbBpm - 60) / 120 * 127;
+  if (key === "swing") return sbSwing * 1.27;
+  if (/^pad\d[xy]$/.test(key)) return mlPadV[+key[3]][key[4]];
+  return 64;
+}
+function mlApply(key, v, down, step) {
+  const [a, b] = key.split(":");
+  if (step !== undefined) {                                    // an endless knob's step: the knobs turn by it, the rest move from where they are
+    if (/^(knob|wheel)\d$/.test(key) && key !== "wheel3") return turn((key[0] === "k" ? knobEls : wheelEls)[+key.slice(-1)], Math.max(-8, Math.min(8, step)));
+    v = Math.max(0, Math.min(127, Math.round(mlCur(key) + step * 2)));
+  }
+  const was = mlLast.get(key);
   mlLast.set(key, v);
   const rel = (k) => { if (was === undefined) return; const dv = Math.max(-8, Math.min(8, v - was)); if (dv) turn(k, dv); };
   const press = (fn) => { const p = mlDown.get(key); mlDown.set(key, down); if (down && !p) fn(); };
@@ -2644,6 +2724,11 @@ function mlApply(key, v, down) {
   if (/^fader\d$/.test(key)) {
     const f = document.querySelector(`.mstrip[data-k="${key.slice(5)}"] .fader`);
     if (f) { f.value = v; f.dispatchEvent(new Event("input")); }
+    return;
+  }
+  if (/^pan\d$/.test(key)) {
+    const pn = document.querySelector(`.mstrip[data-k="${key.slice(3)}"] .pan`);
+    if (pn) { pn.value = Math.round(v / 127 * 127) - 64; pn.dispatchEvent(new Event("input")); }
     return;
   }
   if (/^pad\d[xy]$/.test(key)) {
@@ -2683,6 +2768,7 @@ async function boot(sectors, song) {
       else if (m.type === "frame") {
         if (m.fb) drawScreen(m.fb, m.fbY, m.fbSide);
         if (m.leds) drawLights(lastLeds = m.leds);
+        if (m.pk) outMeter(m.pk);
         if (m.guide) { try { showGuide(JSON.parse(dec.decode(m.guide))); } catch (err) { console.warn(err); } }
         if (m.sectors && !saveFlash(m.sectors) && !warned) {
           warned = true;
@@ -2867,11 +2953,16 @@ $("bounce").addEventListener("click", () => {
   });
 });
 for (const r of ["whatsong", "whatpat"]) $(r).addEventListener("change", () => { dlg.dataset.picked = "1"; });
+try { const f = JSON.parse(localStorage.getItem("spelunkr-groovebox-fade") || "null"); if (f) { $("fadeon").checked = !!f.on; $("fadesec").value = f.s || 6; } } catch {}
+for (const id of ["fadeon", "fadesec"]) $(id).addEventListener("change", () => {
+  try { localStorage.setItem("spelunkr-groovebox-fade", JSON.stringify({ on: $("fadeon").checked, s: +$("fadesec").value || 6 })); } catch {}
+});
 $("bounceform").addEventListener("submit", async (e) => {
   e.preventDefault();
   if (e.submitter && e.submitter.value === "cancel") { if (bouncing) bouncing.terminate(); bouncing = null; dlg.close(); return; }
   if (bouncing) return;
   const job = { song: $("whatsong").checked, loops: Math.max(1, Math.min(64, +$("loops").value || 1)), tail: Math.max(0, Math.min(20, +$("tail").value || 0)),
+                fade: $("fadeon").checked ? Math.max(1, Math.min(30, +$("fadesec").value || 6)) : 0,
                 stems: $("stems").checked, names: ROLE, base: `spelunkr-${stamp()}` };
   $("bouncego").disabled = true;
   const prog = $("bounceprog");
@@ -4502,6 +4593,7 @@ const TIPS = {
   "#sharecopy": "Copy the link to paste anywhere.",
   "#whatsong": "The whole song, its parts in order, once.", "#whatpat": "The pattern playing now, looped as many times as you say.",
   "#stems": "Also a WAV for each track, in a zip (for mixing elsewhere).",
+  "#fadeon": "Fade the end out smoothly, so a looped pattern doesn't stop dead (the stems too).",
   "#bouncego": "Make the WAV now.",
   "dialog button[value='cancel']": "Close this without doing anything.",
   "#sharedlg button[value='close']": "Close.",
@@ -4598,22 +4690,24 @@ $("randsong").addEventListener("click", () => newSong(true));
 const TOURKEY = "spelunkr-groovebox-tour";
 const btnSel = (dev) => `.face .btn[data-dev="${dev}"]`;
 const TOUR = [                                           // (Ed: "cover every part of the song creation process from new
-  // song all the way to export"; Nov 22: "include everything as it currently stands"; each step points at what it talks
-  // about, `el` a selector or a function (a phone: what it shows))
+  // song all the way to export"; Nov 22: "include everything as it currently stands"; Nov 25: "scrub walkthrough with all
+  // our features to date"; each step points at what it talks about, `el` a selector or a function (a phone: what it shows))
   { t: "WELCOME", el: null, x: () => "This tour walks you through a whole song, from a blank page to a WAV you can use. "
+      + "The side menu " + (phoneMQ.matches ? "at the top" : "on the left") + " picks the panel under the groovebox: TRACKS, VAPOR, SAMPLES, POLISH, JAM PADS. "
       + "The groovebox's screen is a touch screen too: drag its boxes, click its key hints and steps. "
       + "Each step lights up what to use: try it, then press <kbd>NEXT</kbd>. "
       + (phoneMQ.matches ? "" : "Hover over anything on the page to see what it does. ")
       + "<kbd>HELP</kbd> at the top brings this tour back and opens the written guide." },
   { t: "1 · START A SONG", el: "#newsong", x: () => "The <kbd>SONG</kbd> menu at the top: <kbd>NEW SONG</kbd> starts from nothing: no steps, the starting sounds. "
       + "<kbd>🎲 RANDOM SONG</kbd> writes a whole song for you to play with: lo-fi, chillwave, electro or chiptune, with its own beat, chords, "
-      + "bass, tune and parts. Both ask first, and <kbd>UNDO</kbd> next to them takes back the last thing you did (click it again to put it back)." },
+      + "bass, tune and parts. Both ask first, and <kbd>UNDO</kbd> next to them takes back the last thing you did, a pattern copied by mistake too "
+      + "(click it again to put it back)." },
   { t: "2 · PLAY AND STOP", el: btnSel("PLAY"), x: () => `<kbd>PLAY</kbd>${phoneMQ.matches ? "" : " (or the space bar)"} starts and stops the music. `
       + "Leave it playing while you work: every change is heard on the next loop." },
   { t: "3 · TEMPO, SWING, KEY", el: "#songbar", x: () => "The bar under the top buttons is the whole song's: <kbd>TEMPO</kbd> (◀ ▶, or tap "
       + "<kbd>TAP</kbd> along with the beat you want), <kbd>SWING</kbd> (0% straight, 30–50% a lazy lo-fi bounce) and <kbd>KEY</kbd>: the home note "
       + "and the scale. Tick <i>keys stay in key</i> and every note you play lands in the scale, so nothing sounds wrong." },
-  { t: "4 · PICK A TRACK", el: "#grows", x: () => "Each row is a track: DRUMS, PERC and three synths. Click a row to work on it: "
+  { t: "4 · PICK A TRACK", el: "#grows", x: () => "Each row is a track: DRUMS, PERC, three synths, and LEAD at the bottom. Click a row to work on it: "
       + "the keys, the screen and the controls follow. <kbd>M</kbd> mutes a track, <kbd>S</kbd> plays it alone. Start with <kbd>DRUMS</kbd>." },
   { t: "5 · PICK ITS SOUND", el: "#wheels", x: () => "<kbd>SOUNDS</kbd> ◀ ▶ steps through the sounds for that track: dusty lo-fi kits (CRATE, BEDROOM), "
       + "80s drum machines (VAPOR 808, LINN, GATED), chiptune kits (NES, GAMEBOY, SNES); on the synths pianos, vibes, sax, chip sounds and more." },
@@ -4625,41 +4719,56 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "Or use the screen itself: click a step to go there, click it again to turn the hit on or off, and drag it (or use the mouse wheel) to scroll." },
   { t: "7 · PLAY THE KEYS", el: ".keybar", x: () => (phoneMQ.matches ? "Play on these keys. "
       : "Play on these keys, or on your computer keyboard: <kbd>Z</kbd> to <kbd>M</kbd> and <kbd>Q</kbd> to <kbd>O</kbd>. ")
-      + "<kbd>OCT −</kbd> and <kbd>OCT +</kbd> move up and down. On a drum track each key is a drum. A MIDI keyboard works too." },
-  { t: "8 · RECORD A PART", el: btnSel("REC"), x: () => "Click a synth row (SYNTH 1) and pick its sound. With the music stopped, tap <kbd>RECORD</kbd>: "
+      + "<kbd>OCT −</kbd> and <kbd>OCT +</kbd> move up and down. On a drum track each key is a drum. "
+      + "The tab on top (<kbd>▼ HIDE KEYS</kbd>) slides them out of the way" + (phoneMQ.matches ? "." : "; the computer keys still play.") },
+  { t: "8 · MIDI KEYBOARDS AND KNOBS", el: () => $("midilearn").closest(".sb"), x: () => phoneMQ.matches
+      ? "A MIDI keyboard works on a computer (Chrome, Edge, Firefox): plug it in and <kbd>MIDI</kbd> shows its name. <kbd>LEARN</kbd> links its knobs to the page."
+      : "Plug in a MIDI keyboard: <kbd>MIDI</kbd> shows its name and it plays the track you've picked. Got knobs, faders or pads on it? "
+      + "Click <kbd>LEARN</kbd>, click anything on the page (a fader, a control, a button, an FX pad), then move a knob: linked. "
+      + "Right-click a link while learning to forget it. The links stay in this browser." },
+  { t: "9 · RECORD A PART", el: btnSel("REC"), x: () => "Click a synth row (SYNTH 1) and pick its sound. With the music stopped, tap <kbd>RECORD</kbd>: "
       + "it asks whether you want a metronome (a bar of clicks counts you in, then they keep time). Then the music starts and what you play on "
       + "the keys goes into the loop. Tap <kbd>RECORD</kbd> again to stop recording (the music keeps going), <kbd>PLAY</kbd> to stop. "
       + "Tap RECORD while it's already playing and it just records, no metronome. Do the same for a bass on SYNTH 2." },
-  { t: "9 · SHAPE THE SOUND", el: "#knobs", x: () => "These four controls change the selected track's sound: its tone, its decay, WOW and AGE on the sampled ones. "
-      + "<kbd>SOUND</kbd> shows more of its settings; <kbd>POWER USER</kbd> at the top shows everything (envelope, wobble, arpeggio, scale) "
-      + "and the device's own names." },
-  { t: "10 · MORE PATTERNS", el: btnSel("GLO"), x: () => "A pattern is a loop of every track. Tap <kbd>MIX</kbd>: patterns A to F on the white keys "
+  { t: "10 · THE LEAD", el: "#grows .grow.lead", x: () => "<kbd>LEAD</kbd> is a voice over everything, for the tune on top. Click its row (or step "
+      + "<kbd>TRACK</kbd> past SYNTH 3), pick its sound with <kbd>SOUNDS</kbd> (a theremin, FM, sampled and GENESIS sounds), play it on the keys, "
+      + "and record it with <kbd>RECORD</kbd> like any track: each pattern keeps its own LEAD part. <kbd>CLEAR</kbd> on its row empties it." },
+  { t: "11 · SHAPE THE SOUND", el: "#knobs", x: () => "These four controls change the selected track's sound: its tone, its decay, WOW and AGE on the sampled ones. "
+      + "<kbd>SOUND</kbd> shows more of its settings; <kbd>POWER USER</kbd> " + (phoneMQ.matches ? "at the top" : "in the side menu")
+      + " shows everything (envelope, wobble, arpeggio, scale) and the device's own names." },
+  { t: "12 · MORE PATTERNS", el: btnSel("GLO"), x: () => "A pattern is a loop of every track. Tap <kbd>MIX</kbd>: patterns A to F on the white keys "
       + (phoneMQ.matches ? "C to A" : "C to A (computer keys Z to N)") + ". Tap D (X) for a new, empty pattern B, or hold C (Z) and tap D (X) to copy A into B. "
       + "Change it (a fill, a chorus, a drop). The columns below show your patterns: click one to play it next." },
-  { t: "11 · ARRANGE THE SONG", el: btnSel("GLO"), x: () => "Tap <kbd>MIX</kbd> again: the SONG screen. Easiest way: tap <kbd>RECORD</kbd> there, "
+  { t: "13 · ARRANGE THE SONG", el: btnSel("GLO"), x: () => "Tap <kbd>MIX</kbd> again: the SONG screen. Easiest way: tap <kbd>RECORD</kbd> there, "
       + "press <kbd>PLAY</kbd>, and click the patterns below as the music goes (each one starts when the loop comes round); press <kbd>PLAY</kbd> to stop. "
       + "What you played becomes the song's parts, and the columns show them. <kbd>PLAY</kbd> on the SONG screen plays the song." },
-  { t: "12 · MIX IT", el: "#mixer", x: () => "The <kbd>MIXER</kbd> beside the screen: a fader a track (and LEAD), <kbd>M</kbd> mutes, <kbd>S</kbd> solos, a name picks the track. "
-      + "For pan and reverb too, tap <kbd>HOME</kbd> on the home screen (its button says MIXER). <kbd>VOLUME</kbd> under the screen is everything." },
-  { t: "13 · FX PADS", el: ".pads", x: () => "This is <kbd>JAM PADS</kbd> (in the side menu): for playing over your song. "
+  { t: "14 · MIX IT", el: "#mixer", x: () => "The <kbd>MIXER</kbd>: a fader a track (and LEAD), the small slider above it pans left or right, "
+      + "<kbd>M</kbd> mutes, <kbd>S</kbd> solos, a name picks the track. <kbd>OUT</kbd> shows the whole song's level: if its light turns red, "
+      + "bring things down a little. For reverb too, tap <kbd>HOME</kbd> on the home screen (its button says MIXER). <kbd>VOLUME</kbd>, with the controls, is everything." },
+  { t: "15 · FX PADS", el: ".pads", x: () => "This is <kbd>JAM PADS</kbd> (in the side menu): for playing over your song. "
       + "The screen goes to the FX keys, and the tracks below stay live: mute, solo, click a pattern to play it next. <kbd>TRACKS</kbd> takes you back. Hold a pad and drag to bend the selected track: FILTER · GATE darkens, thins and chops it; "
       + "ECHO · FLANGE throws echoes and jets. Let go and it snaps back, unless <kbd>LOCK</kbd> is on: then it stays where you leave it, "
       + "on that track, and it's saved with the song." },
-  { t: "14 · FX KEYS", el: btnSel("FX"), x: () => "Tap <kbd>FX KEYS</kbd> and the keys glitch the whole mix while you hold them: stutter, tunnel, jumps, crush "
+  { t: "16 · FX KEYS", el: btnSel("FX"), x: () => "Tap <kbd>FX KEYS</kbd> and the keys glitch the whole mix while you hold them: stutter, tunnel, jumps, crush "
       + "(the screen shows which key does what). Tap it again and the keys play notes." },
-  { t: "15 · MAKE IT VAPOR", el: ".vapor", x: () => "Slow the whole song down, warp the tape, add crackle and crunch: tap <kbd>VAPORIZE</kbd> or use the four controls. "
-      + "It's saved with the song." },
-  { t: "16 · POLISH IT", el: "#polish .pmods", x: () => "<kbd>POLISH</kbd> finishes the mix. The <b>COMPRESSOR</b> squeezes one track, "
-      + "or just the kick or snare (pick them, then a style: PUNCH on the kick is a classic), the <b>EQ</b> shapes the whole song's tone (try the presets), the <b>SIDECHAIN</b> makes the tracks you pick dip at each kick (the classic pump), and the <b>EXCITER</b> adds "
+  { t: "17 · MAKE IT VAPOR", el: ".vapor", x: () => "<kbd>VAPOR</kbd> in the side menu: slow the whole song down, warp the tape, add crackle and crunch. "
+      + "Tap <kbd>VAPORIZE</kbd> or use the four controls. It's saved with the song." },
+  { t: "18 · POLISH IT", el: "#polish .pmods", x: () => "<kbd>POLISH</kbd> finishes the mix. The <b>COMPRESSOR</b> squeezes one track, "
+      + "or just the kick or snare (it starts on PUNCH on the kick, a classic); the <b>SIDECHAIN</b> makes the tracks you pick dip at each kick "
+      + "(the classic pump); the <b>EQ</b> shapes the whole song's tone (try the presets); the <b>EXCITER</b> adds "
       + "sparkle or bass you can hear on small speakers. Picking a preset turns it on; it's saved with the song." },
-  { t: "17 · YOUR OWN SAMPLES", el: "#smpgo", x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file (a long one keeps its first 30 seconds), "
+  { t: "19 · YOUR OWN SAMPLES", el: "#smpgo", x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file (a long one keeps its first 30 seconds), "
       + "trim it, slice it, hear it (<kbd>■ STOP</kbd> stops it), and put it on a track as a synth, as chops on the keys, or as a drum kit." },
-  { t: "18 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>FILE</kbd> \u25B8 SAVE PROJECT downloads a project file (your samples too) "
-      + "and OPEN PROJECT brings it back. <kbd>SHARE</kbd> \u25B8 SHARE THIS SONG gives a short code (SPGB_…) and a link, carrying the samples your song uses: "
-      + "whoever opens the link, or types the code into SHARE \u25B8 OPEN A CODE, hears your song and can carry on from it. "
-      + "A code lasts a month from when it was made; each SHARE makes a new one." },
-  { t: "19 · EXPORT", el: "#bounce", x: () => "<kbd>AUDIO</kbd> \u25B8 EXPORT WAV makes the WAV: the song once through (or the pattern looped), with a WAV for each track if you like. "
-      + "RECORD LIVE, in the same menu, records you playing live instead. That's a whole song: have fun!" },
+  { t: "20 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>FILE</kbd> ▸ SAVE PROJECT downloads a project file (your samples too) "
+      + "and OPEN PROJECT brings it back. <kbd>SHARE</kbd> ▸ SHARE THIS SONG gives a short code (SPGB_…) and a link, carrying the samples, VAPOR, "
+      + "POLISH and locked FX pads your song uses: whoever opens the link, or types the code into SHARE ▸ OPEN A CODE, hears your song and can "
+      + "carry on from it. A code lasts a month from when it was made; each SHARE makes a new one. <kbd>PLAYLIST</kbd> plays up to 10 codes back to "
+      + "back, like an album." },
+  { t: "21 · EXPORT", el: "#bounce", x: () => "<kbd>AUDIO</kbd> ▸ EXPORT WAV makes the WAV: the song once through (or the pattern looped), with a WAV for each "
+      + "track if you like. RECORD LIVE, in the same menu, records you playing live instead." },
+  { t: "22 · MAKE IT YOURS", el: ".railfoot", x: () => "<kbd>THEME</kbd> recolours the page (MALL NEON, GAME CART, PUBLIC ACCESS, SNOW DAY, LATE LATE SHOW), "
+      + "<kbd>SCREEN</kbd> the groovebox's screen (it matches the theme unless you pick one), and <kbd>SKIN</kbd> restyles it all: PRIME TIME, "
+      + "SPGB AMP, AERO GLASS. That's a whole song: have fun!" },
 ];
 let tourAt = -1, tourEl = null;
 function tourShow(i) {
@@ -4694,21 +4803,31 @@ function tourShow(i) {
     tourEl.classList.add("tour-hi");
     if (!tourEl.closest(".keybar")) tourEl.scrollIntoView({ block: "center", behavior: "auto" });
   }
-  const card = $("tour");                              // over what it points at: the card goes to the top instead
+  const card = $("tour");                              // over what it points at: the card goes beside it instead
   card.classList.remove("high");
-  card.style.top = "";
+  card.style.top = card.style.left = card.style.bottom = card.style.transform = "";
   if (tourEl) {
-    const a = tourEl.getBoundingClientRect(), c = card.getBoundingClientRect();
     const over = (a, c) => a.left < c.right && a.right > c.left && a.top < c.bottom && a.bottom > c.top;
-    if (over(a, c)) {
-      card.classList.add("high");
-      const c2 = card.getBoundingClientRect();
-      if (over(a, c2) && !tourEl.closest(".keybar")) {
-        if (a.top < innerHeight / 3 && window.scrollY < 4) {   // (a phone, the top of the page: the card just under it,
-          let below = a.bottom + 8;                             // the page scrolled up for it if it doesn't fit)
-          if (below + c2.height > innerHeight - 4) { window.scrollBy(0, a.top - 6); below = a.height + 14; }
-          card.style.top = Math.round(below) + "px";
-        } else window.scrollBy(0, a.top - (c2.bottom + 14));     // (else: scrolled to below the card)
+    let a = tourEl.getBoundingClientRect();
+    const c = card.getBoundingClientRect();
+    if (over(a, c) && tourEl.closest(".keybar")) card.classList.add("high");   // (the keys: the card at the top)
+    else if (over(a, c)) {
+      // (Nov 25: placed where it fits: under the target, above it, beside it on a wide page; else the page scrolled so the
+      // target sits at the top with the card under it. Before, a top menu on a phone and a face button at 1100 px stayed
+      // under the card, and on a phone an open menu even covered NEXT)
+      const kb = document.body.classList.contains("keyshid") ? innerHeight : Math.min(innerHeight, $("keybar").getBoundingClientRect().top);
+      const h = c.height, w = c.width, put = (top, left) => {
+        card.style.bottom = "auto"; card.style.top = Math.round(top) + "px";
+        if (left !== undefined) { card.style.left = Math.round(left) + "px"; card.style.transform = "none"; }
+      };
+      if (a.bottom + 10 + h <= kb - 6) put(a.bottom + 10);
+      else if (a.top - 10 - h >= 6) put(a.top - 10 - h);
+      else if (innerWidth >= 900 && (a.left - w - 12 >= 6 || a.right + 12 + w <= innerWidth - 6))
+        put(Math.max(6, Math.min(kb - h - 6, a.top)), a.left - w - 12 >= 6 ? a.left - w - 12 : a.right + 12);
+      else {
+        window.scrollBy(0, a.top - 8);
+        a = tourEl.getBoundingClientRect();
+        put(Math.min(a.bottom + 10, kb - h - 6));
       }
     }
   }

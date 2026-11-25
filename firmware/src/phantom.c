@@ -50,6 +50,9 @@ static struct {
     uint8_t stage;                                     /* (LEAD, not the theremin: 0 attack, 1 decay / sustain) */
 } ph;
 static int32_t ph_buf[CTL];
+#if SPK_NU
+static int32_t ph_gate = 32768;                         /* LEAD's mute / solo gain now, Q15 (phantom_render) */
+#endif
 
 #define PH_GLIDE P_GLIDE                               /* (ph_trk's slots this voice reads itself) */
 #define PH_VIB P_LD_PIT
@@ -299,12 +302,30 @@ static void phantom_render(int32_t *l, int32_t *r, int32_t *sd, int32_t *sv, uin
     {
         int32_t xmax = 0x7FFFFFFF / ((d > rv ? d : rv) | 1);   /* sends: mulq15 would overflow (as mix_part's) */
         int32_t pk = ph_trk.peak;
+#if SPK_NU
+        /* the Spelunkr Groovebox (Nov 25): LEAD's PAN, MUTE and SOLO on the page's mixer (web_mute / web_solo_toggle /
+         * web_pan with k NTRK): silent while muted or while another track is soloed (perf_solo without bit NTRK), into
+         * and out of it in ~12 ms; PAN as a FEED's (fx.c mix_part) */
+        int32_t pan = ph_trk.p[P_PAN], gl = 4096 - (pan > 0 ? pan * 64 : 0), gr = 4096 + (pan < 0 ? pan * 64 : 0);
+        int32_t gt = ph_trk.p[P_MUTE] || (perf_solo && !((perf_solo >> NTRK) & 1u)) ? 0 : 32768;
+#endif
         for (i = 0; i < n; i++) {
-            int32_t x = ((ph_buf[i] >> 2) * lvl) >> 10, xs = clamp(x, -xmax, xmax), a = x < 0 ? -x : x;
+            int32_t x = ((ph_buf[i] >> 2) * lvl) >> 10, xs, a;
+#if SPK_NU
+            ph_gate += clamp(gt - ph_gate, -64, 64);
+            x = (int32_t)(((int64_t)x * ph_gate) >> 15);
+#endif
+            xs = clamp(x, -xmax, xmax);
+            a = x < 0 ? -x : x;
             if (a > pk)
                 pk = a;                                 /* (0.10: the strip's PHANTOM meter) */
+#if SPK_NU
+            l[i] += (int32_t)(((int64_t)x * gl) >> 12);
+            r[i] += (int32_t)(((int64_t)x * gr) >> 12);
+#else
             l[i] += x;
             r[i] += x;
+#endif
             if (d)
                 sd[i] += mulq15(xs, d);
             if (rv)

@@ -54,6 +54,16 @@ const NAMES = ["DRUMS", "SYNTH 1", "SYNTH 2", "SYNTH 3", "PERC"];
   const z = new Uint8Array(await zip(a.files).arrayBuffer());
   check(z[0] === 0x50 && z[1] === 0x4b && z.length > a.files.reduce((s, f) => s + f.data.byteLength, 0), "the stems' zip");
   if (out) { fs.mkdirSync(out, { recursive: true }); for (const f of a.files) fs.writeFileSync(`${out}/${f.name}`, Buffer.from(f.data)); }
+  // FADE OUT (Nov 25): the end of the take falls to silence, the start untouched
+  {
+    const f = await bounceRun({ ...job, stems: false, tail: 0, fade: 2, wasm, mem: mem.slice(0) });
+    const g = await bounceRun({ ...job, stems: false, tail: 0, wasm, mem: mem.slice(0) });
+    const tailPeak = (buf, s) => { const b = new Uint8Array(buf), from = b.length - Math.round(s * 44100) * 6; let p = 0;
+      for (let o = Math.max(44, from - (from - 44) % 6); o + 2 < b.length; o += 3) { let x = b[o] | b[o + 1] << 8 | b[o + 2] << 16; if (x & 0x800000) x -= 1 << 24; p = Math.max(p, Math.abs(x)); } return p / 8388608; };
+    const head = (buf) => new Uint8Array(buf).slice(0, 44 + 6 * 44100);
+    check(tailPeak(f.files[0].data, 0.05) < 0.002 && tailPeak(g.files[0].data, 0.05) > 0.01 && same(head(f.files[0].data), head(g.files[0].data)),
+      `FADE OUT: the last 50 ms silent (${tailPeak(f.files[0].data, 0.05).toFixed(4)} vs ${tailPeak(g.files[0].data, 0.05).toFixed(4)} without), the start the same`);
+  }
 
   // no song yet: a clear refusal
   let err = "";

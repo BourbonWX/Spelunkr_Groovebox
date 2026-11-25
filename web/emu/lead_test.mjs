@@ -104,6 +104,31 @@ b.guide().tracks.forEach((t, k) => { if (!t.mute) b.ex.web_mute(k); });
 b.tap(B.PLAY);
 pk = 0; for (let i = 0; i < 12; i++) pk = Math.max(pk, b.render(250));
 check("and it plays back there (as loud as before)", pk > 0.005 && pk < 0.1, pk.toFixed(3));
+// the mixer's LEAD strip (Nov 25): MUTE, SOLO (another track soloed: LEAD silent), PAN, kept with LEAD
+{
+  const lr = (ms) => { let l = 0, r = 0; for (let k = 0; k < ms * 44.1; k += 128) { b.ex.web_render(128);
+    const L = new Float32Array(b.mem.buffer, b.ex.web_out_l(), 128), R = new Float32Array(b.mem.buffer, b.ex.web_out_r(), 128);
+    for (let i = 0; i < 128; i++) { l = Math.max(l, Math.abs(L[i])); r = Math.max(r, Math.abs(R[i])); } } return [l, r]; };
+  const loud = (ms = 3000) => { let p = 0; for (let i = 0; i < ms / 250; i++) p = Math.max(p, b.render(250)); return p; };
+  b.ex.web_mute(5); b.render(2500);
+  check("LEAD's M: silent", loud() < 0.002 && b.guide().lead.mute === 1);
+  b.ex.web_mute(5); b.render(200);
+  check("M again: back", loud() > 0.005 && b.guide().lead.mute === 0);
+  b.ex.web_solo_toggle(0); b.render(2500);
+  check("another track soloed: LEAD silent", loud() < 0.002);
+  b.ex.web_solo_toggle(0); b.ex.web_solo_toggle(5); b.render(200);
+  check("LEAD soloed: it sounds", loud() > 0.005 && b.guide().lead.solo === 1);
+  b.ex.web_solo_toggle(5);
+  b.ex.web_pan(5, -64); b.render(2500);
+  const [l1, r1] = lr(3000);
+  b.ex.web_pan(5, 63); b.render(2500);
+  const [l2, r2] = lr(3000);
+  check("LEAD's PAN: left, then right", l1 > r1 * 1.5 && r2 > l2 * 1.5 && b.guide().lead.pan === 63, `${l1.toFixed(3)}/${r1.toFixed(3)} then ${l2.toFixed(3)}/${r2.toFixed(3)}`);
+  b.ex.web_pan(5, 20); b.ex.web_mute(5); b.render(2500);
+  const kept = await device(storeSectors(new Uint8Array(b.mem.buffer, b.ex.web_nor(), b.ex.web_nor_size())));
+  check("PAN and M kept with LEAD (a power cycle)", kept.guide().lead.pan === 20 && kept.guide().lead.mute === 1, JSON.stringify([kept.guide().lead.pan, kept.guide().lead.mute]));
+  b.ex.web_mute(5); b.ex.web_pan(5, 0); b.render(200);
+}
 b.tap(B.PLAY);
 // a song (a share link / code): LEAD goes along as id 7; a song from before LEAD (no id 7) clears the visitor's
 const song = getSong(b.ex);

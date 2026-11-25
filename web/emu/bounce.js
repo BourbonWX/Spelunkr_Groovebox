@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // The studio's bounce, in a worker: the device cloned from the worklet's memory (felucca_web.c "the studio"), played
 // from the top faster than real time with nothing on its screen, the mix and (asked for) one stem a FEED, as WAV files.
-//   in:  {wasm: ArrayBuffer, mem: ArrayBuffer, song: bool, loops, tail (s), stems: bool, names: [NTRK by index]}
+//   in:  {wasm: ArrayBuffer, mem: ArrayBuffer, song: bool, loops, tail (s), fade (s, 0 none), stems: bool, names: [NTRK by index]}
 //   out: {type: "progress", done, of, what} ... {type: "done", files: [{name, data: ArrayBuffer}], seconds} | {type: "error"}
 import { WASI_STUB } from "./worklet.js";
 
@@ -78,6 +78,15 @@ function pass(job, mute, progress) {
   return take;
 }
 
+// FADE OUT (Nov 25): the last `frames` of the take down to silence (a cosine), so a looped pattern doesn't stop dead
+export function fadeOut(take, frames) {
+  const f = Math.min(frames, take.n), s = take.n - f;
+  for (let i = 0; i < f; i++) {
+    const g = 0.5 * (1 + Math.cos(Math.PI * (i + 1) / f));
+    take.l[s + i] *= g; take.r[s + i] *= g;
+  }
+}
+
 // a stereo WAV, 24-bit PCM
 export function wav24(l, r, n, sr) {
   const buf = new ArrayBuffer(44 + n * 6), v = new DataView(buf);
@@ -140,6 +149,7 @@ export async function bounceRun(job, progress = () => {}) {
   for (let i = 0; i < runs.length; i++) {
     const run = runs[i];
     const take = pass(job, run.mute, (s) => progress(i, runs.length, run.what, s));
+    if (job.fade > 0) fadeOut(take, Math.round(job.fade * rate));
     if (i === 0) seconds = take.n / rate;
     progress(i + 1, runs.length, run.what, take.n / rate);
     if (i > 0 && take.peak(0) < QUIET / 4) continue;          // a FEED that plays nothing: no stem

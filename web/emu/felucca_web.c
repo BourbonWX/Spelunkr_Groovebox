@@ -1559,6 +1559,7 @@ EXPORT const char *web_guide(void)
         wj_str(nm);
         wj(",\"engine\":");
         wj_str(plain_text(ENGINES[t->eng_req % NENGINES]->name));   /* (plain: the drum engine is KIT) */
+        wj(",\"pan\":%d", t->p[P_PAN]);
         wj(",\"lv\":%d,\"mute\":%d,\"solo\":%d,\"b\":%d,\"step\":%u,\"len\":%d,\"vox\":%u,\"pats\":[", t->p[P_LEVEL], t->p[P_MUTE] ? 1 : 0,
            (web_solo >> k) & 1u, k < NTRK && b_on(t) ? 1 : 0, (unsigned)t->seq_idx, t->p[P_SLEN], (unsigned)trk_cap(k));
         for (p = 0; p < NBANK; p++)
@@ -1589,8 +1590,8 @@ EXPORT const char *web_guide(void)
     pc_grmin = 0;
     {   /* LEAD (lead.c): focused, its sound, its engine, recording, the lane playing, the notes a pattern */
         uint32_t p;
-        wj(",\"lead\":{\"f\":%d,\"rec\":%d,\"pat\":%u,\"lv\":%d,\"snd\":", ph_focus ? 1 : 0, lead_recording() ? 1 : 0, (unsigned)lead_pat(),
-           ph_trk.p[P_LEVEL]);
+        wj(",\"lead\":{\"f\":%d,\"rec\":%d,\"pat\":%u,\"lv\":%d,\"pan\":%d,\"mute\":%d,\"solo\":%d,\"snd\":", ph_focus ? 1 : 0,
+           lead_recording() ? 1 : 0, (unsigned)lead_pat(), ph_trk.p[P_LEVEL], ph_trk.p[P_PAN], ph_trk.p[P_MUTE] ? 1 : 0, (web_solo >> NTRK) & 1u);
         wj_str(ph_voice_name());
         wj(",\"eng\":");
         wj_str(plain_text(ENGINES[ph_trk.eng_req % NENGINES]->name));
@@ -1618,7 +1619,28 @@ EXPORT void web_track(uint32_t k)
     }
     if (k < NTRK && k != song.sel) { track_select(k); ui.force = 1; }
 }
-EXPORT void web_mute(uint32_t k) { if (k < NTRK) { trk[k].p[P_MUTE] = (int16_t)!trk[k].p[P_MUTE]; ui.force = 1; } }
+EXPORT void web_mute(uint32_t k)
+{
+    if (k < NTRK)
+        trk[k].p[P_MUTE] = (int16_t)!trk[k].p[P_MUTE];
+    else if (k == NTRK) {                                   /* LEAD (phantom.c: silent while muted; kept: lead.c) */
+        ph_trk.p[P_MUTE] = (int16_t)!ph_trk.p[P_MUTE];
+        lead_dirty = 1;
+    }
+    ui.force = 1;
+}
+/* PAN from the page's mixer (Nov 25): -64 .. 63, k NTRK = LEAD */
+EXPORT void web_pan(uint32_t k, int32_t v)
+{
+    int16_t p = (int16_t)clamp(v, -64, 63);
+    if (k < NTRK)
+        trk[k].p[P_PAN] = p;
+    else if (k == NTRK) {
+        ph_trk.p[P_PAN] = p;
+        lead_dirty = 1;
+    }
+    ui.force = 1;
+}
 /* the page's mixer (Control Room, Nov 24): a track's LEVEL (P_LEVEL 0..127, as MIX's faders), k = NTRK: LEAD's */
 EXPORT void web_level(uint32_t k, uint32_t v)
 {
@@ -1630,7 +1652,7 @@ EXPORT void web_level(uint32_t k, uint32_t v)
 /* the screen's palette from the page (its THEME / SCREEN pickers, Nov 25): MENU > COLOR's built-in i (gen_ui_palettes.py's
  * order), saved with the settings like a pick in the menu */
 EXPORT void web_palette(uint32_t i) { if (i < NPALETTES && (cpal_on() || settings.palette != i)) palette_choose(i); }
-EXPORT void web_solo_toggle(uint32_t k) { if (k < NTRK) { web_solo ^= (unsigned char)(1u << k); ui.force = 1; } }
+EXPORT void web_solo_toggle(uint32_t k) { if (k <= NTRK) { web_solo ^= (unsigned char)(1u << k); ui.force = 1; } }   /* (k NTRK: LEAD) */
 EXPORT uint32_t web_cue(uint32_t p) { uint32_t rc = p < NBANK ? (uint32_t)bank_key(p) : 1u; ui.force = 1; return rc; }
 /* the FX PAD under the mouse: crosshair j at x y (0..127), on; on 0: let go (it springs back), and the pad closes
  * once both are let go */

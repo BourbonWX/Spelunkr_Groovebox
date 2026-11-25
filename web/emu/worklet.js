@@ -296,6 +296,7 @@ if (typeof registerProcessor === "function") {
         this.port.postMessage({ type: "share", id: m.id, rc, song: rc ? null : getSong(ex), spk: ex.web_spk_in_use ? ex.web_spk_in_use() : 0 });
       } else if (m.type === "track") { ex.web_track(m.k);                      // the Spelunkr page's controls
       } else if (m.type === "mute") { ex.web_mute(m.k);
+      } else if (m.type === "pan") { if (ex.web_pan) ex.web_pan(m.k, m.v | 0);   // (the page's mixer: P_PAN)
       } else if (m.type === "solo") { ex.web_solo_toggle(m.k);
       } else if (m.type === "palette") { if (ex.web_palette) ex.web_palette(m.i);       // (the screen's colours: the page's THEME)
       } else if (m.type === "level") { if (ex.web_level) ex.web_level(m.k, m.v);           // (the page's mixer: P_LEVEL)
@@ -343,6 +344,8 @@ if (typeof registerProcessor === "function") {
     publish() {
       const ex = this.ex, mem = ex.memory.buffer;
       const msg = { type: "frame" };
+      msg.pk = [this.pkL || 0, this.pkR || 0];
+      this.pkL = this.pkR = 0;
       const leds = [ex.web_lit_buttons(), ex.web_lit_keys(), ex.web_dim_buttons(), ex.web_dim_keys(), ex.web_dim_level(),
                     ex.web_breath_buttons(), ex.web_breath_keys(), ex.web_mid_keys ? ex.web_mid_keys() : 0];
       const an = ex.web_anim_levels ? ex.web_anim_levels() : 0;   // the power-on sweep: each LED's level
@@ -420,6 +423,12 @@ if (typeof registerProcessor === "function") {
             for (let i = 0; i < n; i++) { out[0][i] += cl[i] * g; if (out[1]) out[1][i] += cr[i] * g; }
           }
         } catch { this.chime = null; this.cx = null; }
+      }
+      {                                               // the output's peaks, L R, for the page's OUT meter (publish)
+        let pl = this.pkL || 0, pr = this.pkR || 0;
+        const L = out[0], R = out[1] || out[0];
+        for (let i = 0; i < n; i++) { const a = Math.abs(L[i]), b = Math.abs(R[i]); if (a > pl) pl = a; if (b > pr) pr = b; }
+        this.pkL = pl; this.pkR = pr;
       }
       if (this.rec) {
         const r = this.rec, take = Math.min(n, REC_CHUNK - r.n);

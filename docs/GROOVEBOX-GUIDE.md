@@ -40,7 +40,9 @@ GROOVEBOX** returns.
 The page remembers the panel and the theme. On a phone the side menu sits along the top.
 
 **The mixer** beside the screen: a fader a track and one for LEAD (drag it up or down; kept with the song),
-**M** mutes, **S** solos, a name picks the track.
+the small slider above it pans the track left or right (double-click: back to the middle), **M** mutes, **S** solos,
+a name picks the track. **OUT** at the right shows how loud the whole song comes out; its light turns red (**CLIP**)
+when it's too loud: bring a fader or VOLUME down a little.
 
 The buttons at the top are menus: **SONG** (new, random), **AUDIO** (record live, export), **SHARE** (make a code,
 open one, the playlist), **FILE** (save and open a project) and **HELP** (the tour, this guide, the manual). **UNDO**
@@ -87,6 +89,8 @@ is a plain button.
   first, then up-down). KNOB 1-4 follow the screen, like on a real groovebox: link one once and it turns whatever
   that knob means on the page you're on. Right-click a linked control while learning to forget it; **CLEAR ALL**
   forgets them all; **DONE** (or Esc) finishes. The links stay in this browser, from song to song (not in the song).
+  The mixer's pan sliders can be linked too. Endless knobs (the kind that turn forever) are recognised by themselves:
+  turn one a little after linking it and it moves the control from where it is.
 
 ## Make a song, start to finish
 
@@ -211,7 +215,8 @@ browser, in a SAVE file and in a song code, and heard in exports and stems. **NE
   it (only those, cut to their trim), into the same sample slots on their side. A code lasts **a month** (30 days from when you shared it), then it
   expires; **FILE ▸ SAVE PROJECT** keeps a song for good. Every SHARE makes a new code: if a friend opens yours, changes the song and
   shares it back, that's a new code, and yours still holds the song as you sent it.
-- **AUDIO ▸ EXPORT WAV** renders the song (or the pattern) to a WAV, with a WAV a track if you like.
+- **AUDIO ▸ EXPORT WAV** renders the song (or the pattern) to a WAV, with a WAV a track if you like. Tick
+  **Fade out** to fade the last few seconds smoothly, so a looped pattern doesn't stop dead.
 - **AUDIO ▸ RECORD LIVE** records what you hear, live, to a WAV (the AUDIO button turns red and counts; STOP
   RECORDING in the same menu saves it).
 - **FILE ▸ SAVE PROJECT** downloads everything as a project file, your samples too; **FILE ▸ OPEN PROJECT** loads one.
