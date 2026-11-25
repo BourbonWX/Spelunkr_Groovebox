@@ -179,6 +179,11 @@ locked pad is part of the song: it's still there next time, in a SAVE file and i
   **SQUASH** is flat and loud, **PUMP** breathes with the beat (try it on the drums). **AMOUNT** is how hard; it keeps
   the track about as loud, so judge it by ear. **MIX** under 100% blends the untouched track back in. **SQUEEZE**
   shows how hard it's working.
+- **SIDECHAIN** makes the tracks you pick under **DUCK** (PERC, the synths, LEAD) dip at every kick of the
+  **DRUMS** and come back up in time with the beat: the classic pump. **FEEL**: **TIGHT** (a quick dip, just making
+  room for the kick), **CLASSIC** (back over an eighth note), **PUMP** (the whole beat breathes) or **SWELL** (held
+  down, then swelling back up). **AMOUNT** is how deep, and the **PUMP** meter shows the dip. It follows the kick's
+  timing even when the DRUMS are turned down.
 - **EQ** shapes the whole song's tone: **LOW** (bass), **MID** (the middle, at **MID AT**) and **HIGH** (treble),
   each up or down 12 dB, with the curve drawn above them. Presets: **FLAT**, **WARM**, **BRIGHT**, **SMILE** (bass and
   treble up, the middle down) and **LO-FI** (a small old radio).

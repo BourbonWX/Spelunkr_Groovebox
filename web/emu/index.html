@@ -370,7 +370,7 @@ body.boxpanel.mouseidle, body.boxpanel.mouseidle * { cursor: none !important; }
 .polish > .title b { font: 28px/1 var(--head); color: var(--yellow); }
 .polish > .title span { color: var(--soft); }
 .polish > .title .btn { margin-left: auto; min-height: 32px; font-size: 19px; padding: 2px 10px; align-self: center; }
-.pmods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 12px; }
+.pmods { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; padding: 12px; }
 .pmod { display: flex; flex-direction: column; gap: 10px; padding: 10px 12px 12px; background: var(--strip); border-radius: 6px; min-width: 0; }
 .pmod.off > :not(.phead) { opacity: .55; }
 .phead { display: flex; align-items: center; gap: 8px; }
@@ -396,10 +396,19 @@ body.boxpanel.mouseidle, body.boxpanel.mouseidle * { cursor: none !important; }
 .grm b { display: block; width: 0; height: 100%; background: var(--orange); transition: width .1s; }
 .grm em { font-style: normal; color: var(--yellow); min-width: 66px; text-align: right; }
 .phint { margin: 0; font-size: 17px; color: var(--soft); line-height: 1.2; min-height: 2.4em; }
-.eqc { width: 100%; height: 96px; background: var(--night); border-radius: 4px; display: block; }
+.eqc { width: 100%; height: 96px; flex: none; background: var(--night); border-radius: 4px; display: block; }
 .polish .hint { padding: 0 14px 14px; color: var(--soft); }
 .tab.pl i { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
-@media (max-width: 1280px) { .pmods { grid-template-columns: repeat(2, minmax(0, 1fr)); } #pme { grid-column: 1 / -1; order: -1; } }
+@media (max-width: 1280px) { .pmods { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1281px) and (max-width: 1700px) {          /* (four across on a laptop: smaller chips, labels on top) */
+  .pmods { gap: 8px; padding: 8px 10px 10px !important; }
+  .pmod { padding: 8px 8px 10px; }
+  .phead b { font-size: 22px; } .phead small { display: none; }
+  .chip { min-height: 28px; padding: 1px 6px; font-size: 16px; }
+  .pknobs .stepper .arr { width: 26px; height: 30px; }
+  .pknobs .stepper .lab, .pknobs .stepper .val { font-size: 17px; }
+  .phint { font-size: 16px; }
+}
 @media (max-width: 720px) { .pmods { grid-template-columns: minmax(0, 1fr); padding: 8px; } }
 
 /* the guide */
@@ -932,6 +941,26 @@ body[data-pane="vapor"] .vappanel .hint { display: none; }
   body[data-pane="vapor"] .vappanel .vapor > .title { flex: 1 1 100%; }
 }
 
+/* POLISH (Ed, Nov 25: "should probably populate above the main display similar to the vapor menu"): a strip across the
+ * top, its three modules side by side; the tracks under the device as on TRACKS */
+body[data-pane="polish"] .polish .hint { display: none; }
+body[data-pane="polish"] .polish > .title { padding: 6px 14px; }
+body[data-pane="polish"] .pmods { padding: 8px 12px 12px; }
+body[data-pane="polish"] .pmod { gap: 8px; }
+body[data-pane="polish"] .prow { flex-direction: row; align-items: center; gap: 8px; }   /* (the labels beside their chips:
+                                                         * a shorter strip) */
+body[data-pane="polish"] .plab { flex: 0 0 52px; }
+body[data-pane="polish"] .eqc { height: 72px; }
+body[data-pane="polish"] .phint { min-height: 0; }
+@media (min-width: 1281px) {
+  body[data-pane="polish"] main { grid-template-areas: "pol pol" "dev mix" "msg msg" "low low"; }
+  body[data-pane="polish"] .polish { grid-area: pol; }
+  body[data-pane="polish"] .guide { grid-area: low; }
+}
+@media (max-width: 1280px) {
+  body[data-pane="polish"] .polish { order: 0; } body[data-pane="polish"] .guide { order: 5; }
+}
+
 /* CONTROLS (Ed, Nov 25): the four knobs and four wheels at the top of the right column, level with the device's top, two
  * 2 x 2 blocks of smaller steppers; the mixer under them; the device just its buttons and the screen */
 .ctrls { display: none; }
@@ -951,6 +980,7 @@ body.sideout .ctrls { display: flex; flex-direction: column; }
   main, body.jam main { grid-template-rows: auto 1fr auto auto; grid-template-areas: "dev ctrl" "dev mix" "msg msg" "low low"; }
   body.jam[data-pane="jam"] main { grid-template-rows: auto auto 1fr auto auto; grid-template-areas: "dev ctrl" "dev pads" "dev mix" "msg msg" "low low"; }
   body[data-pane="vapor"] main { grid-template-rows: auto auto 1fr auto auto; grid-template-areas: "vap vap" "dev ctrl" "dev mix" "msg msg" "low low"; }
+  body[data-pane="polish"] main { grid-template-rows: auto auto 1fr auto auto; grid-template-areas: "pol pol" "dev ctrl" "dev mix" "msg msg" "low low"; }
   .ctrls { grid-area: ctrl; }
   .device { align-self: start; }
   body.sideout .fader { height: 150px; min-height: 90px; }
@@ -1182,7 +1212,7 @@ body.keyshid .tour { bottom: 52px; }
   <!-- POLISH (Ed, Nov 25): mastering. A compressor on one track, a 3-band EQ and an exciter on the whole song
        (felucca_web.c web_polish); kept with the song (this browser, SAVE's file, a song code) -->
   <section class="panel polish lowp" id="polish" aria-label="POLISH">
-    <div class="title strip"><b>POLISH</b><span>finish the mix: squeeze a track, shape the tone, add sparkle</span>
+    <div class="title strip"><b>POLISH</b><span>finish the mix: squeeze a track, pump to the kick, shape the tone, add sparkle</span>
       <button class="btn quiet" type="button" id="poloff" title="Turns all three off (your settings stay for next time)">ALL OFF</button></div>
     <div class="pmods">
       <div class="pmod" id="pmc">
@@ -1193,6 +1223,14 @@ body.keyshid .tour { bottom: 52px; }
         <div class="pknobs" id="pck"></div>
         <div class="grm" title="How hard it's squeezing the track right now"><span>SQUEEZE</span><i><b id="grbar"></b></i><em id="grval">—</em></div>
         <p class="phint" id="pchint"></p>
+      </div>
+      <div class="pmod" id="pms">
+        <div class="phead"><b>SIDECHAIN</b><small>pump to the kick</small><button class="btn pon" type="button" data-m="s" aria-pressed="false">OFF</button></div>
+        <div class="prow"><span class="plab">DUCK</span><div class="pchips" id="psmask"></div></div>
+        <div class="prow"><span class="plab">FEEL</span><div class="pchips" id="psfeel"></div></div>
+        <div class="pknobs" id="psk"></div>
+        <div class="grm" title="How far the ducked tracks dip at each kick"><span>PUMP</span><i><b id="scbar"></b></i><em id="scval">—</em></div>
+        <p class="phint" id="pshint"></p>
       </div>
       <div class="pmod" id="pme">
         <div class="phead"><b>EQ</b><small>the whole song</small><button class="btn pon" type="button" data-m="e" aria-pressed="false">OFF</button></div>
@@ -1610,9 +1648,11 @@ $("vapgo").addEventListener("click", () => {
 // and the exciter on the master after VAPOR, a limiter after them); the page keeps them with the song: this browser,
 // SAVE's file and a song code (polState / polApply), sent again to every new start (polNode). NEW / RANDOM: all off.
 const POLKEY = "spelunkr-groovebox-polish";
-const POL_DEF = { c: { on: 0, k: 0, s: 1, a: 64, m: 127, p: 0 }, e: { on: 0, lo: 0, mid: 0, hi: 0, f: 1 }, x: { on: 0, m: 0, a: 64 } };
+const POL_DEF = { s: { on: 0, m: 14, f: 1, a: 80 }, c: { on: 0, k: 0, s: 1, a: 64, m: 127, p: 1 },   // (Ed, Nov 25: PUNCH on the KICK by default: the sidechain's partner)
+  e: { on: 0, lo: 0, mid: 0, hi: 0, f: 1 }, x: { on: 0, m: 0, a: 64 } };
 const POL_IDS = [["c", "on"], ["c", "k"], ["c", "s"], ["c", "a"], ["c", "m"], ["e", "on"], ["e", "lo"], ["e", "mid"], ["e", "hi"], ["e", "f"],
-  ["x", "on"], ["x", "m"], ["x", "a"], ["c", "p"]];       // (web_polish's ids, in order; c.p, the part, appended)
+  ["x", "on"], ["x", "m"], ["x", "a"], ["c", "p"],        // (web_polish's ids, in order; c.p, the part, appended;
+  ["s", "on"], ["s", "m"], ["s", "f"], ["s", "a"]];       //  then the SIDECHAIN)
 const POL_TRK = [[0, "DRUMS"], [4, "PERC"], [1, "SYNTH 1"], [2, "SYNTH 2"], [3, "SYNTH 3"], [5, "LEAD"]];   // (NTRK order k; 5 = LEAD)
 const POL_STY = [["GENTLE", "Glues the track together, barely there."], ["PUNCH", "Lets each hit through, holds the rest: drums snap."],
   ["SQUASH", "Flat and loud: every hit as strong as the next."], ["PUMP", "A long let-go that breathes with the beat."]];
@@ -1623,7 +1663,7 @@ const POL_X = [["AIR", "Sparkle on top: cymbals, breath and shine above 5 kHz."]
 let pol = structuredClone(POL_DEF), polNode = null, grHold = 0;
 const polSendTo = (n) => { if (n) POL_IDS.forEach(([m, f], id) => n.port.postMessage({ type: "polish", id, v: pol[m][f] | 0 })); };
 const polSendOne = (m, f) => send({ type: "polish", id: POL_IDS.findIndex(([a, b]) => a === m && b === f), v: pol[m][f] | 0 });
-function polState() { return pol.c.on || pol.e.on || pol.x.on ? structuredClone(pol) : null; }
+function polState() { return pol.c.on || pol.e.on || pol.x.on || pol.s.on ? structuredClone(pol) : null; }
 function polSave() { try { localStorage.setItem(POLKEY, JSON.stringify(pol)); } catch {} }
 function polApply(st) {                                   // (a song's POLISH: a project file, a code, this browser's; null: all off)
   const n = structuredClone(POL_DEF);
@@ -1635,7 +1675,7 @@ function polApply(st) {                                   // (a song's POLISH: a
   pol = n;
   polSave(); polShow(); polSendTo(node);
 }
-const POL_RANGE = { cp: [0, 2], con: [0, 1], ck: [0, 5], cs: [0, 3], ca: [0, 127], cm: [0, 127], eon: [0, 1], elo: [-12, 12], emid: [-12, 12], ehi: [-12, 12], ef: [0, 3],
+const POL_RANGE = { son: [0, 1], sm: [0, 62], sf: [0, 3], sa: [0, 127], cp: [0, 2], con: [0, 1], ck: [0, 5], cs: [0, 3], ca: [0, 127], cm: [0, 127], eon: [0, 1], elo: [-12, 12], emid: [-12, 12], ehi: [-12, 12], ef: [0, 3],
   xon: [0, 1], xm: [0, 3], xa: [0, 127] };
 function polSet(m, f, v, quiet) {
   const [lo, hi] = POL_RANGE[m + f];
@@ -1673,6 +1713,12 @@ const peSet = chipRow($("peset"), POL_EQ.map(([n]) => [n, `EQ preset: ${n}`]), (
   if (!pol.e.on && i) { pol.e.on = 1; polSendOne("e", "on"); polSave(); polShow(); }
 });
 const pxMode = chipRow($("pxmode"), POL_X, (i) => polSet("x", "m", i));
+// SIDECHAIN (Ed, Nov 25): the tracks it ducks (bits by NTRK index; 5 LEAD), how it breathes
+const POL_SCT = [[4, "PERC"], [1, "SYNTH 1"], [2, "SYNTH 2"], [3, "SYNTH 3"], [5, "LEAD"]];
+const POL_SCF = [["TIGHT", "A quick dip, back within a 16th: just makes room for the kick."], ["CLASSIC", "Back over an 8th: the classic lo-fi and house duck."],
+  ["PUMP", "Back over the whole beat: everything breathes with the kick."], ["SWELL", "Held down, then swells back up before the next kick."]];
+const psMask = chipRow($("psmask"), POL_SCT.map(([, n]) => [n, `Duck ${n} at each kick (tap again to leave it alone)`]), (i) => polSet("s", "m", pol.s.m ^ (1 << POL_SCT[i][0])));
+const psFeel = chipRow($("psfeel"), POL_SCF, (i) => polSet("s", "f", i));
 const pct = (v) => Math.round(v / 1.27) + "%", dB = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v) + " dB";
 const polKnobs = [
   [$("pck"), "c", "a", "AMOUNT", 4, pct, "How hard it squeezes. It keeps the track about as loud, so turn it by ear."],
@@ -1682,10 +1728,11 @@ const polKnobs = [
   [$("pek"), "e", "hi", "HIGH", 1, dB, "Treble: hats, air, fizz (a shelf over 7.5 kHz)."],
   [$("pek"), "e", "f", "MID AT", 1, (v) => POL_MIDF[v], "Where MID works: 250 Hz (body), 700 Hz (box), 1.5 kHz (honk), 3.5 kHz (presence)."],
   [$("pxk"), "x", "a", "AMOUNT", 4, pct, "How much of the new harmonics go back in."],
+  [$("psk"), "s", "a", "AMOUNT", 4, (v) => v ? "−" + Math.round(v * 20 / 127) + " dB" : "OFF", "How deep the ducked tracks dip at each kick."],
 ].map(([box, m, f, lab, step, show, tip]) => Object.assign(makeKnob(box, "polish", false), { m, f, step, show, tip, plab: lab }));
 function polTurn(k, n) { polSet(k.m, k.f, pol[k.m][k.f] + n * k.step); }
 document.querySelectorAll(".pon").forEach((b) => b.addEventListener("click", () => polSet(b.dataset.m, "on", pol[b.dataset.m].on ? 0 : 1)));
-$("poloff").addEventListener("click", () => { for (const m of ["c", "e", "x"]) if (pol[m].on) polSet(m, "on", 0); });
+$("poloff").addEventListener("click", () => { for (const m of ["c", "e", "x", "s"]) if (pol[m].on) polSet(m, "on", 0); });
 function polShow() {
   for (const k of polKnobs) {
     const v = pol[k.m][k.f], [lo, hi] = POL_RANGE[k.m + k.f];
@@ -1695,7 +1742,7 @@ function polShow() {
     k.el.title = `${k.plab}: ${k.tip} (${k.show(v)})`;
     setAngle(k, -135 + 270 * (v - lo) / (hi - lo));
   }
-  for (const [m, el] of [["c", "pmc"], ["e", "pme"], ["x", "pmx"]]) {
+  for (const [m, el] of [["c", "pmc"], ["e", "pme"], ["x", "pmx"], ["s", "pms"]]) {
     const b = $(el).querySelector(".pon"), on = !!pol[m].on;
     b.textContent = on ? "ON" : "OFF"; b.setAttribute("aria-pressed", on);
     b.title = on ? "On: tap to turn it off (the settings stay)" : "Off: tap to turn it on";
@@ -1716,10 +1763,17 @@ function polShow() {
   pcSty.forEach((b, i) => b.classList.toggle("on", i === pol.c.s));
   peSet.forEach((b, i) => { const p = POL_EQ[i][1]; b.classList.toggle("on", p[0] === pol.e.lo && p[1] === pol.e.mid && p[2] === pol.e.hi && (i === 0 || p[3] === pol.e.f)); });
   pxMode.forEach((b, i) => b.classList.toggle("on", i === pol.x.m));
+  psMask.forEach((b, i) => b.classList.toggle("on", !!((pol.s.m >> POL_SCT[i][0]) & 1)));
+  psFeel.forEach((b, i) => b.classList.toggle("on", i === pol.s.f));
+  {
+    const who = POL_SCT.filter(([k]) => (pol.s.m >> k) & 1).map(([, n]) => n);
+    $("pshint").textContent = who.length ? `${who.join(", ")} dip at each DRUMS kick. ${POL_SCF[pol.s.f][1]}` : "Pick the tracks to duck: they dip at each DRUMS kick.";
+  }
+  if (!pol.s.on) { $("scbar").style.width = "0"; $("scval").textContent = "—"; }
   $("pchint").textContent = POL_TRK.find(([k]) => k === pol.c.k)[1] + (pol.c.p && polPartName() ? " · " + polPartName() : "") + ": " + POL_STY[pol.c.s][1];
   $("pxhint").textContent = POL_X[pol.x.m][1];
-  $("polgo").classList.toggle("pl", !!(pol.c.on || pol.e.on || pol.x.on));
-  $("poloff").hidden = !(pol.c.on || pol.e.on || pol.x.on);
+  $("polgo").classList.toggle("pl", !!(pol.c.on || pol.e.on || pol.x.on || pol.s.on));
+  $("poloff").hidden = !(pol.c.on || pol.e.on || pol.x.on || pol.s.on);
   if (!pol.c.on) { $("grbar").style.width = "0"; $("grval").textContent = "—"; }
   eqDraw();
 }
@@ -1763,6 +1817,13 @@ function eqDraw() {
   for (const [f, t] of [[100, "100"], [1000, "1k"], [10000, "10k"]]) x.fillText(t, Math.log(f / 20) / Math.log(1000) * W + 3 * dpr, H - 4 * dpr);
 }
 addEventListener("resize", () => { if (paneNow === "polish") eqDraw(); });
+let scHold = 0;
+function scMeter(v) {                                      // (the guide's polsc: the sidechain's deepest dip since its last)
+  if (!pol.s.on) return;
+  scHold = Math.max(v | 0, scHold * 0.6);
+  $("scbar").style.width = Math.min(100, scHold / 200 * 100) + "%";
+  $("scval").textContent = scHold >= 1 ? "−" + (scHold / 10).toFixed(1) + " dB" : "0 dB";
+}
 function polMeter(gr) {                                    // (the guide's polgr: the deepest since its last, dB x 10)
   if (!pol.c.on) return;
   grHold = Math.max(gr | 0, grHold * 0.6);
@@ -2127,6 +2188,7 @@ function showGuide(g) {
   if (palNode !== node && node) { palNode = node; if (g.pal !== screenPalIndex()) screenPalSend(); }   // (a new start: the screen's colours)
   if (polNode !== node && node) { polNode = node; polSendTo(node); }   // (a new start: POLISH as the page has it)
   if (g.polgr !== undefined) polMeter(g.polgr);
+  if (g.polsc !== undefined) scMeter(g.polsc);
   if (g.polk && g.polk.join() !== polk.join()) { polk = g.polk; polShow(); }   // (DRUMS a kit?, PERC's two sounds)
   {
     const st = `<b>${g.play ? "PLAYING" : "STOPPED"}</b> · ${g.bpm} BPM<br>PATTERN ${letter(g.cur)}${g.queue >= 0 ? " → " + letter(g.queue) : ""}<br>SAVED IN THIS BROWSER`;
@@ -3024,7 +3086,7 @@ function setPane(pn, quiet) {
   if (!PANES[pn]) pn = "tracks";
   paneNow = pn;
   document.body.dataset.pane = pn;
-  for (const [k, sel] of Object.entries(PANES)) document.querySelector(sel).classList.toggle("on", k === pn || (k === "tracks" && (pn === "jam" || pn === "vapor")));
+  for (const [k, sel] of Object.entries(PANES)) document.querySelector(sel).classList.toggle("on", k === pn || (k === "tracks" && (pn === "jam" || pn === "vapor" || pn === "polish")));
   for (const b of document.querySelectorAll(".tab[data-pane]")) b.setAttribute("aria-selected", String(b.dataset.pane === pn));
   setScene(pn === "jam" ? "jam" : "create", quiet);
   try { sidePlace(); } catch {}                           // (the controls: beside the device, or under the screen on JAM PADS)
@@ -4201,7 +4263,7 @@ const TIPS = {
   "#smpgo": "SAMPLES: your own sounds. Load a file, trim it, slice it, put it on a track.",
   ".tab[data-pane=tracks]": "TRACKS: the song under the device: each track's patterns, mute, solo, the row tools.",
   ".tab[data-pane=vapor]": "VAPOR: slowed, warbly, dusty, crunchy, on the whole song.",
-  ".tab[data-pane=polish]": "POLISH: finish the mix. A compressor on one track, an EQ and an exciter on the whole song.",
+  ".tab[data-pane=polish]": "POLISH: finish the mix. A compressor on one track, a sidechain pump to the kick, an EQ and an exciter on the whole song.",
   ".tab[data-pane=jam]": "JAM PADS: play over the song. The screen goes to the FX keys and the two FX PADs come out.",
   "#railplay": "PLAYLIST: up to 10 song codes, played back to back like an album.",
   "#railshare": "SHARE: a code and a link that play this song in anyone's browser (for a month).",
@@ -4399,7 +4461,7 @@ const TOUR = [                                           // (Ed: "cover every pa
   { t: "15 · MAKE IT VAPOR", el: ".vapor", x: () => "Slow the whole song down, warp the tape, add crackle and crunch: tap <kbd>VAPORIZE</kbd> or use the four controls. "
       + "It's saved with the song." },
   { t: "16 · POLISH IT", el: "#polish .pmods", x: () => "<kbd>POLISH</kbd> finishes the mix. The <b>COMPRESSOR</b> squeezes one track, "
-      + "or just the kick or snare (pick them, then a style: PUNCH on the kick is a classic), the <b>EQ</b> shapes the whole song's tone (try the presets), and the <b>EXCITER</b> adds "
+      + "or just the kick or snare (pick them, then a style: PUNCH on the kick is a classic), the <b>EQ</b> shapes the whole song's tone (try the presets), the <b>SIDECHAIN</b> makes the tracks you pick dip at each kick (the classic pump), and the <b>EXCITER</b> adds "
       + "sparkle or bass you can hear on small speakers. Picking a preset turns it on; it's saved with the song." },
   { t: "17 · YOUR OWN SAMPLES", el: "#smpgo", x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file (a long one keeps its first 30 seconds), "
       + "trim it, slice it, hear it (<kbd>■ STOP</kbd> stops it), and put it on a track as a synth, as chops on the keys, or as a drum kit." },

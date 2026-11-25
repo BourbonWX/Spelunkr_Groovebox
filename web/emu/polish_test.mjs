@@ -13,7 +13,7 @@ let fails = 0;
 const check = (what, ok, extra = "") => { console.log(`polish: ${what.padEnd(70)} ${ok ? "ok" : "FAIL"} ${extra}`); if (!ok) fails++; };
 const dec = new TextDecoder();
 const B = { PLAY: 10 };
-const P = { CON: 0, CTRK: 1, CSTY: 2, CAMT: 3, CMIX: 4, EON: 5, ELO: 6, EMID: 7, EHI: 8, EMF: 9, XON: 10, XMODE: 11, XAMT: 12, CPART: 13 };
+const P = { CON: 0, CTRK: 1, CSTY: 2, CAMT: 3, CMIX: 4, EON: 5, ELO: 6, EMID: 7, EHI: 8, EMF: 9, XON: 10, XMODE: 11, XAMT: 12, CPART: 13, SON: 14, SMASK: 15, SFEEL: 16, SAMT: 17 };
 
 async function device() {
   const { instance } = await WebAssembly.instantiate(bytes, WASI_STUB);
@@ -159,6 +159,32 @@ check("everything boosted: no NaN", finite(hot));
   const z = await device();
   z.set({ CON: 1, CTRK: 1, CPART: 1 });
   check("a part on a synth track: the whole track", z.ex.web_polish_part() === 0);
+}
+
+// SIDECHAIN: the synths dip at DRUMS' kicks (DRUMS turned all the way down: only its kicks' timing counts)
+{
+  async function scPair(o) {
+    const x = await device(), y = await device();
+    for (const d of [x, y]) { d.ex.web_level(0, 0); d.ex.web_mute(4); d.tap(B.PLAY); }
+    y.set(o); x.render(1000); y.render(1000); y.guide();
+    return [x, y];
+  }
+  const win = (a) => { const w = []; for (let i = 0; i + 441 <= a.length; i += 441) w.push(rms(a.subarray(i, i + 441))); return w; };
+  {
+    const [x, y] = await scPair({ SON: 1, SMASK: 14, SFEEL: 2, SAMT: 127 });
+    const r = x.render(3000), o = y.render(3000), sc = y.guide().polsc, wr = win(r.L), wo = win(o.L);
+    const ratios = wr.map((v, i) => wo[i] / (v + 1e-9)).filter((v, i) => wr[i] > 1e-4), lo = Math.min(...ratios), hi = Math.max(...ratios);
+    check("SIDECHAIN PUMP, full: dips at the kicks and comes back", sc > 150 && lo < 0.3 && hi > 0.9 && finite(o), `${sc / 10} dB, windows ${lo.toFixed(2)}..${hi.toFixed(2)}`);
+  }
+  {
+    const [x, y] = await scPair({ SON: 1, SMASK: 0, SAMT: 127 });
+    check("SIDECHAIN on no track: bit for bit", same(x.render(800), y.render(800)) && y.guide().polsc === 0);
+  }
+  for (const f of [0, 1, 3]) {
+    const [, y] = await scPair({ SON: 1, SMASK: 14, SFEEL: f, SAMT: 90 });
+    const o = y.render(1500), sc = y.guide().polsc;
+    check(`SIDECHAIN ${["TIGHT", "CLASSIC", "PUMP", "SWELL"][f]}: dips, no NaN`, sc > 50 && finite(o), sc / 10 + " dB");
+  }
 }
 
 // LEAD

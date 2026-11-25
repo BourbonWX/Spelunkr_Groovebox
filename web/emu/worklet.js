@@ -181,7 +181,9 @@ export function* warmScript(ex) {
 // live, by a third copy of the device sharing the compiled module (never the visitor's song): a slowed electric-piano
 // maj9 rolled in (SAMPLE MALL EP), a glass pad swelling under it (SAMPLE GLASS PAD), one crystal bell (FM), the HALL
 // reverb and VAPOR's SLOWED + WOW. chimeScript yields after each block it renders; chimeGain is the fade.
-export const CHIME = { fadeAt: 4.0, endAt: 5.8, level: 1.4 };   // (level: about as loud as a song at the same VOLUME)
+export const CHIME = { fadeAt: 4.0, endAt: 5.8, level: 1.4, delay: 0.25 };   // (level: about as loud as a song at the
+// same VOLUME; delay: Ed, Nov 25: "the first two notes glitch ... a .25 second delay": its start waits that long after
+// SWITCH ON, so the device's own start and the warm-up's first, heaviest slices are past; its times count from there)
 export function chimeGain(sec) {
   if (sec <= CHIME.fadeAt) return CHIME.level;
   if (sec >= CHIME.endAt) return 0;
@@ -408,8 +410,8 @@ if (typeof registerProcessor === "function") {
       this.frames += n;
       out[0].set(new Float32Array(ex.memory.buffer, ex.web_out_l(), n));
       if (out[1]) out[1].set(new Float32Array(ex.memory.buffer, ex.web_out_r(), n));
-      if (this.chime && n === WARM_BLOCK) {           // the start-up chime over the splash, faded out by CHIME.endAt
-        try {
+      if (this.chime && n === WARM_BLOCK && (this.chimeWait = (this.chimeWait ?? Math.round(CHIME.delay * sampleRate)) - n) < 0) {
+        try {                                         // (the start-up chime over the splash, after CHIME.delay, faded out by CHIME.endAt)
           const step = this.chime.next();
           if (step.done) { this.chime = null; this.cx = null; }
           else {
@@ -437,7 +439,8 @@ if (typeof registerProcessor === "function") {
     // a slice of the warm-up after the real block: generous during the splash (nothing playing yet), then a small
     // share of each block's time, so the real device always comes first
     warmSlice() {
-      const now = clock(), end = now + (now - this.warmStart < 2500 ? 6 : 0.8);
+      const now = clock(), end = now + (this.chime ? 0.8 : now - this.warmStart < 2500 ? 6 : 0.8);   // (the chime playing: a
+      // small share, as when a song plays: 6 ms a 2.9 ms block starved the audio and the chime's first notes broke up)
       try {
         while (clock() < end)
           if (this.warm.next().done) { this.warm = null; this.port.postMessage({ type: "warm", ms: Math.round(clock() - this.warmStart) }); break; }

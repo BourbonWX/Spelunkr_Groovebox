@@ -56,7 +56,8 @@ static void web_card_put(unsigned c, const char *l, const char *v, const char *u
 #define WEB_CARD(c, label, val, unit, ratio) web_card_put((c), (label), (val), (unit), (ratio))
 static void web_pol_comp(uint32_t k, uint32_t part, int32_t *b, int32_t *d, uint32_t n);   /* POLISH's compressor (below) */
 static uint32_t web_pol_part(uint32_t k, uint32_t s0, uint32_t kit);
-#define POLISH_TRACK(k, b, d, n) web_pol_comp((k), 0u, (b), (d), (n))
+static void web_pol_track(uint32_t k, int32_t *b, int32_t *d, uint32_t n);
+#define POLISH_TRACK(k, b, d, n) web_pol_track((k), (b), (d), (n))
 #define POLISH_VOICE_ON(t, v) web_pol_part((uint32_t)((t) - trk), (uint32_t)(v)->s[0], (uint32_t)ENG_KIT((t)->engine % NENGINES))
 #define POLISH_VOICE(t, v, b, n) web_pol_comp((uint32_t)((t) - trk), web_pol_part((uint32_t)((t) - trk), (uint32_t)(v)->s[0], 1u), (b), 0, (n))
 #ifndef FELUCCA_CDC
@@ -507,10 +508,10 @@ EXPORT uint32_t web_vapor_get(uint32_t k) { return vap_get(k & 3u); }
  *             small speakers); AMOUNT
  * With EQ or EXCITE on, a peak limiter at the end (-0.2 dB) catches what a boost pushes over. All off: nothing runs */
 enum { PO_CON, PO_CTRK, PO_CSTY, PO_CAMT, PO_CMIX, PO_EON, PO_ELO, PO_EMID, PO_EHI, PO_EMF, PO_XON, PO_XMODE, PO_XAMT,
-       PO_CPART, PO_N };                   /* (CPART appended, Nov 25: 0 the whole track; on DRUMS 1 KICK, 2 SNARE; on PERC
+       PO_CPART, PO_SON, PO_SMASK, PO_SFEEL, PO_SAMT, PO_N };   /* (SIDECHAIN appended, Nov 25) */                   /* (CPART appended, Nov 25: 0 the whole track; on DRUMS 1 KICK, 2 SNARE; on PERC
                                             * 1 PERC 1, 2 PERC 2: core.h POLISH_VOICE) */
-static int32_t pol[PO_N] = {0, 0, 0, 64, 127, 0, 0, 0, 0, 1, 0, 0, 48, 0};
-static const int32_t POL_MAX[PO_N] = {1, NTRK, 3, 127, 127, 1, 12, 12, 12, 3, 1, 3, 127, 2};
+static int32_t pol[PO_N] = {0, 0, 0, 64, 127, 0, 0, 0, 0, 1, 0, 0, 48, 0, 0, 14, 1, 80};
+static const int32_t POL_MAX[PO_N] = {1, NTRK, 3, 127, 127, 1, 12, 12, 12, 3, 1, 3, 127, 2, 1, (1 << (NTRK + 1)) - 2, 3, 127};
 /* the part the compressor works on: 0 the whole track (CPART 0, not a kit track, or DRUMS playing another engine) */
 static uint32_t pol_part_now(void)
 {
@@ -713,6 +714,49 @@ static void pol_master(uint32_t n)
             out_r[i] *= lim_g;
         }
     }
+}
+/* SIDECHAIN (Ed, Nov 25: "the side chain option inside the Polish menu"): the tracks in SMASK (bit k, NTRK order; bit
+ * NTRK LEAD; DRUMS, whose kick it follows, never) dip at every kick of DRUMS (core.h duck_kick: the kit's KICK lane, any
+ * note of another engine there; heard or not) and come back over a part of the beat, so it follows the tempo. FEEL:
+ * TIGHT (a 16th, straight back), CLASSIC (an 8th, curved), PUMP (a quarter: the whole beat breathes), SWELL (a quarter,
+ * held down, then up). AMOUNT: how deep (127: -20 dB at the kick). Into the dip in ~2 ms (no click) */
+static const struct { float beats, pow, hold; } SC_FEEL[4] = {{0.25f, 1.0f, 0.0f}, {0.5f, 2.0f, 0.0f}, {1.0f, 1.6f, 0.1f},
+                                                             {1.0f, 0.7f, 0.45f}};
+static float sc_g[NTRK + 1] = {1, 1, 1, 1, 1, 1}, sc_min = 1.0f;   /* each track's gain now; the deepest since the guide's look */
+static void web_pol_side(uint32_t k, int32_t *b, int32_t *d, uint32_t n)
+{
+    uint32_t i, f;
+    float len, depth, down = pol_ms(2.0f);
+    if (!pol[PO_SON] || !((pol[PO_SMASK] >> k) & 1u) || !pol[PO_SAMT] || !duck_seen) {
+        sc_g[k] = 1.0f;
+        return;
+    }
+    f = (uint32_t)pol[PO_SFEEL] & 3u;
+    len = SC_FEEL[f].beats * (float)beat_samples();
+    depth = 1.0f - powf(10.0f, -20.0f * (float)pol[PO_SAMT] / 127.0f / 20.0f);   /* (the gain at the kick: -0 .. -20 dB) */
+    for (i = 0; i < n; i++) {
+        float x = (float)(uint32_t)(rondo_clock - duck_at + i) / len, dip, g;
+        if (x >= 1.0f)
+            dip = 0;
+        else if (x < SC_FEEL[f].hold)
+            dip = 1.0f;
+        else
+            dip = powf(1.0f - (x - SC_FEEL[f].hold) / (1.0f - SC_FEEL[f].hold), SC_FEEL[f].pow);
+        g = 1.0f - depth * dip;
+        sc_g[k] = g < sc_g[k] ? sc_g[k] + (g - sc_g[k]) * down : g;   /* (down in ~2 ms, up as the curve) */
+        if (sc_g[k] < sc_min)
+            sc_min = sc_g[k];
+        b[i] = (int32_t)((float)b[i] * sc_g[k]);
+        if (d)
+            d[i] = (int32_t)((float)d[i] * sc_g[k]);
+    }
+}
+/* the track's POLISH in the device: the compressor (on the whole track), then the sidechain */
+static void web_pol_track(uint32_t k, int32_t *b, int32_t *d, uint32_t n)
+{
+    web_pol_comp(k, 0u, b, d, n);
+    if (k)
+        web_pol_side(k, b, d, n);
 }
 EXPORT void web_polish(uint32_t id, int32_t v)
 {
@@ -1538,6 +1582,8 @@ EXPORT const char *web_guide(void)
     wj(",\"vapor\":[%u,%u,%u,%u]", vap_get(0), vap_get(1), vap_get(2), vap_get(3));
     wj(",\"pal\":%u", (unsigned)palette_cur());
     wj(",\"polgr\":%d", (int)(pc_grmin * -10.0f));   /* POLISH: the compressor's deepest since the last (dB x 10) */
+    wj(",\"polsc\":%d", (int)(-200.0f * log10f(sc_min > 1e-4f ? sc_min : 1e-4f)));   /* (the sidechain's, dB x 10) */
+    sc_min = 1.0f;
     wj(",\"polk\":[%d,\"%s\",\"%s\"]", ENG_KIT(trk[0].engine % NENGINES) ? 1 : 0,   /* (POLISH's parts: DRUMS a kit?, */
        N_PC_SND[pc_snd(trk[PERC_TRK].p, 0)], N_PC_SND[pc_snd(trk[PERC_TRK].p, 1)]);       /* PERC's two sounds) */
     pc_grmin = 0;
