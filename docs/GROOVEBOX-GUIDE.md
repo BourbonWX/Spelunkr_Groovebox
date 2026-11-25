@@ -175,8 +175,14 @@ The **VAPOR** panel works on the whole song: **SLOWED** plays the record slower 
 tape, **VINYL** adds crackle and hiss, **CRUSH** makes it crunchy (◀ ▶ on each). **VAPORIZE** sets all four in one tap. It is saved
 with the song and heard in exports and shared links.
 
-**FX KEYS** (a button left of the screen): tap it and the keys glitch the whole mix while you hold them (stutter,
-tunnel, jumps, crush: the screen shows which key does what); tap it again and the keys play notes.
+**FX KEYS** (on **JAM PADS**, the button left of the screen): the keys glitch the whole mix while you hold them
+(stutter, tunnel, jumps, crush: the screen shows which key does what); tap **FX KEYS OFF** and the keys play notes.
+
+**EFFECTS** (the same button, on every other panel): the picked track's effects, a page at a time, tap it again for
+the next: **SENDS** (how much goes to the reverb, delay and chorus, and distortion), the **SLICER** (a rhythmic gate),
+the **INSERT** (one effect on the track: phaser, flanger, chorus, filter, crush, drive, ducking or a beat repeat, with its
+dry / wet), **MASTER FX**, then the delay's, the reverb's (room, spring or hall) and the chorus's own settings. Holding
+the button shows the FX keys anywhere.
 
 The **FX PAD** bends the track you picked while you hold it: drag around, let go and it snaps back. Each pad has a
 **LOCK**: with it on, the pad stays where you let go, on the track you played it on, until you turn LOCK off. A

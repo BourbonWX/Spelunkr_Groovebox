@@ -30,7 +30,9 @@ static unsigned char web_pad;            /* the page's FX PAD held (ui_input.c W
 #define WEB_PAD web_pad
 static unsigned char web_pad_k;          /* the track the page's pads are on (Ed, Nov 22: a locked pad stays on its track) */
 #define WEB_PAD_TRK web_pad_k
-#define WEB_FX_LOCK 1                    /* (ui_layer.c layer_tap: FX tapped locks its keys open) */
+static uint32_t web_fx_keys;           /* (Nov 25) 1: FX tapped locks the FX keys open (JAM PADS, the box: ui_layer.c layer_tap);
+                                         * 0: FX opens the effects pages, as on the FM-1 (web_fx_mode) */
+#define WEB_FX_LOCK web_fx_keys
 static unsigned char web_rec_ask;        /* REC tapped while stopped: the page asks about the metronome (web_rec_go) */
 #define WEB_REC_ASK web_rec_ask
 static int16_t web_route_was = -1;     /* the song's ROUT before a keyboard's note set it to SEL (web_midi) */
@@ -1021,6 +1023,22 @@ EXPORT void web_new_song(uint32_t random)
 
 /* the beginner's device: 1 the screen's words plain and the in-depth pages hidden (the page's default), 0 the device's
  * words and every page (POWER USER): gfx.c ui_plain, ui_simple */
+/* FX's job (Nov 25: "the Glitch effects ... tied to the Jam Pads button and if you're in any other menu and press the FX
+ * button you get all the original effects"): on 1 a tap locks the FX keys (JAM PADS, the box), and open 1 locks them now;
+ * on 0 FX opens the effects pages, and the FX keys locked open are let go */
+EXPORT void web_fx_mode(uint32_t on, uint32_t open)
+{
+    web_fx_keys = on ? 1u : 0u;
+    if (on && open && ui.lock != LAYER_FX && !ui.menu && !name_on()) {
+        lys.nv.home = ui.home; lys.nv.page = ui.page; lys.nv.act = ui.act; lys.nv.seq = song.seq_mode; lys.nv.rec = song.rec;
+        memcpy(lys.nv.fam, ui.fam_last, sizeof lys.nv.fam);
+        ui.ly = (uint8_t)LAYER_FX;
+        layer_lock(LAYER_FX, fm1_ms);
+    } else if (!on && ui.lock == LAYER_FX)
+        ui.lock = 0;
+    ui.force = 1;
+}
+EXPORT uint32_t web_fx_locked(void) { return ui.lock == LAYER_FX; }   /* (tests) */
 EXPORT void web_plain(uint32_t on) { ui_plain = ui_simple = on ? 1u : 0u; ui.force = 1; }   /* (and the in-depth pages hidden) */
 EXPORT void web_vapor(uint32_t k, uint32_t v) { vap_set(k & 3u, v); }
 
@@ -1750,7 +1768,7 @@ static void web_btn(uint32_t b, char *act, char *sub)
         return;
     }
     if (b == B_REC) { str_cpy(act, song.rec ? "REC OFF" : "RECORD", 24); return; }
-    if (b == B_FX) {                                     /* (ui_layer.c WEB_FX_LOCK: a tap locks the FX keys) */
+    if (b == B_FX && (web_fx_keys || ui.lock == LAYER_FX)) {   /* (ui_layer.c WEB_FX_LOCK: a tap locks the FX keys) */
         str_cpy(act, ui.lock == LAYER_FX ? "FX KEYS OFF" : "FX KEYS", 24);
         return;
     }

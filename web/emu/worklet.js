@@ -314,6 +314,7 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "spk") { this.port.postMessage({ type: "spk", k: m.k, rc: spkPut(ex, m.k, m.data, m.meta, m.name) });
       } else if (m.type === "spkuse") { ex.web_spk_use(m.k, m.mode);
       } else if (m.type === "newsong") { ex.web_new_song(m.random ? 1 : 0);
+      } else if (m.type === "fxkeys") { if (ex.web_fx_mode) ex.web_fx_mode(m.on ? 1 : 0, m.open ? 1 : 0);   // (FX: the keys, or the effects)
       } else if (m.type === "plain") { if (ex.web_plain) ex.web_plain(m.on ? 1 : 0);
       } else if (m.type === "vapor") { ex.web_vapor(m.k, m.v);
       } else if (m.type === "polish") { if (ex.web_polish) ex.web_polish(m.id, m.v | 0);   // (POLISH: felucca_web.c)

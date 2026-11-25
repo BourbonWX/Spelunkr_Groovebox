@@ -469,6 +469,8 @@ static int page_visible(uint32_t i)
         !str_eq(PAGES[i].title, "SOURCE"))           /* (Spelunkr, beginners: SOUND is the engine's two pages, PERC's
                                                        * sounds; the rest with POWER USER) */
         return 0;
+    if (ui_simple && PAGES[i].graph == GR_XY)         /* (Spelunkr, beginners: the FX PAD is on the page itself) */
+        return 0;
     if (PAGES[i].graph == GR_BSIDE)                   /* 0.10: B SIDE, a synth FEED's */
         return bs_of(TSEL) != 0;
     if (str_eq(PAGES[i].title, "SOURCE") || (PAGES[i].title[0] == 'P' && PAGES[i].title[1] == 'E' &&

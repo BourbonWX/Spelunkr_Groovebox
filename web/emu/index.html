@@ -662,13 +662,22 @@ body[data-pane] .lowp:not(.on) { display: none !important; }
 .mstrip .mn:focus-visible { outline: 3px solid var(--yellow); }
 .mstrip .lvv { font-size: 19px; color: var(--yellow); }
 .mstrip.sel .lvv { color: #fff; }
-.fader { writing-mode: vertical-lr; direction: rtl; width: 34px; height: 230px; flex: 1 1 auto; min-height: 120px; margin: 0; accent-color: var(--yellow); cursor: ns-resize; }
-.mstrip .msb { display: grid; grid-template-columns: repeat(2, minmax(0, 28px)); gap: 3px; width: 100%; justify-content: center; }
-.mstrip .ms { width: auto; min-width: 0; height: 28px; padding: 0; font-size: 17px; }   /* (Nov 25: they share the strip's width: no
+.fader { writing-mode: vertical-lr; direction: rtl; width: 34px; height: 200px; flex: 1 1 auto; min-height: 100px; margin: 0; accent-color: var(--yellow); cursor: ns-resize; }
+.mstrip .msb { display: grid; grid-template-columns: minmax(0, 32px); gap: 3px; width: 100%; justify-content: center; }   /* (Ed, Nov 25: M over S) */
+.mstrip .ms { width: auto; min-width: 0; height: 26px; padding: 0; font-size: 17px; }   /* (Nov 25: they share the strip's width: no
                                                          * spilling onto the next strip in a narrow mixer) */
 .mstrip.muted .fader { opacity: .4; }
 /* PAN and the OUT meter (Nov 25) */
-.mstrip .pan { width: 100%; max-width: 64px; height: 16px; margin: 0; accent-color: var(--orange); cursor: ew-resize; }
+.mstrip .pan { display: none; }                        /* (the value; the knob below shows and turns it) */
+/* PAN as a knob (Ed, Nov 25: "a semi circle that starts at 12 and goes to 4 o'clock for full right and 8 o'clock for full
+ * left ... controlled by just mouse wheel scrolling over them"): the arc 8 .. 4 o'clock, lit from 12 to the value */
+.pank { width: 36px; height: 30px; cursor: ns-resize; touch-action: none; outline: none; border-radius: 6px; }
+.pank:focus-visible { box-shadow: 0 0 0 2px var(--yellow); }
+.pank svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.pank .trk { fill: none; stroke: var(--night); stroke-width: 4.5; stroke-linecap: round; }
+.pank .lit { fill: none; stroke: var(--orange); stroke-width: 4.5; stroke-linecap: round; }
+.pank .ptr { stroke: #fff; stroke-width: 2.5; stroke-linecap: round; }
+.pank .tick { stroke: var(--soft); stroke-width: 1.5; }
 .mstrip .panv { font-size: 15px; line-height: 1; color: var(--soft); min-height: 15px; }
 .mstrip.sel .panv { color: #fff; }
 .mixbody { display: flex; flex: 1 1 auto; min-height: 0; }
@@ -691,7 +700,7 @@ body[data-pane] .lowp:not(.on) { display: none !important; }
 }
 @media (max-width: 1280px) {
   .device { order: 1; } .mixer { order: 2; } #studiomsg { order: 3; } .lowp { order: 4; }
-  .fader { height: 160px; }
+  .fader { height: 130px; }
 }
 /* a laptop's width: the screen and the face buttons side by side, the controls in two rows of four under them */
 @media (min-width: 1281px) and (max-width: 1899px) {
@@ -718,7 +727,7 @@ body.boxv .keybar { left: 0; }
   .theme { flex-direction: row; align-items: center; font-size: 0; } .theme select { min-height: 36px; font-size: 17px; max-width: 128px; }
   .rail .power { font-size: 16px; padding: 2px 8px; min-height: 36px; }
   .keybar { left: 0; }
-  .strips { gap: 4px; padding: 8px; } .fader { height: 140px; } .mstrip .mn { font-size: 16px; }
+  .strips { gap: 4px; padding: 8px; } .fader { height: 115px; } .mstrip .mn { font-size: 16px; }
   .vappanel.lowp.on .vknobs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -937,7 +946,7 @@ body[data-pane="jam"] .pad, body.jam[data-pane="jam"] .pad { width: 150px; heigh
 body[data-pane="jam"] .pad .lbl { font-size: 13px; white-space: nowrap; }
 body[data-pane="jam"] .padbox .name { white-space: nowrap; } body[data-pane="jam"] .padfoot .lock { min-height: 28px; padding: 1px 8px; font-size: 15px; }
 body[data-pane="jam"] .padfoot { gap: 6px; } body[data-pane="jam"] .padbox .name { font-size: 15px; }
-body[data-pane="jam"] .fader { height: 140px; min-height: 90px; }
+body[data-pane="jam"] .fader { height: 115px; min-height: 75px; }
 @media (min-width: 1281px) {
   body.jam[data-pane="jam"] main { grid-template-areas: "dev pads" "dev mix" "msg msg" "low low"; grid-template-rows: auto 1fr auto auto; }
   body[data-pane="jam"] .fxpad { grid-area: pads; }
@@ -1009,8 +1018,8 @@ body.sideout .ctrls { display: flex; flex-direction: column; }
   body[data-pane="polish"] main { grid-template-rows: auto auto 1fr auto auto; grid-template-areas: "pol pol" "dev ctrl" "dev mix" "msg msg" "low low"; }
   .ctrls { grid-area: ctrl; }
   .device { align-self: start; }
-  body.sideout .fader { height: 150px; min-height: 90px; }
-  body.sideout[data-pane="jam"] .fader { height: 110px; min-height: 80px; }
+  body.sideout .fader { height: 120px; min-height: 75px; }
+  body.sideout[data-pane="jam"] .fader { height: 85px; min-height: 60px; }
   body.sideout .device .body { display: flex; justify-content: center; }
 }
 
@@ -1023,8 +1032,8 @@ body.sideout .ctrls { display: flex; flex-direction: column; }
 .ctrls .stepper .val { font-size: 16px; }
 .ctrls .stepper .bar { height: 4px; }
 @media (min-width: 1281px) {
-  body.sideout .fader { height: 110px; min-height: 70px; }
-  body.sideout[data-pane="jam"] .fader { height: 60px; min-height: 50px; }
+  body.sideout .fader { height: 85px; min-height: 55px; }
+  body.sideout[data-pane="jam"] .fader { height: 45px; min-height: 40px; }
   body.sideout[data-pane="jam"] .mixer .title span { display: none; }
 }
 
@@ -1436,7 +1445,7 @@ const STORE = "spelunkr-groovebox-flash", POWER = "spelunkr-groovebox-power";
 // panel.c's buttons (bit) and encoders (role); the plain names, the device's names (POWER USER)
 const B = { FX: 0, SCL: 1, ENV: 2, LFO: 3, EDIT: 4, GLO: 5, HOME: 6, SAVE: 7, ARP: 8, SEQ: 9, PLAY: 10, REC: 11, "OCT-": 12, "OCT+": 13 };
 const PLAY_GREEN = 14;
-const FACE = [["HOME", "HOME"], ["EDIT", "SOUND"], ["SEQ", "STEPS"], ["GLO", "MIX"], ["FX", "FX KEYS"], ["SCL", "SCALE"],
+const FACE = [["HOME", "HOME"], ["EDIT", "SOUND"], ["SEQ", "STEPS"], ["GLO", "MIX"], ["FX", "EFFECTS"], ["SCL", "SCALE"],
               ["ENV", "ENVELOPE"], ["LFO", "WOBBLE"], ["ARP", "ARP"], ["SAVE", "SAVE"], ["PLAY", "PLAY"], ["REC", "RECORD"],
               ["OCT-", "OCTAVE −"], ["OCT+", "OCTAVE +"]];
 const WHEEL_TIP = {
@@ -1499,7 +1508,7 @@ const FACE_TIP = {
   EDIT: "the sound's settings. Hold it: the white keys pick another engine, OCTAVE + scrambles the sound, OCTAVE − puts it back.",
   SEQ: "the pattern's steps, one row a step (a tracker): ROW picks a step, COLUMN what to change. Tap again for the knob moves. Hold it for tools: a beat, random, clear, length, swing.",
   GLO: "patterns A–F (the white keys C to A pick or copy one). Tap again: the song, its parts in order. Hold it: every track's level.",
-  FX: "the FX keys. Tap it and the keys glitch the whole mix while you hold them: stutter, tunnel, jumps, crush (the screen shows which key does what). Tap FX again and the keys play notes. Holding FX does the same for as long as you hold it.",
+  FX: "the track's effects: sends to reverb, delay and chorus, distortion, the INSERT effect (phaser, flanger, filter, crush, ducking, beat repeat), the SLICER, and the reverb's, delay's and chorus's own settings. Tap again for the next page. On JAM PADS it's the FX KEYS instead: the keys glitch the whole mix while you hold them. Holding FX shows the FX keys anywhere.",
   SCL: "the scale: every note kept in a key, and chords on the white keys.",
   ENV: "the envelope: how each note starts, holds and fades.",
   LFO: "the wobble: slow movement on the sound. A tap freezes what you hear while you edit the steps (tap again: your edits come in).",
@@ -2216,7 +2225,7 @@ function showGuide(g) {
   smpTrack(g);
   mixerShow(g, order);
   if (palNode !== node && node) { palNode = node; if (g.pal !== screenPalIndex()) screenPalSend(); }   // (a new start: the screen's colours)
-  if (polNode !== node && node) { polNode = node; polSendTo(node); }   // (a new start: POLISH as the page has it)
+  if (polNode !== node && node) { polNode = node; polSendTo(node); if (sceneBooted) fxMode(sceneNow === "jam"); }   // (a new start: POLISH, and what FX does)
   if (g.polgr !== undefined) polMeter(g.polgr);
   if (g.polsc !== undefined) scMeter(g.polsc);
   if (g.polk && g.polk.join() !== polk.join()) { polk = g.polk; polShow(); }   // (DRUMS a kit?, PERC's two sounds)
@@ -2394,6 +2403,49 @@ var sidePlace = () => {};
 // the mixer (Control Room): a fader a track (P_LEVEL, felucca_web.c web_level) and LEAD's, mute / solo, the name picks it
 let mixSig = "", mixTouched = 0;
 const mixShort = (k) => ROLE[k].replace("SYNTH ", "SYN ");
+// the pan knob: an SVG arc over the hidden range `pn` (its value, its input event: the mixer and MIDI LEARN use those)
+function panArc(a0, a1) {                                   // (degrees from 12 o'clock, clockwise; centre 18 18, radius 13)
+  const pt = (a) => [18 + 13 * Math.sin(a * Math.PI / 180), 18 - 13 * Math.cos(a * Math.PI / 180)];
+  const [x0, y0] = pt(a0), [x1, y1] = pt(a1);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)} A13 13 0 ${Math.abs(a1 - a0) > 180 ? 1 : 0} ${a1 > a0 ? 1 : 0} ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+function panKnob(pn, long) {
+  const k = document.createElement("div");
+  k.className = "pank"; k.tabIndex = 0; k.setAttribute("role", "slider");
+  k.setAttribute("aria-label", long + " pan"); k.setAttribute("aria-valuemin", "-64"); k.setAttribute("aria-valuemax", "63");
+  k.title = `${long}'s pan: scroll over it (or drag up and down) to move it left or right; double-click: the middle.`;
+  k.innerHTML = `<svg viewBox="0 0 36 30" aria-hidden="true"><path class="trk" d="${panArc(-120, 120)}"/><path class="lit"/><line class="tick" x1="18" y1="1" x2="18" y2="4"/><line class="ptr" x1="18" y1="18"/></svg>`;
+  const draw = () => {
+    const v = +pn.value, a = v / 64 * 120, lit = k.querySelector(".lit"), ptr = k.querySelector(".ptr");
+    lit.setAttribute("d", v ? panArc(Math.min(0, a), Math.max(0, a)) : "");
+    ptr.setAttribute("x2", (18 + 10 * Math.sin(a * Math.PI / 180)).toFixed(2)); ptr.setAttribute("y2", (18 - 10 * Math.cos(a * Math.PI / 180)).toFixed(2));
+    k.setAttribute("aria-valuenow", v); k.setAttribute("aria-valuetext", panTxt(v));
+  };
+  const set = (v) => { v = Math.max(-64, Math.min(63, Math.round(v))); if (v === +pn.value) return; pn.value = v; pn.dispatchEvent(new Event("input")); };
+  pn.addEventListener("input", draw);
+  pn.addEventListener("panshow", draw);
+  let acc = 0;
+  k.addEventListener("wheel", (e) => {                       // up (or right on a trackpad): right
+    e.preventDefault();
+    const d = (e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY) - (e.deltaMode === 1 ? e.deltaX * 33 : e.deltaX);
+    if (Math.abs(d) >= 50) { set(+pn.value + (d < 0 ? 4 : -4)); acc = 0; return; }
+    acc -= d;
+    const n = Math.trunc(acc / 12);
+    if (n) { acc -= n * 12; set(+pn.value + n); }
+  }, { passive: false });
+  let drag = null;
+  k.addEventListener("pointerdown", (e) => { if (e.button) return; e.preventDefault(); k.setPointerCapture(e.pointerId); drag = { y: e.clientY, x: e.clientX, v: +pn.value }; k.focus({ preventScroll: true }); });
+  k.addEventListener("pointermove", (e) => { if (drag) set(drag.v + (drag.y - e.clientY) + (e.clientX - drag.x)); });
+  for (const t of ["pointerup", "pointercancel"]) k.addEventListener(t, () => { drag = null; });
+  k.addEventListener("dblclick", () => set(0));
+  k.addEventListener("keydown", (e) => {
+    const d = { ArrowRight: 2, ArrowUp: 2, ArrowLeft: -2, ArrowDown: -2 }[e.key];
+    if (d) { set(+pn.value + d); e.preventDefault(); e.stopPropagation(); }
+    else if (e.key === "Home" || e.key === "0") { set(0); e.preventDefault(); e.stopPropagation(); }
+  });
+  draw();
+  return k;
+}
 const panTxt = (v) => v ? (v < 0 ? "L" : "R") + Math.round(Math.abs(v) / 0.64) : "C";   // (L 100 .. C .. R 98: percent)
 // the OUT meter (Nov 25): the output's peaks, L R, from the worklet's frames (m.pk), falling slowly; CLIP lights at the top
 let outPk = [0, 0], outClipT = 0;
@@ -2437,7 +2489,8 @@ function mixerShow(g, order) {
       pn.addEventListener("input", panSend);
       pn.addEventListener("dblclick", () => { pn.value = 0; panSend(); });
       pv.textContent = panTxt(it.pan);
-      d.append(nm, pn, pv, f, v);
+      const pk = panKnob(pn, it.long);
+      d.append(nm, pn, pk, pv, f, v);
       const msb = document.createElement("span");
       msb.className = "msb";
       for (const [t, ty, tip] of [["M", "mute", "Mute"], ["S", "solo", "Solo"]]) {
@@ -2458,7 +2511,7 @@ function mixerShow(g, order) {
     d.classList.toggle("sel", it.sel); d.classList.toggle("muted", !!it.mute);
     if (!drag && document.activeElement !== f && +f.value !== it.lv) { f.value = it.lv; d.querySelector(".lvv").textContent = Math.round(it.lv / 1.27); }
     const pn = d.querySelector(".pan");
-    if (pn && !drag && document.activeElement !== pn && +pn.value !== it.pan) { pn.value = it.pan; d.querySelector(".panv").textContent = panTxt(it.pan); }
+    if (pn && !drag && !d.querySelector(".pank:focus") && +pn.value !== it.pan) { pn.value = it.pan; d.querySelector(".panv").textContent = panTxt(it.pan); pn.dispatchEvent(new Event("panshow")); }
     for (const b of d.querySelectorAll(".ms")) { const on = !!it[b.dataset.w]; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); }
   });
 }
@@ -2563,7 +2616,7 @@ function mlKeyOf(el) {
     const pk = polKnobs.find((k) => k.el === h);
     return pk ? "pol:" + pk.m + pk.f : null;
   }
-  if ((h = el.closest(".mstrip"))) { const b = el.closest(".ms"); return b ? b.dataset.w + h.dataset.k : el.closest(".pan, .panv") ? "pan" + h.dataset.k : "fader" + h.dataset.k; }
+  if ((h = el.closest(".mstrip"))) { const b = el.closest(".ms"); return b ? b.dataset.w + h.dataset.k : el.closest(".pan, .panv, .pank") ? "pan" + h.dataset.k : "fader" + h.dataset.k; }
   if ((h = el.closest("#face .btn"))) { const f = faceEls.find((f) => f.el === h); return f ? "face:" + f.bit : null; }
   if ((h = el.closest(".pad"))) return "pad" + h.id.slice(3);
   if (el.closest("#bpm")) return "tempo";
@@ -3349,10 +3402,10 @@ function setScene(sc, quiet) {
   $("scjam").setAttribute("aria-selected", String(sc === "jam"));
   try { localStorage.setItem(SCENEKEY, sc); } catch {}
   if (quiet || was === sc) return;
-  const [, act] = fxCtx();
-  if (sc === "jam") { jamFx = act === "FX KEYS"; if (jamFx) fxTap(); }
-  else { if (jamFx && act === "FX KEYS OFF") fxTap(); jamFx = false; }
+  fxMode(true);                                          // (Nov 25: JAM PADS: FX is the FX KEYS, locked open; else the effects)
 }
+// what FX does (felucca_web.c web_fx_mode): the FX KEYS on JAM PADS and on the box, the effects pages everywhere else
+function fxMode(open) { send({ type: "fxkeys", on: sceneNow === "jam" || !!boxMode(), open: open && sceneNow === "jam" }); }
 $("sccreate").addEventListener("click", () => setScene("create"));
 $("scjam").addEventListener("click", () => setScene("jam"));
 // Control Room (Ed, Nov 24): the side menu's panels under the device and the mixer; JAM PADS is the JAM scene (the FX
@@ -3441,7 +3494,7 @@ let sceneBooted = false;                                 // (a page opened on JA
 setInterval(() => {
   if (sceneBooted || !node || !btnCtx) return;
   sceneBooted = true;
-  if (sceneNow === "jam") { sceneNow = "create"; setScene("jam"); }
+  fxMode(sceneNow === "jam");
 }, 500);
 
 
@@ -4749,8 +4802,10 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "The screen goes to the FX keys, and the tracks below stay live: mute, solo, click a pattern to play it next. <kbd>TRACKS</kbd> takes you back. Hold a pad and drag to bend the selected track: FILTER · GATE darkens, thins and chops it; "
       + "ECHO · FLANGE throws echoes and jets. Let go and it snaps back, unless <kbd>LOCK</kbd> is on: then it stays where you leave it, "
       + "on that track, and it's saved with the song." },
-  { t: "16 · FX KEYS", el: btnSel("FX"), x: () => "Tap <kbd>FX KEYS</kbd> and the keys glitch the whole mix while you hold them: stutter, tunnel, jumps, crush "
-      + "(the screen shows which key does what). Tap it again and the keys play notes." },
+  { t: "16 · FX KEYS AND EFFECTS", el: btnSel("FX"), x: () => "On <kbd>JAM PADS</kbd> the keys glitch the whole mix while you hold them: stutter, tunnel, "
+      + "jumps, crush (the screen shows which key does what); tap <kbd>FX KEYS OFF</kbd> and they play notes again. Everywhere else this button is "
+      + "<kbd>EFFECTS</kbd>: the picked track's reverb, delay and chorus sends, distortion, an INSERT effect (phaser, flanger, filter, crush, ducking, "
+      + "beat repeat) and the SLICER; tap it again for the next page, through to the reverb's, delay's and chorus's own settings." },
   { t: "17 · MAKE IT VAPOR", el: ".vapor", x: () => "<kbd>VAPOR</kbd> in the side menu: slow the whole song down, warp the tape, add crackle and crunch. "
       + "Tap <kbd>VAPORIZE</kbd> or use the four controls. It's saved with the song." },
   { t: "18 · POLISH IT", el: "#polish .pmods", x: () => "<kbd>POLISH</kbd> finishes the mix. The <b>COMPRESSOR</b> squeezes one track, "
