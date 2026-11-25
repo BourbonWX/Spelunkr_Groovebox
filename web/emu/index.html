@@ -1157,6 +1157,7 @@ body.keyshid .tour { bottom: 52px; }
         <button class="btn ddi" id="helpbtn" type="button" role="menuitem" title="A quick tour of the groovebox">TOUR<small>a walk through a whole song</small></button>
         <a class="btn ddi" id="guidebtn" href="guide.html" target="_blank" rel="noopener" role="menuitem" title="The guide, in a new tab">GUIDE<small>the written guide, new tab</small></a>
         <a class="btn ddi" id="manualbtn" href="manual.html" target="_blank" rel="noopener" role="menuitem" title="The manual: the device under the hood">MANUAL<small>every page and setting</small></a>
+        <button class="btn ddi" id="tipsbtn" type="button" role="menuitemcheckbox" aria-checked="true" title="Turn the pop-up help you get when you point at something on or off">HOVER TIPS: ON<small>the help when you point at things</small></button>
       </div>
     </div>
   </nav>
@@ -4613,7 +4614,7 @@ const TIPS = {
   "#ddaudio": "AUDIO: record live, or export the song as WAV files.",
   "#ddshare": "SHARE: give your song a code, or open someone else's.",
   "#ddfile": "FILE: save everything as a project file, or open one.",
-  "#ddhelp": "HELP: the tour, the guide and the manual.",
+  "#ddhelp": "HELP: the tour, the guide, the manual, and the hover tips on or off.",
   ".power": "POWER USER: every button and setting, and the device's own names (FX, SEQ, GLO …). Off: the simple set, in plain words.",
   "#tprev": "The track before (TRACK ◀).",
   "#tnext": "The next track (TRACK ▶).",
@@ -4684,8 +4685,26 @@ function tipPlace() {
   if (y + r.height > innerHeight - 8) y = Math.max(8, tipY - r.height - 14);
   tipBox.style.left = x + "px"; tipBox.style.top = y + "px";
 }
+// HOVER TIPS on / off (Ed, Nov 25: "an option in the drop down to turn off the hover tips. on by default"): HELP's item,
+// kept in this browser; off, the box never shows (the help stays in each control's accessible label)
+const TIPSKEY = "spelunkr-groovebox-tips";
+let tipsOn = true;
+try { tipsOn = localStorage.getItem(TIPSKEY) !== "off"; } catch {}
+function tipsShowState() {
+  const b = $("tipsbtn");
+  b.firstChild.textContent = "HOVER TIPS: " + (tipsOn ? "ON" : "OFF");
+  b.setAttribute("aria-checked", String(tipsOn));
+}
+$("tipsbtn").addEventListener("click", () => {
+  tipsOn = !tipsOn;
+  try { localStorage.setItem(TIPSKEY, tipsOn ? "on" : "off"); } catch {}
+  tipsShowState();
+  tipHide();
+  studioSay(tipsOn ? "Hover tips are on: point at anything to see what it does." : "Hover tips are off. HELP ▸ HOVER TIPS turns them back on.");
+});
+tipsShowState();
 function tipShow() {
-  if (!tipEl || !tipEl.dataset.tip) { tipBox.hidden = true; return; }
+  if (!tipsOn || !tipEl || !tipEl.dataset.tip) { tipBox.hidden = true; return; }
   tipBox.textContent = tipEl.dataset.tip;
   tipBox.hidden = false;
   tipPlace();
@@ -4823,7 +4842,10 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "track if you like. RECORD LIVE, in the same menu, records you playing live instead." },
   { t: "22 · MAKE IT YOURS", el: ".railfoot", x: () => "<kbd>THEME</kbd> recolours the page (MALL NEON, GAME CART, PUBLIC ACCESS, SNOW DAY, LATE LATE SHOW), "
       + "<kbd>SCREEN</kbd> the groovebox's screen (it matches the theme unless you pick one), and <kbd>SKIN</kbd> restyles it all: PRIME TIME, "
-      + "SPGB AMP, AERO GLASS. That's a whole song: have fun!" },
+      + "SPGB AMP, AERO GLASS." },
+  { t: "23 · HOVER TIPS", el: "#tipsbtn", x: () => (phoneMQ.matches ? "On a computer, pointing at anything shows what it does. "
+      : "Point at anything on the page and a little box says what it does. Know your way around? ")
+      + "<kbd>HELP</kbd> ▸ <kbd>HOVER TIPS</kbd> turns them off (and back on); this tour and the guide are in the same menu. That's a whole song: have fun!" },
 ];
 let tourAt = -1, tourEl = null;
 function tourShow(i) {

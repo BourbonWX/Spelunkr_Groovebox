@@ -8,7 +8,8 @@ saves in this browser, and a link shares it.
 1. Press **SWITCH ON**. Headphones on: the starter song is ready.
 2. Press **PLAY** (or the space bar). Press it again to stop.
 3. **HELP ▸ TOUR** at the top runs the tour again: it walks through a whole song, from a blank page to the export.
-   Hover over anything on the page to see what it does. **HELP ▸ GUIDE** opens this guide.
+   Hover over anything on the page to see what it does (**HELP ▸ HOVER TIPS** turns those boxes off, and back on).
+   **HELP ▸ GUIDE** opens this guide.
 
 ## The page
 
@@ -45,7 +46,7 @@ a name picks the track. **OUT** at the right shows how loud the whole song comes
 when it's too loud: bring a fader or VOLUME down a little.
 
 The buttons at the top are menus: **SONG** (new, random), **AUDIO** (record live, export), **SHARE** (make a code,
-open one, the playlist), **FILE** (save and open a project) and **HELP** (the tour, this guide, the manual). **UNDO**
+open one, the playlist), **FILE** (save and open a project) and **HELP** (the tour, this guide, the manual, the hover tips on or off). **UNDO**
 is a plain button.
 
 - **SONG ▸ NEW SONG** and **SONG ▸ 🎲 RANDOM SONG**: a blank song, or a whole random one to play with (lo-fi,

@@ -1721,6 +1721,11 @@ static void ui_input(void)
     int32_t s, sel = 0, ks[4] = {0, 0, 0, 0};
     static uint32_t lock_ms;                            /* BPM LOCK: the last locked SELECT turn (fm1_ms | 1; 0 none) */
     auto_vox_sync();                                    /* (0.10.5: AUTO voices from the sounds loaded) */
+    if (ui_simple && !ui.home && !ui.menu && !page_visible(ui.page)) {   /* (Spelunkr, beginners: never on a page they don't
+                                                         * get, as the FX PAD after the FX keys were let go: its family's first) */
+        ui.page = (uint8_t)page_first(cur_page()->fam);
+        ui.force = 1;
+    }
     midi_take();                                        /* (MIDI IN notes: lights, SCREEN WAKE, AUTO SELECT's) */
     midi_pc_poll();                                     /* MIDI Program Change (before fm6_poll: a bank voice) */
     fm6_poll();                                         /* FM6: PTCH turned -> its patch */

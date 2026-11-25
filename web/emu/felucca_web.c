@@ -33,6 +33,7 @@ static unsigned char web_pad_k;          /* the track the page's pads are on (Ed
 static uint32_t web_fx_keys;           /* (Nov 25) 1: FX tapped locks the FX keys open (JAM PADS, the box: ui_layer.c layer_tap);
                                          * 0: FX opens the effects pages, as on the FM-1 (web_fx_mode) */
 #define WEB_FX_LOCK web_fx_keys
+#define WEB_FX_NODTAP (!web_fx_keys)          /* (EFFECTS: two quick taps are two pages, not the FX keys locked) */
 static unsigned char web_rec_ask;        /* REC tapped while stopped: the page asks about the metronome (web_rec_go) */
 #define WEB_REC_ASK web_rec_ask
 static int16_t web_route_was = -1;     /* the song's ROUT before a keyboard's note set it to SEL (web_midi) */

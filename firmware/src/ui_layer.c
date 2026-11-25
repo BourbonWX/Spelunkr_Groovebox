@@ -421,7 +421,12 @@ static void layer_tap(uint32_t l)
         ui.msg_t = 90;                                  /* ~1.5 s */
         lys.dt_hint = 1;
     }
-    if (!acted && !name_on() && !ui.confirm && !ui.menu) {   /* a page opened: a second tap soon locks the layer */
+#ifndef WEB_FX_NODTAP
+#define WEB_FX_NODTAP 0
+#endif
+    if (!acted && !name_on() && !ui.confirm && !ui.menu && !(WEB_FX_NODTAP && l == LAYER_FX)) {   /* a page opened: a second
+                                                         * tap soon locks the layer (the Spelunkr page's EFFECTS: never,
+                                                         * a quick second tap is the next page) */
         lys.dt_l = (uint8_t)l;
         lys.dt_ms = fm1_ms;
     }
