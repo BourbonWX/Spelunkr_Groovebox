@@ -77,6 +77,17 @@ static const uint8_t TRK_CAP[5] = {NVOICE, NVOICE, NVOICE, NVOICE, NVOICE};
 /* the engine interface (Felucca-Engines, MIT: engines/, a git submodule): param_desc_t and F_*, voice_t,
  * vmod_t, preset_t with FX() / PAT(), engine_t, NELEM */
 #include "../engines/src/felucca_engine.h"
+/* POLISH (the Spelunkr page, Nov 25 2026): its compressor on one track's block, after the FX PAD and before the level
+ * (fx.c mix_part / mix_spread, phantom.c for LEAD: k NTRK); d the SPREAD side or 0. Nothing elsewhere */
+#ifndef POLISH_TRACK
+#define POLISH_TRACK(k, b, d, n) ((void)0)
+#endif
+/* .. and on one drum of a kit (Ed, Nov 25: "any kind of kick and snare as well as either option on the two note Perc
+ * track"): voice.c renders that voice on its own (POLISH_VOICE_ON: nonzero), squeezes it (POLISH_VOICE), adds it in */
+#ifndef POLISH_VOICE
+#define POLISH_VOICE_ON(t, v) 0
+#define POLISH_VOICE(t, v, b, n) ((void)0)
+#endif
 
 enum {                          /* per-track parameters */
     P_LEVEL,

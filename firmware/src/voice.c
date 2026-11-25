@@ -785,6 +785,8 @@ static __attribute__((noinline)) void vpan_render(track_t *t, voice_t *v, int32_
     for (i = 0; i < n; i++)
         vb[i] = 0;
     ENGINES[t->engine]->render(t, v, vb, n, m);
+    if (POLISH_VOICE_ON(t, v))
+        POLISH_VOICE(t, v, vb, n);                      /* (the page's POLISH on one drum: felucca_web.c) */
     if (!ws && wm == 4096) {
         for (i = 0; i < n; i++)
             out[i] += vb[i];
@@ -913,7 +915,16 @@ static uint32_t track_render1(track_t *t, int32_t *out, uint32_t n, uint32_t pas
             mod_voice(t, v, &m, m.fine);
         if (T_SPREAD(t))
             vpan_render(t, v, out, n, &m);              /* (0.10: each voice at its own pan) */
-        else
+        else if (POLISH_VOICE_ON(t, v)) {               /* (the page's POLISH on one drum: on its own, then in) */
+            int32_t vb[CTL];
+            uint32_t j;
+            for (j = 0; j < n; j++)
+                vb[j] = 0;
+            e->render(t, v, vb, n, &m);
+            POLISH_VOICE(t, v, vb, n);
+            for (j = 0; j < n; j++)
+                out[j] += vb[j];
+        } else
             e->render(t, v, out, n, &m);
         nr++;
     }

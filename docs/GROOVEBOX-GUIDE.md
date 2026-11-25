@@ -31,6 +31,7 @@ GROOVEBOX** returns.
 - **TRACKS**: the song, a row a track (and LEAD), with mute, solo and the row tools (BEAT, RANDOM, VARY, CLEAR).
 - **VAPOR**: slowed, warbly, dusty, crunchy, on the whole song.
 - **SAMPLES**: your own sounds.
+- **POLISH**: finish the mix: a compressor on one track, an EQ and an exciter on the whole song.
 - **JAM PADS** is for playing over the song: the screen goes straight to the **FX keys** (stutter, tunnel, jumps,
   crush on the keys) and the two **FX PADs** come out. Back on any other panel the keys play notes again.
 - **PLAYLIST** and **SHARE** open their pop-ups. Under them: what's playing, the **THEME** (the page's colours:
@@ -167,6 +168,26 @@ tunnel, jumps, crush: the screen shows which key does what); tap it again and th
 The **FX PAD** bends the track you picked while you hold it: drag around, let go and it snaps back. Each pad has a
 **LOCK**: with it on, the pad stays where you let go, on the track you played it on, until you turn LOCK off. A
 locked pad is part of the song: it's still there next time, in a SAVE file and in a song code.
+
+## Polish the mix
+
+**POLISH** in the side menu finishes the song, like a mastering desk. Three parts, each with its own **ON**:
+
+- **COMPRESSOR** squeezes one track (pick it under **TRACK**, LEAD too) so its loud and quiet parts sit closer
+  together. On **DRUMS**, **PART** narrows it to just the **KICK** or just the **SNARE** (any kit, sampled or
+  synthesized), leaving the rest of the kit alone; on **PERC**, to either of its two sounds. **STYLE**: **GENTLE** glues it together, **PUNCH** lets each hit through and holds the rest (drums snap),
+  **SQUASH** is flat and loud, **PUMP** breathes with the beat (try it on the drums). **AMOUNT** is how hard; it keeps
+  the track about as loud, so judge it by ear. **MIX** under 100% blends the untouched track back in. **SQUEEZE**
+  shows how hard it's working.
+- **EQ** shapes the whole song's tone: **LOW** (bass), **MID** (the middle, at **MID AT**) and **HIGH** (treble),
+  each up or down 12 dB, with the curve drawn above them. Presets: **FLAT**, **WARM**, **BRIGHT**, **SMILE** (bass and
+  treble up, the middle down) and **LO-FI** (a small old radio).
+- **EXCITER** adds new harmonics where it says: **AIR** (sparkle on top), **SHINE** (presence for leads and keys),
+  **WARM** (tube-like body) or **BASS** (bass you can hear on phone and laptop speakers). **AMOUNT** is how much.
+
+Picking a preset, style or mode turns that part on; **ALL OFF** turns all three off and keeps your settings. With the
+EQ or the exciter on, a limiter at the very end stops boosts from clipping. POLISH is saved with the song: in this
+browser, in a SAVE file and in a song code, and heard in exports and stems. **NEW SONG** and **RANDOM SONG** start with it off.
 
 ## Save, share, export
 

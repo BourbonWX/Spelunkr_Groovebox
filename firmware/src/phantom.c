@@ -292,6 +292,7 @@ static void phantom_render(int32_t *l, int32_t *r, int32_t *sd, int32_t *sv, uin
     for (i = 0; i < n; i++)
         ph_buf[i] = 0;
     ENGINES[eng_idx(ph_trk.engine)]->render(&ph_trk, v, ph_buf, n, &m);
+    POLISH_TRACK(NTRK, ph_buf, 0, n);                   /* (LEAD: the page's POLISH compressor) */
     lvl = (LEVEL_Q12[ph_trk.p[P_LEVEL] & 127] * MIX_TRIM) >> 12;   /* (0.9.15: as a FEED's, fx.c feed_lvl) */
     d = ph_trk.p[P_DLY] * 258;
     rv = ph_trk.p[P_REV] * 258;

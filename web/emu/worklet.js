@@ -176,6 +176,39 @@ export function* warmScript(ex) {
   yield* tap(REC);
 }
 
+// The start-up chime (Ed, Nov 25 2026: the PS1's boot fanfare "wasn't a recording but was synthesized live every time
+// it turned on"; his pick, MALL, "fade out sooner ... starts at 4 and ends before six"). Like the PS1, it is played
+// live, by a third copy of the device sharing the compiled module (never the visitor's song): a slowed electric-piano
+// maj9 rolled in (SAMPLE MALL EP), a glass pad swelling under it (SAMPLE GLASS PAD), one crystal bell (FM), the HALL
+// reverb and VAPOR's SLOWED + WOW. chimeScript yields after each block it renders; chimeGain is the fade.
+export const CHIME = { fadeAt: 4.0, endAt: 5.8, level: 1.4 };   // (level: about as loud as a song at the same VOLUME)
+export function chimeGain(sec) {
+  if (sec <= CHIME.fadeAt) return CHIME.level;
+  if (sec >= CHIME.endAt) return 0;
+  const x = (sec - CHIME.fadeAt) / (CHIME.endAt - CHIME.fadeAt);
+  return CHIME.level * 0.5 * (1 + Math.cos(Math.PI * x));
+}
+export function* chimeScript(ex) {
+  const X = -1000, ev = [];
+  const note = (t, p, n, hold, v) => { ev.push([t, p, n, v], [t + hold, p, n, 0]); };
+  ex.web_test_reverb(2, 115);                                                        // HALL, big
+  ex.web_test_note(2, 4, 1, 0, 0); ex.web_test_fx(2, 70, 40, 0, X, X, 80, X);         // SAMPLE MALL EP
+  ex.web_test_note(3, 4, 4, 0, 0); ex.web_test_fx(3, 95, 60, -20, X, 70, 95, X); ex.web_level(3, 92);   // SAMPLE GLASS PAD
+  ex.web_test_note(4, 24, 0, 0, 0); ex.web_test_fx(4, 110, X, 25, X, X, 90, 30);      // FM CRYSTAL BELL
+  ex.web_vapor(0, 40); ex.web_vapor(1, 35);                                          // VAPOR: SLOWED, WOW
+  [53, 60, 64, 67, 69, 74].forEach((n, k) => note(0.1 + 0.08 * k, 2, n, 3.4, 92 - k * 4));
+  note(0.45, 3, 65, 3.6, 80); note(0.5, 3, 72, 3.6, 70);
+  note(1.5, 4, 86, 0.5, 90);
+  ev.sort((a, b) => a[0] - b[0]);
+  let e = 0, t = 0;
+  while (t < CHIME.endAt) {
+    while (e < ev.length && ev[e][0] <= t) { const [, p, n, v] = ev[e++]; ex.web_test_note(p, 255, 0, n, v); }
+    ex.web_render(WARM_BLOCK);
+    t += WARM_BLOCK / 44100;
+    yield t;
+  }
+}
+
 if (typeof registerProcessor === "function") {
   const clock = globalThis.performance ? () => globalThis.performance.now() : () => Date.now();
   class Felucca extends AudioWorkletProcessor {
@@ -200,6 +233,19 @@ if (typeof registerProcessor === "function") {
         try {
           const module = await WebAssembly.compile(m.wasm);
           const ex = (await WebAssembly.instantiate(module, WASI_STUB)).exports;
+          if (m.chime) try {                            // the start-up chime's own copy (process() mixes it in)
+            const cx = (await WebAssembly.instantiate(module, WASI_STUB)).exports;
+            if (cx.web_test_fx) {
+              cx._initialize();
+              cx.web_nor_erase();
+              cx.web_seed(7);
+              cx.web_boot();
+              cx.web_master(m.master ?? 700);
+              for (let p = 0; p < 5; p++) cx.web_test_note(p, 255, 0, 0, 0);
+              this.cx = cx;
+              this.chime = chimeScript(cx);
+            }
+          } catch { this.chime = null; }
           if (!m.nowarm) try {                          // the warm-up's copy (process() plays it a slice at a time)
             const wx = (await WebAssembly.instantiate(module, WASI_STUB)).exports;
             wx._initialize();
@@ -228,12 +274,12 @@ if (typeof registerProcessor === "function") {
         }
         return;
       }
-      if (m.type === "off") { this.dead = true; this.ex = null; this.warm = null; return; }   // switched off (the page made another)
+      if (m.type === "off") { this.dead = true; this.ex = null; this.warm = null; this.chime = null; return; }   // switched off (the page made another)
       const ex = this.ex;
       if (!ex) return;
       if (m.type === "buttons" || m.type === "keys") this.queue.push(m);
       else if (m.type === "enc") ex.web_enc(m.role, m.n | 0);
-      else if (m.type === "master") ex.web_master(m.value | 0);
+      else if (m.type === "master") { ex.web_master(m.value | 0); if (this.cx) this.cx.web_master(m.value | 0); }
       else if (m.type === "batt") { if (ex.web_batt) ex.web_batt(m.level | 0); }   // (the box: its cells' charge, 0 on DC)
       else if (m.type === "midi") ex.web_midi(m.data[0] | 0, m.data[1] | 0, m.data[2] | 0);
       else if (m.type === "visible") this.period = m.on ? 1 / 30 : 1 / 4;
@@ -267,6 +313,7 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "newsong") { ex.web_new_song(m.random ? 1 : 0);
       } else if (m.type === "plain") { if (ex.web_plain) ex.web_plain(m.on ? 1 : 0);
       } else if (m.type === "vapor") { ex.web_vapor(m.k, m.v);
+      } else if (m.type === "polish") { if (ex.web_polish) ex.web_polish(m.id, m.v | 0);   // (POLISH: felucca_web.c)
       } else if (m.type === "xy") { ex.web_xy(m.j, m.x, m.y, m.on ? 1 : 0, m.k ?? 255);
       } else if (m.type === "play") {                 // the shared song, once switched on: the song, else the pattern
         ex.web_bounce_go(ex.web_song_sections() ? 1 : 0, 0);
@@ -361,6 +408,17 @@ if (typeof registerProcessor === "function") {
       this.frames += n;
       out[0].set(new Float32Array(ex.memory.buffer, ex.web_out_l(), n));
       if (out[1]) out[1].set(new Float32Array(ex.memory.buffer, ex.web_out_r(), n));
+      if (this.chime && n === WARM_BLOCK) {           // the start-up chime over the splash, faded out by CHIME.endAt
+        try {
+          const step = this.chime.next();
+          if (step.done) { this.chime = null; this.cx = null; }
+          else {
+            const g = chimeGain(step.value), cm = this.cx.memory.buffer;
+            const cl = new Float32Array(cm, this.cx.web_out_l(), n), cr = new Float32Array(cm, this.cx.web_out_r(), n);
+            for (let i = 0; i < n; i++) { out[0][i] += cl[i] * g; if (out[1]) out[1][i] += cr[i] * g; }
+          }
+        } catch { this.chime = null; this.cx = null; }
+      }
       if (this.rec) {
         const r = this.rec, take = Math.min(n, REC_CHUNK - r.n);
         r.l.set(out[0].subarray(0, take), r.n);

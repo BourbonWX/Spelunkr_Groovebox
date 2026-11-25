@@ -54,6 +54,11 @@ static void web_card_put(unsigned c, const char *l, const char *v, const char *u
     web_cards_seen |= 1u << c;
 }
 #define WEB_CARD(c, label, val, unit, ratio) web_card_put((c), (label), (val), (unit), (ratio))
+static void web_pol_comp(uint32_t k, uint32_t part, int32_t *b, int32_t *d, uint32_t n);   /* POLISH's compressor (below) */
+static uint32_t web_pol_part(uint32_t k, uint32_t s0, uint32_t kit);
+#define POLISH_TRACK(k, b, d, n) web_pol_comp((k), 0u, (b), (d), (n))
+#define POLISH_VOICE_ON(t, v) web_pol_part((uint32_t)((t) - trk), (uint32_t)(v)->s[0], (uint32_t)ENG_KIT((t)->engine % NENGINES))
+#define POLISH_VOICE(t, v, b, n) web_pol_comp((uint32_t)((t) - trk), web_pol_part((uint32_t)((t) - trk), (uint32_t)(v)->s[0], 1u), (b), 0, (n))
 #ifndef FELUCCA_CDC
 #define FELUCCA_CDC 1                    /* as src/felucca.c: MENU > USB SERIAL is there (nothing behind it) */
 #endif
@@ -487,6 +492,238 @@ static uint32_t vap_hc, vap_rng = 0x5EED1u;
 static float vap_rand(void) { vap_rng = vap_rng * 1664525u + 1013904223u; return (float)(int32_t)vap_rng / 2147483648.0f; }
 static double vap_speed(void) { return 1.0 - vap_get(0) * 0.3 / 127.0; }
 EXPORT uint32_t web_vapor_get(uint32_t k) { return vap_get(k & 3u); }
+
+/* ---- Spelunkr: POLISH (Ed, Nov 25 2026: "some mastering options, maybe the option to put compression on one of the
+ * tracks, a simple 3 channel EQ and an exciter with a handful of options for each"). The page's, not the song's
+ * (index.html keeps them: this browser, SAVE's file, a song code), set here by web_polish(id, v):
+ *   COMPRESS  on one track (k: NTRK order, NTRK = LEAD), in the device after its FX PAD and before its level (core.h
+ *             POLISH_TRACK): STYLE GENTLE PUNCH SQUASH PUMP (ratio, attack, release, knee), AMOUNT (the threshold, 0
+ *             .. -32 dB of a voice's full scale; make-up: as loud as it came in over ~2 s (up to
+ *             +24 dB), so AMOUNT changes the feel, not the loudness), MIX (parallel: dry under it)
+ *   EQ        on the master after VAPOR: LOW shelf 110 Hz, MID bell (MID AT 250 700 1.5k 3.5k Hz), HIGH shelf 7.5 kHz,
+ *             -12 .. +12 dB each
+ *   EXCITE    after the EQ: a band of the mix driven into a curve, only the harmonics it makes added back: AIR (over 5
+ *             kHz, odd), SHINE (over 2.5 kHz, even), WARM (the mids, tube-like), BASS (the lows' harmonics, heard on
+ *             small speakers); AMOUNT
+ * With EQ or EXCITE on, a peak limiter at the end (-0.2 dB) catches what a boost pushes over. All off: nothing runs */
+enum { PO_CON, PO_CTRK, PO_CSTY, PO_CAMT, PO_CMIX, PO_EON, PO_ELO, PO_EMID, PO_EHI, PO_EMF, PO_XON, PO_XMODE, PO_XAMT,
+       PO_CPART, PO_N };                   /* (CPART appended, Nov 25: 0 the whole track; on DRUMS 1 KICK, 2 SNARE; on PERC
+                                            * 1 PERC 1, 2 PERC 2: core.h POLISH_VOICE) */
+static int32_t pol[PO_N] = {0, 0, 0, 64, 127, 0, 0, 0, 0, 1, 0, 0, 48, 0};
+static const int32_t POL_MAX[PO_N] = {1, NTRK, 3, 127, 127, 1, 12, 12, 12, 3, 1, 3, 127, 2};
+/* the part the compressor works on: 0 the whole track (CPART 0, not a kit track, or DRUMS playing another engine) */
+static uint32_t pol_part_now(void)
+{
+    uint32_t k = (uint32_t)pol[PO_CTRK];
+    if (!pol[PO_CPART] || !trk_is_kit(k) || !ENG_KIT(trk[k].engine % NENGINES))
+        return 0;
+    return (uint32_t)pol[PO_CPART];
+}
+/* a kit voice's part (1 KICK / PERC 1, 2 SNARE / PERC 2) when the compressor wants it on its own, else 0: on DRUMS
+ * s[0] is the voice's lane (eng_cycle.c CK_KICK 0, CK_SNARE 1), on PERC its slot in bits 0-1 */
+static uint32_t web_pol_part(uint32_t k, uint32_t s0, uint32_t kit)
+{
+    uint32_t want;
+    if (!pol[PO_CON] || !pol[PO_CAMT] || k != (uint32_t)pol[PO_CTRK] || !kit || !(want = pol_part_now()))
+        return 0;
+    return (k == PERC_TRK ? (s0 & 3u) : s0) + 1u == want ? want : 0;
+}
+static const struct { float ratio, att, rel, knee; } PC_STY[4] = {
+    {2.0f, 40.0f, 400.0f, 10.0f},          /* GENTLE: glue, barely there */
+    {4.0f, 45.0f, 220.0f, 6.0f},           /* PUNCH: the attack let through, the body held */
+    {10.0f, 3.0f, 90.0f, 3.0f},            /* SQUASH: flat and loud */
+    {6.0f, 12.0f, 500.0f, 4.0f},           /* PUMP: a long release that breathes */
+};
+static float pc_env, pc_g, pc_grmin;       /* the detector, the gain reduction now (dB, <= 0), the deepest since the
+                                             * guide's last look */
+static float pc_pin, pc_pout, pc_mk = 1.0f; /* the make-up: the track's power in and out over ~2 s, its gain */
+static uint32_t pc_last_ms, pc_k_was = 255u;   /* (the target: track x 4 + part) */
+static float pol_ms(float ms) { return ms <= 0 ? 1.0f : 1.0f - expf(-1000.0f / (ms * (float)FS)); }
+static void web_pol_comp(uint32_t k, uint32_t part, int32_t *b, int32_t *d, uint32_t n)
+{
+    float thr, R, W, ka, kr, gr2, ks, mix;
+    uint32_t i, sty, tg = k * 4u + part;
+    if (!pol[PO_CON] || k != (uint32_t)pol[PO_CTRK] || !pol[PO_CAMT] || part != pol_part_now())
+        return;                                         /* (a part on its own: the track's own call passes it by) */
+    sty = (uint32_t)pol[PO_CSTY] & 3u;
+    if (tg != pc_k_was) {                               /* a new target: from rest */
+        pc_env = pc_g = 0;
+        pc_pin = pc_pout = 0;
+        pc_mk = 1.0f;
+    } else if (fm1_ms - pc_last_ms > 3u) {              /* silent a while (a drum between hits): let go as it would have */
+        pc_env = 0;
+        pc_g *= expf(-(float)(fm1_ms - pc_last_ms) / PC_STY[sty].rel);
+    }
+    pc_k_was = tg;
+    pc_last_ms = fm1_ms;
+    R = PC_STY[sty].ratio;
+    W = PC_STY[sty].knee;
+    thr = -32.0f * (float)pol[PO_CAMT] / 127.0f;
+    ks = pol_ms(2000.0f);
+    ka = pol_ms(PC_STY[sty].att);
+    kr = pol_ms(PC_STY[sty].rel);
+    gr2 = pol_ms(15.0f);                                  /* (the detector lets go quickly: the STYLE's release rules) */
+    mix = (float)pol[PO_CMIX] / 127.0f;
+    for (i = 0; i < n; i++) {
+        float x = (float)b[i] * (1.0f / 32768.0f), a = fabsf(x), lv, ov, g, y;
+        if (d)
+            a += fabsf((float)d[i] * (1.0f / 32768.0f));
+        pc_env = a > pc_env ? a : pc_env + (a - pc_env) * gr2;   /* (peak: at once up, ~15 ms down) */
+        lv = 20.0f * log10f(pc_env + 1e-6f);
+        ov = lv - thr;
+        if (2.0f * ov < -W)
+            g = 0;
+        else if (2.0f * fabsf(ov) <= W)
+            g = (1.0f / R - 1.0f) * (ov + W * 0.5f) * (ov + W * 0.5f) / (2.0f * W);
+        else
+            g = (1.0f / R - 1.0f) * ov;
+        pc_g += (g - pc_g) * (g < pc_g ? ka : kr);     /* (Ed, Nov 25: "loosen it up": every STYLE's attack and release longer) */
+        if (pc_g < pc_grmin)
+            pc_grmin = pc_g;
+        y = powf(10.0f, pc_g * 0.05f);
+        pc_pin += (x * x - pc_pin) * ks;               /* make-up: as loud as it came in, over ~2 s (AMOUNT changes the
+                                                         * feel, not the loudness) */
+        pc_pout += (x * x * y * y - pc_pout) * ks;
+        if (pc_pout > 1e-9f) {
+            float w = sqrtf(pc_pin / pc_pout);
+            pc_mk += ((w > 16.0f ? 16.0f : w < 1.0f ? 1.0f : w) - pc_mk) * ks;
+        }
+        y *= pc_mk;
+        y = mix * y + (1.0f - mix);
+        b[i] = (int32_t)((float)b[i] * y);
+        if (d)
+            d[i] = (int32_t)((float)d[i] * y);
+    }
+}
+
+/* a biquad (RBJ), one channel's state */
+typedef struct { float b0, b1, b2, a1, a2; } bq_t;
+typedef struct { float x1, x2, y1, y2; } bqs_t;
+static inline float bq_run(const bq_t *q, bqs_t *s, float x)
+{
+    float y = q->b0 * x + q->b1 * s->x1 + q->b2 * s->x2 - q->a1 * s->y1 - q->a2 * s->y2;
+    s->x2 = s->x1; s->x1 = x; s->y2 = s->y1; s->y1 = y;
+    return y;
+}
+enum { BQ_LP, BQ_HP, BQ_PEAK, BQ_LSH, BQ_HSH };
+static void bq_make(bq_t *q, int type, float f, float Q, float db)
+{
+    float A = powf(10.0f, db / 40.0f), w = 6.2831853f * f / (float)FS, c = cosf(w), sn = sinf(w), al = sn / (2.0f * Q);
+    float b0, b1, b2, a0, a1, a2, sq = 2.0f * sqrtf(A) * al;
+    switch (type) {
+    case BQ_LP: b0 = (1 - c) / 2; b1 = 1 - c; b2 = b0; a0 = 1 + al; a1 = -2 * c; a2 = 1 - al; break;
+    case BQ_HP: b0 = (1 + c) / 2; b1 = -(1 + c); b2 = b0; a0 = 1 + al; a1 = -2 * c; a2 = 1 - al; break;
+    case BQ_PEAK: b0 = 1 + al * A; b1 = -2 * c; b2 = 1 - al * A; a0 = 1 + al / A; a1 = -2 * c; a2 = 1 - al / A; break;
+    case BQ_LSH:
+        b0 = A * ((A + 1) - (A - 1) * c + sq); b1 = 2 * A * ((A - 1) - (A + 1) * c); b2 = A * ((A + 1) - (A - 1) * c - sq);
+        a0 = (A + 1) + (A - 1) * c + sq; a1 = -2 * ((A - 1) + (A + 1) * c); a2 = (A + 1) + (A - 1) * c - sq; break;
+    default:
+        b0 = A * ((A + 1) + (A - 1) * c + sq); b1 = -2 * A * ((A - 1) + (A + 1) * c); b2 = A * ((A + 1) + (A - 1) * c - sq);
+        a0 = (A + 1) - (A - 1) * c + sq; a1 = 2 * ((A - 1) - (A + 1) * c); a2 = (A + 1) - (A - 1) * c - sq; break;
+    }
+    q->b0 = b0 / a0; q->b1 = b1 / a0; q->b2 = b2 / a0; q->a1 = a1 / a0; q->a2 = a2 / a0;
+}
+static const float EQ_MIDF[4] = {250.0f, 700.0f, 1500.0f, 3500.0f};
+static bq_t eq_q[3];
+static bqs_t eq_s[3][2];
+static int32_t eq_key = -1;
+/* EXCITE: per mode the band in (HP, LP; 0 none), the curve's drive and lean (even harmonics), the band out (HP, LP),
+ * how much of what it makes goes back */
+static const struct { float hp, lp, drive, fund, lean, ohp, olp, gain; } XM[4] = {   /* (fund: the curve's own
+                                                         * fundamental at that drive, taken back out) */
+    {5000.0f, 0.0f, 4.0f, 1.24f, 0.0f, 5000.0f, 0.0f, 1.0f},          /* AIR */
+    {2500.0f, 0.0f, 3.0f, 1.21f, 0.5f, 2500.0f, 0.0f, 0.9f},          /* SHINE */
+    {180.0f, 1600.0f, 1.8f, 1.08f, 0.9f, 300.0f, 5000.0f, 1.0f},      /* WARM */
+    {0.0f, 120.0f, 1.6f, 1.04f, 1.0f, 110.0f, 450.0f, 1.6f},          /* BASS */
+};
+static bq_t xq[4];                          /* in HP, in LP, out HP, out LP */
+static bqs_t xs[4][2];
+static int32_t xq_mode = -1;
+static float lim_g = 1.0f;
+static uint32_t pol_was_on;
+static float xenv[2];                      /* EXCITE: the band's level, per side (the curve sees it at ~1) */
+static inline float xcurve(float v, float lean) { float t = tanhf(v); return t + lean * (t * t - 0.5f); }
+static void pol_master(uint32_t n)
+{
+    uint32_t i, j, eq = pol[PO_EON] && (pol[PO_ELO] | pol[PO_EMID] | pol[PO_EHI]), xc = pol[PO_XON] && pol[PO_XAMT];
+    if (!eq && !xc) {
+        if (pol_was_on) {                               /* (off: from rest next time) */
+            memset(eq_s, 0, sizeof eq_s);
+            memset(xs, 0, sizeof xs);
+            lim_g = 1.0f;
+            pol_was_on = 0;
+        }
+        return;
+    }
+    pol_was_on = 1;
+    if (eq) {
+        int32_t key = (pol[PO_ELO] + 12) | (pol[PO_EMID] + 12) << 5 | (pol[PO_EHI] + 12) << 10 | pol[PO_EMF] << 15;
+        if (key != eq_key) {
+            bq_make(&eq_q[0], BQ_LSH, 110.0f, 0.707f, (float)pol[PO_ELO]);
+            bq_make(&eq_q[1], BQ_PEAK, EQ_MIDF[pol[PO_EMF] & 3], 0.9f, (float)pol[PO_EMID]);
+            bq_make(&eq_q[2], BQ_HSH, 7500.0f, 0.707f, (float)pol[PO_EHI]);
+            eq_key = key;
+        }
+        for (i = 0; i < n; i++)
+            for (j = 0; j < 3u; j++) {
+                out_l[i] = bq_run(&eq_q[j], &eq_s[j][0], out_l[i]);
+                out_r[i] = bq_run(&eq_q[j], &eq_s[j][1], out_r[i]);
+            }
+    }
+    if (xc) {
+        uint32_t m = (uint32_t)pol[PO_XMODE] & 3u;
+        float amt = (float)pol[PO_XAMT] / 127.0f, g = XM[m].gain * amt, dr = XM[m].drive, xatt = pol_ms(1.0f), xrel = pol_ms(40.0f);
+        if ((int32_t)m != xq_mode) {
+            if (XM[m].hp > 0) bq_make(&xq[0], BQ_HP, XM[m].hp, 0.707f, 0);
+            if (XM[m].lp > 0) bq_make(&xq[1], BQ_LP, XM[m].lp, 0.707f, 0);
+            if (XM[m].ohp > 0) bq_make(&xq[2], BQ_HP, XM[m].ohp, 0.707f, 0);
+            if (XM[m].olp > 0) bq_make(&xq[3], BQ_LP, XM[m].olp, 0.707f, 0);
+            memset(xs, 0, sizeof xs);
+            xenv[0] = xenv[1] = 0;
+            xq_mode = (int32_t)m;
+        }
+        for (i = 0; i < n; i++) {
+            float *o[2] = {&out_l[i], &out_r[i]};
+            for (j = 0; j < 2u; j++) {
+                float v = *o[j], h;
+                if (XM[m].hp > 0) v = bq_run(&xq[0], &xs[0][j], v);
+                if (XM[m].lp > 0) v = bq_run(&xq[1], &xs[1][j], v);
+                {                                 /* the band at ~1 (its level followed), driven, only what the curve
+                                                         * made kept, back at the band's level: the same colour loud or soft */
+                    float a = fabsf(v), u;
+                    xenv[j] += (a - xenv[j]) * (a > xenv[j] ? xatt : xrel);
+                    u = v / (xenv[j] + 1e-4f);
+                    h = (xcurve(u * dr, XM[m].lean) - XM[m].fund * u) * 0.5f * xenv[j];
+                }
+                if (XM[m].ohp > 0) h = bq_run(&xq[2], &xs[2][j], h);
+                if (XM[m].olp > 0) h = bq_run(&xq[3], &xs[3][j], h);
+                *o[j] += h * g * 2.0f;
+            }
+        }
+    }
+    {                                                   /* the limiter: instant down, ~120 ms back */
+        float rel = pol_ms(120.0f);
+        for (i = 0; i < n; i++) {
+            float a = fabsf(out_l[i]) > fabsf(out_r[i]) ? fabsf(out_l[i]) : fabsf(out_r[i]), want = a * lim_g > 0.977f ? 0.977f / a : 1.0f;
+            if (want < lim_g)
+                lim_g = want;
+            else
+                lim_g += (1.0f - lim_g) * rel;
+            out_l[i] *= lim_g;
+            out_r[i] *= lim_g;
+        }
+    }
+}
+EXPORT void web_polish(uint32_t id, int32_t v)
+{
+    int32_t lo;
+    if (id >= PO_N)
+        return;
+    lo = id == PO_ELO || id == PO_EMID || id == PO_EHI ? -12 : 0;
+    pol[id] = v < lo ? lo : v > POL_MAX[id] ? POL_MAX[id] : v;
+}
+EXPORT int32_t web_polish_get(uint32_t id) { return id < PO_N ? pol[id] : 0; }
+EXPORT uint32_t web_polish_part(void) { return pol_part_now(); }   /* (the part it's on now: tests) */
 /* ---- the user samples (Ed, Nov 22 2026): the page's SAMPLES panel loads them (IMA ADPCM at 22.05 kHz, made by the
  * page), here they play (core.h SPK_NU). Slot k: web_spk_clear(k) (silent at once: no voice reads a half-written
  * slot), the page writes the data at web_spk_data(k) (the whole sample, then each slice, each from a fresh ADPCM
@@ -807,7 +1044,7 @@ EXPORT void web_render(uint32_t n)
             out_l[k] = out_l[k] * (1.0f - amt * 0.06f) + c + vap_hiss_y;
             out_r[k] = out_r[k] * (1.0f - amt * 0.06f) + c * 0.85f + vap_hiss_y;
         }
-    }
+    }    pol_master(n);                                     /* POLISH: EQ, EXCITE, the limiter (off: nothing) */
 }
 
 /* the flash: erased, then the page's saved sectors (web_nor), then boot */
@@ -1020,6 +1257,19 @@ EXPORT void web_test_note(uint32_t p, uint32_t e, uint32_t k, uint32_t n, uint32
         trk_note_off(t, n & 127u);
 }
 
+/* (tests / renders: a part's mix and envelope, -1000 leaves one as it is; the reverb bus's TYPE and SIZE) */
+EXPORT void web_test_fx(uint32_t p, int32_t rev, int32_t chor, int32_t pan, int32_t det, int32_t atk, int32_t rel, int32_t dly)
+{
+    track_t *t = &trk[p % NPART];
+    if (rev != -1000) t->p[P_REV] = (int16_t)rev;
+    if (chor != -1000) t->p[P_CHOR] = (int16_t)chor;
+    if (pan != -1000) t->p[P_PAN] = (int16_t)pan;
+    if (det != -1000) t->p[P_DETUNE] = (int16_t)det;
+    if (atk != -1000) t->p[P_ATK] = (int16_t)atk;
+    if (rel != -1000) t->p[P_REL] = (int16_t)rel;
+    if (dly != -1000) t->p[P_DLY] = (int16_t)dly;
+}
+EXPORT void web_test_reverb(uint32_t type, uint32_t size) { song.g[G_RTYPE] = (int16_t)type; song.g[G_RSIZE] = (int16_t)size; }
 EXPORT uint16_t *web_screen(void) { return web_fb; }
 EXPORT uint32_t web_screen_px(void) { return LCD_PX; }   /* the frame's side in pixels (480) */
 EXPORT uint32_t web_screen_draws(void) { return web_draws; }
@@ -1287,6 +1537,10 @@ EXPORT const char *web_guide(void)
        web_pad ? (int)web_pad_k : -1);
     wj(",\"vapor\":[%u,%u,%u,%u]", vap_get(0), vap_get(1), vap_get(2), vap_get(3));
     wj(",\"pal\":%u", (unsigned)palette_cur());
+    wj(",\"polgr\":%d", (int)(pc_grmin * -10.0f));   /* POLISH: the compressor's deepest since the last (dB x 10) */
+    wj(",\"polk\":[%d,\"%s\",\"%s\"]", ENG_KIT(trk[0].engine % NENGINES) ? 1 : 0,   /* (POLISH's parts: DRUMS a kit?, */
+       N_PC_SND[pc_snd(trk[PERC_TRK].p, 0)], N_PC_SND[pc_snd(trk[PERC_TRK].p, 1)]);       /* PERC's two sounds) */
+    pc_grmin = 0;
     {   /* LEAD (lead.c): focused, its sound, its engine, recording, the lane playing, the notes a pattern */
         uint32_t p;
         wj(",\"lead\":{\"f\":%d,\"rec\":%d,\"pat\":%u,\"lv\":%d,\"snd\":", ph_focus ? 1 : 0, lead_recording() ? 1 : 0, (unsigned)lead_pat(),

@@ -364,6 +364,43 @@ body.boxpanel.mouseidle, body.boxpanel.mouseidle * { cursor: none !important; }
 .vknobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; padding: 12px 12px 6px; }
 .vknobs .stepper { width: auto; }
 .vknobs .stepper .lab { font-size: 21px; }
+/* POLISH (felucca_web.c web_polish): three modules side by side, one under the other on a phone */
+.polish { flex-direction: column; }
+.polish > .title { display: flex; align-items: baseline; gap: 10px; padding: 6px 14px; flex-wrap: wrap; }
+.polish > .title b { font: 28px/1 var(--head); color: var(--yellow); }
+.polish > .title span { color: var(--soft); }
+.polish > .title .btn { margin-left: auto; min-height: 32px; font-size: 19px; padding: 2px 10px; align-self: center; }
+.pmods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 12px; }
+.pmod { display: flex; flex-direction: column; gap: 10px; padding: 10px 12px 12px; background: var(--strip); border-radius: 6px; min-width: 0; }
+.pmod.off > :not(.phead) { opacity: .55; }
+.phead { display: flex; align-items: center; gap: 8px; }
+.phead b { font: 25px/1 var(--head); color: var(--yellow); }
+.phead small { font-size: 17px; color: var(--soft); white-space: nowrap; }
+.phead .pon { margin-left: auto; min-height: 32px; min-width: 62px; padding: 2px 10px; font-size: 19px; background: var(--row); color: var(--soft); border-color: var(--rule); }
+.phead .pon[aria-pressed="true"] { background: var(--yellow); color: var(--night); border-color: var(--litedge); }
+.prow { display: flex; flex-direction: column; gap: 4px; }
+.plab { font: 17px/1 var(--head); color: var(--soft); letter-spacing: .04em; }
+.pchips { display: flex; flex-wrap: wrap; gap: 4px; }
+.prow[hidden] { display: none; }
+.chip:disabled { opacity: .4; cursor: default; filter: none; }
+.chip { min-height: 32px; padding: 2px 8px; font-size: 18px; background: var(--row); color: #fff; border-color: var(--rule); }
+.btn.chip.on { background: var(--yellow); color: var(--night); border-color: var(--litedge); }
+.pknobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 8px; }
+.pknobs .stepper { width: auto; }
+.pknobs .stepper .lab { font-size: 19px; }
+.pknobs .stepper .val { font-size: 19px; }
+.pknobs .stepper .arr { width: 30px; height: 32px; font-size: 13px; }
+.grm { display: flex; align-items: center; gap: 8px; font-size: 17px; color: var(--soft); }
+.grm span { font: 17px/1 var(--head); }
+.grm i { flex: 1 1 auto; height: 10px; background: var(--night); border-radius: 3px; overflow: hidden; display: flex; justify-content: flex-end; }
+.grm b { display: block; width: 0; height: 100%; background: var(--orange); transition: width .1s; }
+.grm em { font-style: normal; color: var(--yellow); min-width: 66px; text-align: right; }
+.phint { margin: 0; font-size: 17px; color: var(--soft); line-height: 1.2; min-height: 2.4em; }
+.eqc { width: 100%; height: 96px; background: var(--night); border-radius: 4px; display: block; }
+.polish .hint { padding: 0 14px 14px; color: var(--soft); }
+.tab.pl i { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+@media (max-width: 1280px) { .pmods { grid-template-columns: repeat(2, minmax(0, 1fr)); } #pme { grid-column: 1 / -1; order: -1; } }
+@media (max-width: 720px) { .pmods { grid-template-columns: minmax(0, 1fr); padding: 8px; } }
 
 /* the guide */
 .guide { overflow-x: auto; }
@@ -612,7 +649,7 @@ body[data-pane] .lowp:not(.on) { display: none !important; }
   main, body.jam main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 400px); align-items: stretch;
          grid-template-areas: "dev mix" "msg msg" "low low"; }
   .device { grid-area: dev; } .mixer { grid-area: mix; } #studiomsg { grid-area: msg; margin: 0; }
-  .guide, .vappanel, .samples, .fxpad { grid-area: low; }
+  .guide, .vappanel, .samples, .fxpad, .polish { grid-area: low; }
   body.jam .pads { flex-direction: row; padding: 14px; gap: 30px; }
   body.jam .pad, .pad { width: 230px; height: 230px; }
   body.jam .fxpad .hint { display: block; }
@@ -995,6 +1032,7 @@ body.keyshid .tour { bottom: 52px; }
     <button class="tab" type="button" role="tab" data-pane="tracks" aria-selected="true"><i aria-hidden="true"></i>TRACKS</button>
     <button class="tab" type="button" role="tab" data-pane="vapor" aria-selected="false"><i aria-hidden="true"></i>VAPOR</button>
     <button class="tab" type="button" role="tab" data-pane="samples" id="smpgo" aria-selected="false"><i aria-hidden="true"></i>SAMPLES</button>
+    <button class="tab" type="button" role="tab" data-pane="polish" id="polgo" aria-selected="false"><i aria-hidden="true"></i>POLISH</button>
     <button class="tab" type="button" role="tab" data-pane="jam" aria-selected="false"><i aria-hidden="true"></i>JAM PADS</button>
   </nav>
   <hr>
@@ -1139,6 +1177,37 @@ body.keyshid .tour { bottom: 52px; }
       <div class="ghead strip" id="ghead"></div>
       <div id="grows"></div>
     </div>
+  </section>
+
+  <!-- POLISH (Ed, Nov 25): mastering. A compressor on one track, a 3-band EQ and an exciter on the whole song
+       (felucca_web.c web_polish); kept with the song (this browser, SAVE's file, a song code) -->
+  <section class="panel polish lowp" id="polish" aria-label="POLISH">
+    <div class="title strip"><b>POLISH</b><span>finish the mix: squeeze a track, shape the tone, add sparkle</span>
+      <button class="btn quiet" type="button" id="poloff" title="Turns all three off (your settings stay for next time)">ALL OFF</button></div>
+    <div class="pmods">
+      <div class="pmod" id="pmc">
+        <div class="phead"><b>COMPRESSOR</b><small>one track or drum</small><button class="btn pon" type="button" data-m="c" aria-pressed="false">OFF</button></div>
+        <div class="prow"><span class="plab">TRACK</span><div class="pchips" id="pctrk"></div></div>
+        <div class="prow" id="pcpartrow"><span class="plab" id="pcpartlab">PART</span><div class="pchips" id="pcpart"></div></div>
+        <div class="prow"><span class="plab">STYLE</span><div class="pchips" id="pcsty"></div></div>
+        <div class="pknobs" id="pck"></div>
+        <div class="grm" title="How hard it's squeezing the track right now"><span>SQUEEZE</span><i><b id="grbar"></b></i><em id="grval">—</em></div>
+        <p class="phint" id="pchint"></p>
+      </div>
+      <div class="pmod" id="pme">
+        <div class="phead"><b>EQ</b><small>the whole song</small><button class="btn pon" type="button" data-m="e" aria-pressed="false">OFF</button></div>
+        <div class="prow"><span class="plab">PRESET</span><div class="pchips" id="peset"></div></div>
+        <canvas class="eqc" id="eqc" width="420" height="96" aria-hidden="true"></canvas>
+        <div class="pknobs four" id="pek"></div>
+      </div>
+      <div class="pmod" id="pmx">
+        <div class="phead"><b>EXCITER</b><small>the whole song</small><button class="btn pon" type="button" data-m="x" aria-pressed="false">OFF</button></div>
+        <div class="prow"><span class="plab">MODE</span><div class="pchips" id="pxmode"></div></div>
+        <div class="pknobs" id="pxk"></div>
+        <p class="phint" id="pxhint"></p>
+      </div>
+    </div>
+    <div class="hint">Saved with the song: heard in exports, stems and shared codes. Picking a preset, style or mode turns that one on.</div>
   </section>
 
   <section class="panel samples lowp" id="samples" aria-label="Your samples">
@@ -1490,6 +1559,7 @@ function knobName(k, name) {                            // its arrows say what t
 function turn(k, n) {
   if (!n) return;
   if (k.role === "vapor") { vapSet(k.k, k.v + n * 4); return; }
+  if (k.role === "polish") { polTurn(k, n); return; }
   if (k.role === "master") {
     masterValue = Math.max(0, Math.min(1023, masterValue + n * 16));
     send({ type: "master", value: masterValue });
@@ -1533,6 +1603,174 @@ $("vapgo").addEventListener("click", () => {
   const on = vapEls.some((e) => e.v);
   vapEls.forEach((el, k) => vapSet(k, on ? 0 : VAPORIZE[k]));
 });
+
+// ------------------------------------------------------------------ POLISH (Ed, Nov 25: "some mastering options, maybe the
+// option to put compression on one of the tracks, a simple 3 channel EQ and an exciter with a handful of options for
+// each"). The device runs them (felucca_web.c web_polish: the compressor inside, on the track, before its level; the EQ
+// and the exciter on the master after VAPOR, a limiter after them); the page keeps them with the song: this browser,
+// SAVE's file and a song code (polState / polApply), sent again to every new start (polNode). NEW / RANDOM: all off.
+const POLKEY = "spelunkr-groovebox-polish";
+const POL_DEF = { c: { on: 0, k: 0, s: 1, a: 64, m: 127, p: 0 }, e: { on: 0, lo: 0, mid: 0, hi: 0, f: 1 }, x: { on: 0, m: 0, a: 64 } };
+const POL_IDS = [["c", "on"], ["c", "k"], ["c", "s"], ["c", "a"], ["c", "m"], ["e", "on"], ["e", "lo"], ["e", "mid"], ["e", "hi"], ["e", "f"],
+  ["x", "on"], ["x", "m"], ["x", "a"], ["c", "p"]];       // (web_polish's ids, in order; c.p, the part, appended)
+const POL_TRK = [[0, "DRUMS"], [4, "PERC"], [1, "SYNTH 1"], [2, "SYNTH 2"], [3, "SYNTH 3"], [5, "LEAD"]];   // (NTRK order k; 5 = LEAD)
+const POL_STY = [["GENTLE", "Glues the track together, barely there."], ["PUNCH", "Lets each hit through, holds the rest: drums snap."],
+  ["SQUASH", "Flat and loud: every hit as strong as the next."], ["PUMP", "A long let-go that breathes with the beat."]];
+const POL_EQ = [["FLAT", [0, 0, 0, 1]], ["WARM", [4, 2, -3, 0]], ["BRIGHT", [-1, 2, 5, 3]], ["SMILE", [5, -3, 4, 1]], ["LO-FI", [-10, 6, -10, 2]]];
+const POL_MIDF = ["250 Hz", "700 Hz", "1.5 kHz", "3.5 kHz"];
+const POL_X = [["AIR", "Sparkle on top: cymbals, breath and shine above 5 kHz."], ["SHINE", "Brighter presence for leads, keys and voices."],
+  ["WARM", "Tube-like body in the middle: thicker, rounder."], ["BASS", "Bass you can hear on phone and laptop speakers."]];
+let pol = structuredClone(POL_DEF), polNode = null, grHold = 0;
+const polSendTo = (n) => { if (n) POL_IDS.forEach(([m, f], id) => n.port.postMessage({ type: "polish", id, v: pol[m][f] | 0 })); };
+const polSendOne = (m, f) => send({ type: "polish", id: POL_IDS.findIndex(([a, b]) => a === m && b === f), v: pol[m][f] | 0 });
+function polState() { return pol.c.on || pol.e.on || pol.x.on ? structuredClone(pol) : null; }
+function polSave() { try { localStorage.setItem(POLKEY, JSON.stringify(pol)); } catch {} }
+function polApply(st) {                                   // (a song's POLISH: a project file, a code, this browser's; null: all off)
+  const n = structuredClone(POL_DEF);
+  if (st && typeof st === "object") for (const [m, f] of POL_IDS) if (Number.isFinite(st[m] && st[m][f])) n[m][f] = st[m][f];
+  for (const [m, f] of POL_IDS) {
+    const [lo, hi] = POL_RANGE[m + f];
+    n[m][f] = Math.max(lo, Math.min(hi, Math.round(n[m][f])));
+  }
+  pol = n;
+  polSave(); polShow(); polSendTo(node);
+}
+const POL_RANGE = { cp: [0, 2], con: [0, 1], ck: [0, 5], cs: [0, 3], ca: [0, 127], cm: [0, 127], eon: [0, 1], elo: [-12, 12], emid: [-12, 12], ehi: [-12, 12], ef: [0, 3],
+  xon: [0, 1], xm: [0, 3], xa: [0, 127] };
+function polSet(m, f, v, quiet) {
+  const [lo, hi] = POL_RANGE[m + f];
+  v = Math.max(lo, Math.min(hi, Math.round(v)));
+  if (pol[m][f] === v && f !== "on") return;
+  pol[m][f] = v;
+  polSendOne(m, f);
+  if (f !== "on" && !pol[m].on && !quiet) { pol[m].on = 1; polSendOne(m, "on"); }   // (touching an off one turns it on)
+  polSave(); polShow();
+}
+// the controls
+function chipRow(box, items, pick) {
+  return items.map(([lab, tip], i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "btn chip"; b.textContent = lab;
+    if (tip) b.title = tip;
+    b.addEventListener("click", () => pick(i));
+    box.append(b);
+    return b;
+  });
+}
+const pcTrk = chipRow($("pctrk"), POL_TRK.map(([, n]) => [n, `Compress ${n}`]), (i) => {
+  if (pol.c.k !== POL_TRK[i][0] && pol.c.p) polSet("c", "p", 0, true);   // (another track: the whole of it)
+  polSet("c", "k", POL_TRK[i][0]);
+});
+// the part (Ed, Nov 25: "any kind of kick and snare as well as either option on the two note Perc track"): on DRUMS
+// the whole kit, its KICK or its SNARE; on PERC both sounds or either one (named by the guide's polk)
+let polk = [1, "PERC 1", "PERC 2"];
+const pcPart = chipRow($("pcpart"), [["ALL", ""], ["", ""], ["", ""]], (i) => polSet("c", "p", i));
+const polPartName = () => pol.c.k === 0 ? ["WHOLE KIT", "KICK", "SNARE"][pol.c.p] : pol.c.k === 4 ? ["BOTH", polk[1], polk[2]][pol.c.p] : "";
+const pcSty = chipRow($("pcsty"), POL_STY, (i) => polSet("c", "s", i));
+const peSet = chipRow($("peset"), POL_EQ.map(([n]) => [n, `EQ preset: ${n}`]), (i) => {
+  const [lo, mid, hi, f] = POL_EQ[i][1];
+  for (const [k, v] of [["lo", lo], ["mid", mid], ["hi", hi], ["f", f]]) polSet("e", k, v, true);
+  if (!pol.e.on && i) { pol.e.on = 1; polSendOne("e", "on"); polSave(); polShow(); }
+});
+const pxMode = chipRow($("pxmode"), POL_X, (i) => polSet("x", "m", i));
+const pct = (v) => Math.round(v / 1.27) + "%", dB = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v) + " dB";
+const polKnobs = [
+  [$("pck"), "c", "a", "AMOUNT", 4, pct, "How hard it squeezes. It keeps the track about as loud, so turn it by ear."],
+  [$("pck"), "c", "m", "MIX", 4, pct, "100%: all squeezed. Less blends the untouched track back in under it (parallel)."],
+  [$("pek"), "e", "lo", "LOW", 1, dB, "Bass: kick, bass, warmth (a shelf under 110 Hz)."],
+  [$("pek"), "e", "mid", "MID", 1, dB, "The middle, at MID AT: boxy, honky or present."],
+  [$("pek"), "e", "hi", "HIGH", 1, dB, "Treble: hats, air, fizz (a shelf over 7.5 kHz)."],
+  [$("pek"), "e", "f", "MID AT", 1, (v) => POL_MIDF[v], "Where MID works: 250 Hz (body), 700 Hz (box), 1.5 kHz (honk), 3.5 kHz (presence)."],
+  [$("pxk"), "x", "a", "AMOUNT", 4, pct, "How much of the new harmonics go back in."],
+].map(([box, m, f, lab, step, show, tip]) => Object.assign(makeKnob(box, "polish", false), { m, f, step, show, tip, plab: lab }));
+function polTurn(k, n) { polSet(k.m, k.f, pol[k.m][k.f] + n * k.step); }
+document.querySelectorAll(".pon").forEach((b) => b.addEventListener("click", () => polSet(b.dataset.m, "on", pol[b.dataset.m].on ? 0 : 1)));
+$("poloff").addEventListener("click", () => { for (const m of ["c", "e", "x"]) if (pol[m].on) polSet(m, "on", 0); });
+function polShow() {
+  for (const k of polKnobs) {
+    const v = pol[k.m][k.f], [lo, hi] = POL_RANGE[k.m + k.f];
+    k.lab.textContent = k.plab;
+    knobName(k, k.plab);
+    k.val.textContent = k.show(v);
+    k.el.title = `${k.plab}: ${k.tip} (${k.show(v)})`;
+    setAngle(k, -135 + 270 * (v - lo) / (hi - lo));
+  }
+  for (const [m, el] of [["c", "pmc"], ["e", "pme"], ["x", "pmx"]]) {
+    const b = $(el).querySelector(".pon"), on = !!pol[m].on;
+    b.textContent = on ? "ON" : "OFF"; b.setAttribute("aria-pressed", on);
+    b.title = on ? "On: tap to turn it off (the settings stay)" : "Off: tap to turn it on";
+    $(el).classList.toggle("off", !on);
+  }
+  pcTrk.forEach((b, i) => b.classList.toggle("on", POL_TRK[i][0] === pol.c.k));
+  {
+    const kit = pol.c.k === 4 || (pol.c.k === 0 && polk[0]), labs = pol.c.k === 0 ? ["WHOLE KIT", "KICK", "SNARE"] : ["BOTH", polk[1], polk[2]];
+    $("pcpartrow").hidden = !(pol.c.k === 0 || pol.c.k === 4);
+    $("pcpartlab").textContent = pol.c.k === 0 && !polk[0] ? "PART (DRUMS isn't playing a kit: the whole track)" : "PART";
+    pcPart.forEach((b, i) => {
+      b.textContent = labs[i];
+      b.disabled = !kit && i > 0;
+      b.classList.toggle("on", i === (kit ? pol.c.p : 0));
+      b.title = i ? `Squeeze only the ${labs[i]}: the rest of ${pol.c.k ? "PERC" : "the kit"} stays as it is` : `Squeeze all of ${pol.c.k ? "PERC" : "the kit"} together`;
+    });
+  }
+  pcSty.forEach((b, i) => b.classList.toggle("on", i === pol.c.s));
+  peSet.forEach((b, i) => { const p = POL_EQ[i][1]; b.classList.toggle("on", p[0] === pol.e.lo && p[1] === pol.e.mid && p[2] === pol.e.hi && (i === 0 || p[3] === pol.e.f)); });
+  pxMode.forEach((b, i) => b.classList.toggle("on", i === pol.x.m));
+  $("pchint").textContent = POL_TRK.find(([k]) => k === pol.c.k)[1] + (pol.c.p && polPartName() ? " · " + polPartName() : "") + ": " + POL_STY[pol.c.s][1];
+  $("pxhint").textContent = POL_X[pol.x.m][1];
+  $("polgo").classList.toggle("pl", !!(pol.c.on || pol.e.on || pol.x.on));
+  $("poloff").hidden = !(pol.c.on || pol.e.on || pol.x.on);
+  if (!pol.c.on) { $("grbar").style.width = "0"; $("grval").textContent = "—"; }
+  eqDraw();
+}
+// the EQ's curve: the device's three filters (felucca_web.c bq_make), their response drawn -15 .. +15 dB, 20 Hz .. 20 kHz
+function bqMag(type, f0, Q, db, f) {
+  const A = 10 ** (db / 40), w = 2 * Math.PI * f0 / 44100, c = Math.cos(w), sn = Math.sin(w), al = sn / (2 * Q), sq = 2 * Math.sqrt(A) * al;
+  let b0, b1, b2, a0, a1, a2;
+  if (type === "peak") { b0 = 1 + al * A; b1 = -2 * c; b2 = 1 - al * A; a0 = 1 + al / A; a1 = -2 * c; a2 = 1 - al / A; }
+  else if (type === "lsh") { b0 = A * ((A + 1) - (A - 1) * c + sq); b1 = 2 * A * ((A - 1) - (A + 1) * c); b2 = A * ((A + 1) - (A - 1) * c - sq);
+    a0 = (A + 1) + (A - 1) * c + sq; a1 = -2 * ((A - 1) + (A + 1) * c); a2 = (A + 1) + (A - 1) * c - sq; }
+  else { b0 = A * ((A + 1) + (A - 1) * c + sq); b1 = -2 * A * ((A - 1) + (A + 1) * c); b2 = A * ((A + 1) + (A - 1) * c - sq);
+    a0 = (A + 1) - (A - 1) * c + sq; a1 = 2 * ((A - 1) - (A + 1) * c); a2 = (A + 1) - (A - 1) * c - sq; }
+  const ww = 2 * Math.PI * f / 44100, cr = (x0, x1, x2) => [x0 + x1 * Math.cos(ww) + x2 * Math.cos(2 * ww), -(x1 * Math.sin(ww) + x2 * Math.sin(2 * ww))];
+  const [nr, ni] = cr(b0, b1, b2), [dr, di] = cr(a0, a1, a2);
+  return 10 * Math.log10((nr * nr + ni * ni) / (dr * dr + di * di));
+}
+function eqDraw() {
+  const cv = $("eqc"), r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  if (!r.width) return;
+  const W = Math.round(r.width * dpr), H = Math.round(r.height * dpr);
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const x = cv.getContext("2d"), css = getComputedStyle(document.documentElement), col = (v) => css.getPropertyValue(v).trim();
+  const yOf = (d) => H / 2 - d / 15 * (H / 2 - 4 * dpr), fOf = (i) => 20 * 1000 ** (i / W);
+  x.clearRect(0, 0, W, H);
+  x.lineWidth = dpr;
+  x.strokeStyle = col("--rule");
+  for (const f of [100, 1000, 10000]) { const px = Math.log(f / 20) / Math.log(1000) * W; x.beginPath(); x.moveTo(px, 0); x.lineTo(px, H); x.stroke(); }
+  for (const d of [-12, 0, 12]) { x.globalAlpha = d ? .5 : 1; x.beginPath(); x.moveTo(0, yOf(d)); x.lineTo(W, yOf(d)); x.stroke(); }
+  x.globalAlpha = 1;
+  x.beginPath();
+  for (let i = 0; i <= W; i += 2) {
+    const f = fOf(i), d = bqMag("lsh", 110, .707, pol.e.lo, f) + bqMag("peak", [250, 700, 1500, 3500][pol.e.f], .9, pol.e.mid, f) + bqMag("hsh", 7500, .707, pol.e.hi, Math.min(f, 21000));
+    i ? x.lineTo(i, yOf(d)) : x.moveTo(i, yOf(d));
+  }
+  x.strokeStyle = pol.e.on ? col("--yellow") : col("--soft");
+  x.lineWidth = 2.5 * dpr;
+  x.stroke();
+  x.lineTo(W, yOf(0)); x.lineTo(0, yOf(0)); x.closePath();
+  x.globalAlpha = .18; x.fillStyle = pol.e.on ? col("--yellow") : col("--soft"); x.fill(); x.globalAlpha = 1;
+  x.fillStyle = col("--soft"); x.font = `${13 * dpr}px ${col("--mono") || "monospace"}`;
+  for (const [f, t] of [[100, "100"], [1000, "1k"], [10000, "10k"]]) x.fillText(t, Math.log(f / 20) / Math.log(1000) * W + 3 * dpr, H - 4 * dpr);
+}
+addEventListener("resize", () => { if (paneNow === "polish") eqDraw(); });
+function polMeter(gr) {                                    // (the guide's polgr: the deepest since its last, dB x 10)
+  if (!pol.c.on) return;
+  grHold = Math.max(gr | 0, grHold * 0.6);
+  const d = grHold / 10;
+  $("grbar").style.width = Math.min(100, d / 24 * 100) + "%";
+  $("grval").textContent = d >= 0.1 ? "−" + d.toFixed(1) + " dB" : "0 dB";
+}
+try { polApply(JSON.parse(localStorage.getItem(POLKEY) || "null")); } catch { polApply(null); }
 knobEls.forEach((k, i) => { k.lab.textContent = "KNOB " + (i + 1); setAngle(k, -135); });
 const wheelEls = WHEELS.map((w) => Object.assign(makeKnob($("wheels"), w.role, true), w));
 wheelEls.forEach((w) => { w.val.textContent = w.hint; });
@@ -1887,6 +2125,9 @@ function showGuide(g) {
   smpTrack(g);
   mixerShow(g, order);
   if (palNode !== node && node) { palNode = node; if (g.pal !== screenPalIndex()) screenPalSend(); }   // (a new start: the screen's colours)
+  if (polNode !== node && node) { polNode = node; polSendTo(node); }   // (a new start: POLISH as the page has it)
+  if (g.polgr !== undefined) polMeter(g.polgr);
+  if (g.polk && g.polk.join() !== polk.join()) { polk = g.polk; polShow(); }   // (DRUMS a kit?, PERC's two sounds)
   {
     const st = `<b>${g.play ? "PLAYING" : "STOPPED"}</b> · ${g.bpm} BPM<br>PATTERN ${letter(g.cur)}${g.queue >= 0 ? " → " + letter(g.queue) : ""}<br>SAVED IN THIS BROWSER`;
     if ($("railstat").innerHTML !== st) $("railstat").innerHTML = st;
@@ -2183,7 +2424,7 @@ $("midiroute").addEventListener("change", () => {
 
 // ------------------------------------------------------------------ switching on
 const say = (t) => { $("status").textContent = t; };
-let ac = null, wasmBytes = null, onPort = null, warned = false;
+let ac = null, wasmBytes = null, onPort = null, warned = false, chimed = false;   // (chimed: the start-up chime plays once a page load)
 async function boot(sectors, song) {
   const n = new AudioWorkletNode(ac, "felucca", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
   await new Promise((res, rej) => {
@@ -2201,7 +2442,8 @@ async function boot(sectors, song) {
         }
       } else if (onPort) onPort(m);
     };
-    n.port.postMessage({ type: "load", wasm: wasmBytes.slice(0), sectors, song, master: masterValue, plain: !power });
+    n.port.postMessage({ type: "load", wasm: wasmBytes.slice(0), sectors, song, master: masterValue, plain: !power, chime: !chimed });
+    chimed = true;
   });
   smp.forEach((s, k) => s && smpSend(k, n.port));         // (the user samples: the device keeps them in RAM)
   n.connect(ac.destination);
@@ -2234,6 +2476,8 @@ async function switchOn(withSong) {
       if (withSong) st = sharedPads; else try { st = JSON.parse(localStorage.getItem(PADKEY) || "null"); } catch {}
       sharedPads = null;
       setTimeout(() => padsApply(st), 300);
+      if (withSong) polApply(sharedPolish);                // (POLISH: the code's; else this browser's, as loaded)
+      sharedPolish = null;
     }
     await ac.resume();
     $("start").hidden = true;
@@ -2774,7 +3018,7 @@ $("sccreate").addEventListener("click", () => setScene("create"));
 $("scjam").addEventListener("click", () => setScene("jam"));
 // Control Room (Ed, Nov 24): the side menu's panels under the device and the mixer; JAM PADS is the JAM scene (the FX
 // keys), the others CREATE. Remembered in this browser.
-const PANEKEY = "spelunkr-groovebox-pane", PANES = { tracks: ".guide", vapor: ".vappanel", samples: ".samples", jam: ".fxpad" };
+const PANEKEY = "spelunkr-groovebox-pane", PANES = { tracks: ".guide", vapor: ".vappanel", samples: ".samples", polish: ".polish", jam: ".fxpad" };
 let paneNow = "tracks";
 function setPane(pn, quiet) {
   if (!PANES[pn]) pn = "tracks";
@@ -2784,6 +3028,7 @@ function setPane(pn, quiet) {
   for (const b of document.querySelectorAll(".tab[data-pane]")) b.setAttribute("aria-selected", String(b.dataset.pane === pn));
   setScene(pn === "jam" ? "jam" : "create", quiet);
   try { sidePlace(); } catch {}                           // (the controls: beside the device, or under the screen on JAM PADS)
+  if (pn === "polish") requestAnimationFrame(() => { try { eqDraw(); } catch {} });
   try { localStorage.setItem(PANEKEY, pn); } catch {}
 }
 for (const b of document.querySelectorAll(".tab[data-pane]")) if (b.id !== "smpgo") b.addEventListener("click", () => setPane(b.dataset.pane));
@@ -2806,6 +3051,7 @@ function setTheme(t) {
   if (m) m.content = getComputedStyle(document.documentElement).getPropertyValue("--indigo").trim() || "#1C0A57";
   try { localStorage.setItem(THEMEKEY, t); } catch {}
   if (typeof smpDraw === "function") try { smpDraw(); } catch {}
+  try { eqDraw(); } catch {}                              // (POLISH's curve: the theme's colours)
   try { screenPalSend(); } catch {}                       // (not yet at the first call: the SCREEN picker comes next)
 }
 for (const [id, nm] of THEMES) $("theme").append(new Option(nm, id));
@@ -3809,7 +4055,7 @@ $("saveproj").addEventListener("click", async () => {
   for (const [off, u8] of Object.entries(m.sectors)) sectors[off] = b64(u8);
   saveFlash(m.sectors);
   const samples = smp.map((s, k) => s && { k, ...stored(s), pcm16: SPK.b64of(new Uint8Array(SPK.toInt16(s.pcm, 0).buffer)) }).filter(Boolean);
-  download(new Blob([JSON.stringify({ format: PROJ_FORMAT, version: 1, app: "spelunkr-groovebox", firmware: "@VERSION@", saved: new Date().toISOString(), sectors, samples, pads: padsState() })],
+  download(new Blob([JSON.stringify({ format: PROJ_FORMAT, version: 1, app: "spelunkr-groovebox", firmware: "@VERSION@", saved: new Date().toISOString(), sectors, samples, pads: padsState(), polish: polState() })],
                     { type: "application/json" }), `spelunkr-${stamp()}.phantom`);
   studioSay("Saved: OPEN that file here later to carry on.");
 });
@@ -3837,6 +4083,7 @@ $("openproj").addEventListener("change", async (e) => {
     }
     await restart(sectors);
     setTimeout(() => padsApply(j.pads || null), 300);
+    polApply(j.polish || null);
     studioSay(`Opened ${f.name}${Array.isArray(j.samples) && j.samples.length ? ` with ${j.samples.length} sample${j.samples.length > 1 ? "s" : ""}` : ""}. Press Space to play.`);
   } catch (err) { studioSay("Couldn't open it: " + (err && err.message || err) + "."); }
 });
@@ -3848,7 +4095,7 @@ function hadSaves() { try { return !!localStorage.getItem(STORE); } catch { retu
 // back (SPGB_7K2QX9A); the page's address + #code opens it. No service set (SHARE_API empty): the long #song= link.
 const SHARE_API = "@SHARE_API@".startsWith("@") ? "" : "@SHARE_API@".replace(/\/+$/, "");
 const CODE_RE = /^SPGB_[2-9A-HJ-NP-Z]{7}$/;
-let sharedSamples = null, sharedPads = null;          // (a code's samples and locked FX pads: in when the song is opened)                               // (a code's samples: into their slots when the song is opened)
+let sharedSamples = null, sharedPads = null, sharedPolish = null;          // (a code's samples and locked FX pads: in when the song is opened)                               // (a code's samples: into their slots when the song is opened)
 const gz = async (u8, how) => new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(how)).arrayBuffer());
 function codeOf(text) {                                  // a code from a code, a link or a #hash, any case
   const m = /SPGB_[A-Z0-9]{7}/i.exec(String(text || ""));
@@ -3866,13 +4113,13 @@ async function fetchCode(code) {
   if (!r.ok) throw new Error(`the song store said ${r.status}`);
   const j = JSON.parse(new TextDecoder().decode(await gz(new Uint8Array(await r.arrayBuffer()), new DecompressionStream("gzip"))));
   if (j.format !== "spgb-share" || typeof j.song !== "string") throw new Error("that code doesn't hold a groovebox song");
-  return { song: await unpackSong(j.song), samples: Array.isArray(j.samples) ? j.samples : [], pads: j.pads || null };
+  return { song: await unpackSong(j.song), samples: Array.isArray(j.samples) ? j.samples : [], pads: j.pads || null, polish: j.polish || null };
 }
 async function readShared() {
-  sharedSamples = null; sharedPads = null;
+  sharedSamples = null; sharedPads = null; sharedPolish = null;
   const code = codeOf(location.hash);
   if (code) {
-    try { const o = await fetchCode(code); sharedSamples = o.samples; sharedPads = o.pads; return o.song; }
+    try { const o = await fetchCode(code); sharedSamples = o.samples; sharedPads = o.pads; sharedPolish = o.polish; return o.song; }
     catch (err) { (node ? studioSay : say)(`Couldn't open ${code}: ${err && err.message || err}.`, true); return null; }
   }
   const m = /^#song=([A-Za-z0-9_-]+)/.exec(location.hash);
@@ -3912,7 +4159,7 @@ function sharePackageSamples(mask) {
   return out;
 }
 async function shareUpload(packed, samples) {
-  const body = await gz(new TextEncoder().encode(JSON.stringify({ format: "spgb-share", v: 1, app: "spelunkr-groovebox", firmware: "@VERSION@", song: packed, samples, pads: padsState() })),
+  const body = await gz(new TextEncoder().encode(JSON.stringify({ format: "spgb-share", v: 1, app: "spelunkr-groovebox", firmware: "@VERSION@", song: packed, samples, pads: padsState(), polish: polState() })),
                         new CompressionStream("gzip"));
   const r = await fetch(`${SHARE_API}/s`, { method: "POST", headers: { "Content-Type": "application/gzip" }, body });
   const j = await r.json().catch(() => ({}));
@@ -3954,6 +4201,7 @@ const TIPS = {
   "#smpgo": "SAMPLES: your own sounds. Load a file, trim it, slice it, put it on a track.",
   ".tab[data-pane=tracks]": "TRACKS: the song under the device: each track's patterns, mute, solo, the row tools.",
   ".tab[data-pane=vapor]": "VAPOR: slowed, warbly, dusty, crunchy, on the whole song.",
+  ".tab[data-pane=polish]": "POLISH: finish the mix. A compressor on one track, an EQ and an exciter on the whole song.",
   ".tab[data-pane=jam]": "JAM PADS: play over the song. The screen goes to the FX keys and the two FX PADs come out.",
   "#railplay": "PLAYLIST: up to 10 song codes, played back to back like an album.",
   "#railshare": "SHARE: a code and a link that play this song in anyone's browser (for a month).",
@@ -4087,6 +4335,7 @@ function newSong(random) {
     if (d.returnValue !== "go") return;
     node.port.postMessage({ type: "newsong", random });
     padsApply(null);                                    // (a new song: the locked FX pads off)
+    polApply(null);                                     // (and POLISH)
     studioSay(random ? "A random song: press PLAY (Space) to hear it. RANDOM again rolls another." : "A new song: pick a track and its sound, then make a beat.");
   };
   d.showModal();
@@ -4149,13 +4398,16 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "(the screen shows which key does what). Tap it again and the keys play notes." },
   { t: "15 · MAKE IT VAPOR", el: ".vapor", x: () => "Slow the whole song down, warp the tape, add crackle and crunch: tap <kbd>VAPORIZE</kbd> or use the four controls. "
       + "It's saved with the song." },
-  { t: "16 · YOUR OWN SAMPLES", el: "#smpgo", x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file (a long one keeps its first 30 seconds), "
+  { t: "16 · POLISH IT", el: "#polish .pmods", x: () => "<kbd>POLISH</kbd> finishes the mix. The <b>COMPRESSOR</b> squeezes one track, "
+      + "or just the kick or snare (pick them, then a style: PUNCH on the kick is a classic), the <b>EQ</b> shapes the whole song's tone (try the presets), and the <b>EXCITER</b> adds "
+      + "sparkle or bass you can hear on small speakers. Picking a preset turns it on; it's saved with the song." },
+  { t: "17 · YOUR OWN SAMPLES", el: "#smpgo", x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file (a long one keeps its first 30 seconds), "
       + "trim it, slice it, hear it (<kbd>■ STOP</kbd> stops it), and put it on a track as a synth, as chops on the keys, or as a drum kit." },
-  { t: "17 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>FILE</kbd> \u25B8 SAVE PROJECT downloads a project file (your samples too) "
+  { t: "18 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>FILE</kbd> \u25B8 SAVE PROJECT downloads a project file (your samples too) "
       + "and OPEN PROJECT brings it back. <kbd>SHARE</kbd> \u25B8 SHARE THIS SONG gives a short code (SPGB_…) and a link, carrying the samples your song uses: "
       + "whoever opens the link, or types the code into SHARE \u25B8 OPEN A CODE, hears your song and can carry on from it. "
       + "A code lasts a month from when it was made; each SHARE makes a new one." },
-  { t: "18 · EXPORT", el: "#bounce", x: () => "<kbd>AUDIO</kbd> \u25B8 EXPORT WAV makes the WAV: the song once through (or the pattern looped), with a WAV for each track if you like. "
+  { t: "19 · EXPORT", el: "#bounce", x: () => "<kbd>AUDIO</kbd> \u25B8 EXPORT WAV makes the WAV: the song once through (or the pattern looped), with a WAV for each track if you like. "
       + "RECORD LIVE, in the same menu, records you playing live instead. That's a whole song: have fun!" },
 ];
 let tourAt = -1, tourEl = null;
@@ -4183,6 +4435,7 @@ function tourShow(i) {
   if (tourEl && tourEl.closest(".fxpad")) setPane("jam");
   else if (tourEl && tourEl.closest(".vappanel")) setPane("vapor");
   else if (tourEl && tourEl.closest(".samples")) setPane("samples");
+  else if (tourEl && tourEl.closest(".polish")) setPane("polish");
   else if (tourEl && tourEl.closest(".guide")) setPane("tracks");
   const dd = tourEl && tourEl.closest(".dd");            // (an item in a top menu: the menu opened, all of it lit)
   if (dd) { ddOpen(dd); tourEl = dd.querySelector(".ddm"); }
@@ -4270,9 +4523,10 @@ addEventListener("hashchange", async () => {
   if (rec) recDone();
   sharedSong = song;
   sharedSamplesIn();
-  const pads = sharedPads; sharedPads = null;
+  const pads = sharedPads, polish = sharedPolish; sharedPads = sharedPolish = null;
   await restart(loadFlash(), song);
   setTimeout(() => padsApply(pads), 300);
+  polApply(polish);
   sharedDone(true);
 });
 $("share").addEventListener("click", async () => {
@@ -4433,6 +4687,8 @@ async function plPlay(i) {
     }
     if (o.pads && Array.isArray(o.pads.p))                         // (its locked FX pads)
       o.pads.p.forEach((v, j) => { if (j < 2 && Array.isArray(v)) n.port.postMessage({ type: "xy", j, x: v[0] | 0, y: v[1] | 0, on: 1, k: o.pads.k }); });
+    if (o.polish && typeof o.polish === "object")                 // (its POLISH: the device clamps the values)
+      POL_IDS.forEach(([m, f], id) => { const v = o.polish[m] && o.polish[m][f]; if (Number.isFinite(v)) n.port.postMessage({ type: "polish", id, v: v | 0 }); });
     n.port.postMessage({ type: "visible", on: false });           // (its frames 4 a second: only whether it plays)
     n.connect(ac.destination);
     pl.n = n;

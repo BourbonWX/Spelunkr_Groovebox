@@ -1070,6 +1070,7 @@ static __attribute__((noinline)) void mix_spread(track_t *t, int32_t *b, uint32_
         perf_mute_sd((uint32_t)(t - trk), b, d, n);
     if (xy_feed_want(k))
         xy_feed(t, b, d, n);                            /* the FX PAD, the FEED's (0.9.15: fxpad.c) */
+    POLISH_TRACK(k, b, d, n);                           /* (the page's POLISH compressor: felucca_web.c) */
     {
     int32_t es = xpf[k].es, et = xy_send_to(k);
     for (i = 0; i < n; i++) {
@@ -1181,6 +1182,7 @@ static void mix_part(track_t *t, uint32_t n SM_DECL)
             perf_mute((uint32_t)(t - trk), b, n);       /* perform.c: a black key in the FX layer */
         if (xy_feed_want((uint32_t)(t - trk) % NTRK))
             xy_feed(t, b, 0, n);                        /* the FX PAD, the FEED's (0.9.15: fxpad.c) */
+        POLISH_TRACK((uint32_t)(t - trk) % NTRK, b, 0, n);   /* (the page's POLISH compressor: felucca_web.c) */
     }
     if (!T_SPREAD(t)) {                                /* (the mix's values read after the calls: none is held over
                                                          * them, no spill in the loop: the ISR's cost as before 1.5) */
