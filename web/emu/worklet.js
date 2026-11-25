@@ -249,6 +249,8 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "track") { ex.web_track(m.k);                      // the Spelunkr page's controls
       } else if (m.type === "mute") { ex.web_mute(m.k);
       } else if (m.type === "solo") { ex.web_solo_toggle(m.k);
+      } else if (m.type === "palette") { if (ex.web_palette) ex.web_palette(m.i);       // (the screen's colours: the page's THEME)
+      } else if (m.type === "level") { if (ex.web_level) ex.web_level(m.k, m.v);           // (the page's mixer: P_LEVEL)
       } else if (m.type === "tool") { ex.web_tool(m.k, m.which);   // (the page's shortcuts: felucca_web.c)
       } else if (m.type === "leadfocus") { if (ex.web_lead_focus) ex.web_lead_focus(m.on ? 1 : 0);   // (LEAD: lead.c)
       } else if (m.type === "leadclear") { if (ex.web_lead_clear) ex.web_lead_clear();

@@ -12,20 +12,60 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%23FFE13A%22/%3E%3Ctext x=%228%22 y=%2213%22 font-size=%2213%22 text-anchor=%22middle%22 font-family=%22monospace%22 fill=%22%231C0A57%22%3ES%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=VT323&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
 <style>
 :root {
   --indigo: #1C0A57; --night: #0B0530; --panel: #0E1E78; --row: #13288F; --rowhot: #1D3BB8; --rest: #0A1660;
   --rule: #2F49C8; --rule2: #6C7CFF; --strip: #2B0E70; --yellow: #FFE13A; --gold: #F5C93A; --orange: #E2741F;
   --rust: #B5480F; --btn: #2E3FD8; --ink: #F4F4FF; --soft: #C9D2FF; --dim: #9FB4FF; --faint: #5D6CC0;
   --play: #3FBF6A; --rec: #FF6A5A;
+  --btndim: #23309F; --breath: #5A68F0; --litedge: #FFE98A; --hotedge: #FFB36B; --colnow: #4A1C9A; --queued: #4A3BB8;
+  --keyw: #E9ECFF; --keyink: #5A4FA0; --keydim: #8E98E8; --keydim2: #3C48B8; --slotsub: #FFE0C0;
+  --g1: #1C0A57; --g2: #3A1478; --g3: #8E2F6E; --g4: #D8661E; --rail: #120840;
   --head: 'Jersey 10', 'Arial Narrow', sans-serif; --mono: 'VT323', ui-monospace, Menlo, monospace;
   color-scheme: dark;
+}
+/* THEME picker (Control Room, Nov 24): the palettes, made from the original by moving each colour family (purple ground,
+ * blue panels, yellow accent, orange hot) to its own hue (scratchpad shots/recolor.js; out/2026-11-24/spelunkr/palettes) */
+:root[data-theme="mallneon"] {
+  --indigo: #480A57; --night: #230530; --panel: #125D6A; --row: #187380; --rowhot: #239AA8; --rest: #0D4853; --rule: #34A7B8;
+  --rule2: #6ADCF7; --strip: #630E70; --yellow: #FF44B8; --gold: #F544C1; --orange: #26D1C9; --rust: #16A490; --btn: #30ADCC;
+  --ink: #F5FBFE; --soft: #CCF6FC; --dim: #9AF2FA; --faint: #5BAAB8; --btndim: #277C91; --breath: #59CAE7; --litedge: #FF94DA;
+  --hotedge: #69F7F7; --colnow: #911C9A; --queued: #913BB8; --keyw: #EAFBFE; --keyink: #884FA0; --keydim: #8AD1E1; --keydim2: #3F95AA;
+  --slotsub: #C3FAFC; --g1: #480A57; --g2: #731478; --g3: #8E2F38; --g4: #26C6B7; --rail: #320840;
+}
+:root[data-theme="gamecart"] {
+  --indigo: #263B1C; --night: #141D0E; --panel: #41592D; --row: #4F6B37; --rowhot: #6A8B4A; --rest: #334723; --rule: #7A9C5B;
+  --rule2: #B0D497; --strip: #304E26; --yellow: #DEFA3F; --gold: #E5F03F; --orange: #D34C2E; --rust: #A9291B; --btn: #7CA75F;
+  --ink: #F9FCF7; --soft: #E3EFD9; --dim: #D0E3BB; --faint: #8CA37A; --btndim: #5C7B47; --breath: #9EC586; --litedge: #F0FC8D;
+  --hotedge: #F49476; --colnow: #45713B; --queued: #718F59; --keyw: #F3F9EF; --keyink: #6F8461; --keydim: #B8CEA8; --keydim2: #759460;
+  --slotsub: #FAD3C5; --g1: #263B1C; --g2: #33562C; --g3: #456E65; --g4: #CA422C; --rail: #1C2A14;
+}
+:root[data-theme="publicaccess"] {
+  --indigo: #392019; --night: #1A0D0B; --panel: #674529; --row: #7A5132; --rowhot: #9C6743; --rest: #543820; --rule: #AC7B56;
+  --rule2: #E0BA95; --strip: #4D2F22; --yellow: #EBCE76; --gold: #E4BE74; --orange: #2DBFBD; --rust: #1C9387; --btn: #B5885B;
+  --ink: #FDFAF6; --soft: #F3E2D5; --dim: #ECCEBD; --faint: #AE917A; --btndim: #8A6642; --breath: #D1AB83; --litedge: #F5E5BC;
+  --hotedge: #67E9EE; --colnow: #704C36; --queued: #8F5C55; --keyw: #FAF4EE; --keyink: #83625D; --keydim: #D7C0A9; --keydim2: #A37F5C;
+  --slotsub: #C6F6F9; --g1: #392019; --g2: #553928; --g3: #5E6D41; --g4: #2DB5AC; --rail: #271511;
+}
+:root[data-theme="snowday"] {
+  --indigo: #0E2C53; --night: #071C2E; --panel: #145F90; --row: #1A71A6; --rowhot: #2692CE; --rest: #104E79; --rule: #469BCF;
+  --rule2: #8ECBFC; --strip: #13346B; --yellow: #3AE8FF; --gold: #3AEFF5; --orange: #D82931; --rust: #AD172C; --btn: #4C99D9;
+  --ink: #F4F9FF; --soft: #CAEAFE; --dim: #BFE9FD; --faint: #75A6C6; --btndim: #2C78B4; --breath: #79B9EF; --litedge: #8AF6FF;
+  --hotedge: #F87372; --colnow: #224494; --queued: #417FB2; --keyw: #EAF6FE; --keyink: #537A9C; --keydim: #A9CEEB; --keydim2: #508FC2;
+  --slotsub: #FCC5C3; --g1: #0E2C53; --g2: #193373; --g3: #6D3489; --g4: #CF2737; --rail: #0B233D;
+}
+:root[data-theme="latelate"] {
+  --indigo: #272830; --night: #131417; --panel: #3C3E4A; --row: #484B5A; --rowhot: #606475; --rest: #2F313B; --rule: #717486;
+  --rule2: #ABADC0; --strip: #34353F; --yellow: #FFC03A; --gold: #F5AA3A; --orange: #E2711F; --rust: #B5450F; --btn: #77798F;
+  --ink: #F9F9FA; --soft: #E0E1E8; --dim: #C8CBD6; --faint: #888A95; --btndim: #585A6A; --breath: #9B9CB0; --litedge: #FFD68A;
+  --hotedge: #FFB16B; --colnow: #504F5D; --queued: #6D707C; --keyw: #F2F3F6; --keyink: #6E6F77; --keydim: #B5B6C1; --keydim2: #717383;
+  --slotsub: #FFDFC0; --g1: #272830; --g2: #3C3B46; --g3: #5F545E; --g4: #D8631E; --rail: #1C1D22;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--indigo); }
 body { min-height: 100vh; color: var(--ink); font: 21px/1.15 var(--mono);
-       background: linear-gradient(180deg, #1C0A57 0%, #3A1478 42%, #8E2F6E 76%, #D8661E 100%) fixed; }
+       background: linear-gradient(180deg, var(--g1) 0%, var(--g2) 42%, var(--g3) 76%, var(--g4) 100%) fixed; }
 button { font: inherit; color: inherit; }
 a { color: var(--yellow); }
 .h { font-family: var(--head); letter-spacing: .01em; }
@@ -36,10 +76,10 @@ a { color: var(--yellow); }
        touch-action: none; }
 .btn:hover { filter: brightness(1.12); }
 .btn:focus-visible, .key:focus-visible, .pad:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
-.btn.lit { background: var(--gold); color: var(--indigo); border-color: #FFE98A; }
-.btn.dim { background: #23309F; }
+.btn.lit { background: var(--gold); color: var(--indigo); border-color: var(--litedge); }
+.btn.dim { background: var(--btndim); }
 .btn.breath { animation: breath 1.13s ease-in-out infinite; }
-@keyframes breath { 50% { background: #5A68F0; } }
+@keyframes breath { 50% { background: var(--breath); } }
 .btn.held { box-shadow: inset 0 0 0 3px var(--yellow); }
 .btn.latched { box-shadow: inset 0 0 0 3px #79b8ff; }
 .btn.play { background: var(--play); color: var(--night); border-color: #9BF0B5; }
@@ -47,7 +87,7 @@ a { color: var(--yellow); }
 .btn.rec { background: var(--row); color: var(--rec); border-color: var(--rec); }
 .btn.rec.lit { background: var(--rec); color: var(--night); }
 .btn.quiet { background: var(--row); color: var(--soft); border-color: var(--rule); }
-.btn.orange { background: var(--orange); color: var(--indigo); border-color: #FFB36B; }
+.btn.orange { background: var(--orange); color: var(--indigo); border-color: var(--hotedge); }
 
 /* header */
 header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 20px;
@@ -279,7 +319,7 @@ body.boxpanel.mouseidle, body.boxpanel.mouseidle * { cursor: none !important; }
 .stepper .bar i { display: block; height: 100%; width: 0; background: var(--yellow); transition: width .08s; }
 .stepper.free .bar { visibility: hidden; }
 .stepper.nudge .val { animation: nudge .25s; }
-@keyframes nudge { 0% { background: #4A3BB8; } }
+@keyframes nudge { 0% { background: var(--queued); } }
 .knob.idle { opacity: .45; }
 .wheels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; border-top: 2px solid var(--rule); padding-top: 14px; }
 .wheels .stepper .lab { color: #fff; font-size: 21px; }
@@ -333,7 +373,7 @@ body.boxpanel.mouseidle, body.boxpanel.mouseidle * { cursor: none !important; }
 .ghead .c0 small { font: 18px var(--mono); color: var(--dim); }
 .ghead .col { flex: 1 1 0; min-width: 0; padding: 4px 10px; font: 24px var(--head); color: var(--yellow); border-left: 2px solid var(--rule); white-space: nowrap; overflow: hidden; }
 .ghead .col small { font: 18px var(--mono); color: var(--dim); }
-.ghead .col.now { background: #4A1C9A; }
+.ghead .col.now { background: var(--colnow); }
 .grow { display: flex; align-items: stretch; height: 60px; border-bottom: 2px solid var(--rule); position: relative; }
 .grow.sel { outline: 3px solid var(--yellow); outline-offset: -3px; z-index: 1; }
 .ghd { width: 430px; flex: 0 0 430px; display: flex; align-items: center; gap: 10px; padding: 0 10px; background: var(--panel); cursor: pointer; border: 0; text-align: left; }
@@ -347,7 +387,7 @@ body.boxpanel.mouseidle, body.boxpanel.mouseidle * { cursor: none !important; }
 .ghd .nm b { font: 24px/1 var(--head); font-weight: normal; color: #fff; }
 .ghd .nm span { font-size: 18px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ms { width: 32px; height: 32px; min-height: 0; padding: 0; font-size: 20px; background: var(--row); flex: none; }
-.ms.on { background: var(--yellow); color: var(--indigo); border-color: #FFE98A; }
+.ms.on { background: var(--yellow); color: var(--indigo); border-color: var(--litedge); }
 /* a row's tools (Ed, Nov 22): BEAT (a kit) RANDOM VARY CLEAR on that track, as SEQ held + a key does */
 .ghd .tools { display: grid; grid-template-columns: repeat(2, auto); gap: 3px; flex: none; }
 .ghd .tl { min-height: 0; height: 26px; padding: 0 6px; font-size: 15px; background: var(--row); }
@@ -362,7 +402,7 @@ body.boxpanel.mouseidle, body.boxpanel.mouseidle * { cursor: none !important; }
 .blk .bar i { position: absolute; inset: 0 auto 0 0; background: var(--dim); }
 .blk .head { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
 .blk.queued { animation: queued .5s steps(2) infinite; }
-@keyframes queued { 50% { background: #4A3BB8; } }
+@keyframes queued { 50% { background: var(--queued); } }
 .gempty { padding: 10px 14px; color: var(--soft); }
 
 /* the keys: fixed along the bottom */
@@ -370,16 +410,16 @@ body.boxpanel.mouseidle, body.boxpanel.mouseidle * { cursor: none !important; }
           padding: 10px 12px; background: rgba(11, 5, 48, .94); border-top: 3px solid var(--rule); flex-wrap: wrap; }
 .keybar .lab { font: 26px var(--head); color: var(--yellow); min-width: 80px; text-align: center; }
 .keys { position: relative; display: flex; gap: 3px; height: 120px; touch-action: none; }
-.key { width: 46px; height: 120px; background: #E9ECFF; border: 2px solid var(--rule2); border-radius: 0 0 6px 6px; padding: 0 0 4px; cursor: pointer;
+.key { width: 46px; height: 120px; background: var(--keyw); border: 2px solid var(--rule2); border-radius: 0 0 6px 6px; padding: 0 0 4px; cursor: pointer;
        display: flex; flex-direction: column; justify-content: flex-end; align-items: center; color: var(--indigo); font: 17px/1 var(--mono); }
-.key small { color: #5A4FA0; font-size: 15px; }
+.key small { color: var(--keyink); font-size: 15px; }
 .key.blk2 { position: absolute; top: 0; width: 30px; height: 74px; background: var(--night); color: var(--yellow); z-index: 1; border-radius: 0 0 5px 5px; }
 .key.on, .key:active { background: var(--yellow) !important; color: var(--indigo); }
-.key.dim { box-shadow: inset 0 -10px 0 #8E98E8; }
-.key.blk2.dim { box-shadow: inset 0 -10px 0 #3C48B8; }
+.key.dim { box-shadow: inset 0 -10px 0 var(--keydim); }
+.key.blk2.dim { box-shadow: inset 0 -10px 0 var(--keydim2); }
 .key.lit { box-shadow: inset 0 -14px 0 var(--orange); }
 .key.breath { animation: kbreath 1.13s ease-in-out infinite; }
-@keyframes kbreath { 50% { box-shadow: inset 0 -14px 0 #8E98E8; } }
+@keyframes kbreath { 50% { box-shadow: inset 0 -14px 0 var(--keydim); } }
 
 footer { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 10px 20px; margin-bottom: 150px;
          background: var(--night); font: 21px var(--head); }
@@ -428,7 +468,7 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
 .slot .t b { font: 21px/1 var(--head); font-weight: normal; }
 .slot .t span { font-size: 17px; color: var(--dim); white-space: nowrap; }
 .slot.on { background: linear-gradient(90deg, var(--orange), var(--rust)); border-color: var(--yellow); }
-.slot.on .t span { color: #FFE0C0; }
+.slot.on .t span { color: var(--slotsub); }
 .slot.empty .t b { color: var(--faint); }
 .sed { flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .sed.drag { outline: 3px dashed var(--yellow); outline-offset: 4px; }
@@ -518,16 +558,442 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   .slots { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sbar .hint { display: none; }
 }
+
+/* ================================================================ Control Room (Ed, Nov 24: the new default look)
+ * a side menu (.rail) beside everything; the device and the mixer always; under them one panel at a time (.lowp.on):
+ * TRACKS (the guide), VAPOR, SAMPLES, JAM (the FX PAD; the screen on the FX keys); the keys docked at the bottom */
+.app { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 100vh; }
+.stage { min-width: 0; display: flex; flex-direction: column; }
+.rail { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 14px 10px 160px;
+        background: var(--rail); border-right: 4px solid var(--rule); z-index: 6; }
+.rail .logo { width: auto; margin: 0 4px 14px; }
+.tabs { display: flex; flex-direction: column; gap: 4px; }
+.tab { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; font: 22px/1 var(--head); color: var(--soft); background: transparent;
+       border: 0; border-radius: 6px; cursor: pointer; text-align: left; text-decoration: none; white-space: nowrap; }
+.tab i { width: 10px; height: 10px; border-radius: 2px; background: var(--rule); flex: none; }
+.tab:hover { background: var(--rowhot); color: #fff; }
+.tab:focus-visible { outline: 3px solid var(--yellow); outline-offset: 1px; }
+.tab[aria-selected="true"] { background: linear-gradient(90deg, var(--orange), var(--rust)); color: #fff; box-shadow: inset 0 0 0 2px var(--yellow); }
+.tab[aria-selected="true"] i { background: var(--yellow); }
+.rail hr { border: 0; border-top: 2px solid var(--strip); margin: 8px 4px; }
+.railfoot { margin-top: auto; padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.railstat { padding: 8px 10px; border: 2px solid var(--strip); border-radius: 8px; font-size: 18px; color: var(--soft); line-height: 1.25; }
+.railstat b { color: var(--yellow); font-weight: normal; }
+.theme { display: flex; flex-direction: column; gap: 4px; font: 18px var(--head); color: var(--yellow); }
+.theme select { font: 19px var(--mono); background: var(--night); color: #fff; border: 2px solid var(--rule2); padding: 3px 6px; min-height: 38px; }
+.rail .power { font-size: 19px; }
+.scenes { display: none !important; }
+header, header[class] { background: var(--indigo) !important; }
+header nav { margin-left: 0; }
+main { max-width: 1640px; width: 100%; }
+.panel { border-radius: 8px; overflow: hidden; }
+.guide.panel { overflow-x: auto; }
+.panel .title b::before, .trackbar .num::before { content: "● "; font-size: .7em; vertical-align: .12em; color: var(--yellow); }
+body[data-pane] .lowp:not(.on) { display: none !important; }
+.lowp.on { display: flex; }
+.guide.lowp.on { display: block; }
+/* the mixer */
+.mixer { display: flex; flex-direction: column; }
+.mixer .title { display: flex; align-items: baseline; gap: 10px; padding: 6px 14px; }
+.mixer .title b { font: 28px/1 var(--head); color: var(--yellow); }
+.mixer .title span { color: var(--soft); }
+.strips { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; padding: 12px; flex: 1 1 auto; }
+.mstrip { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 2px; background: var(--strip); border-radius: 6px; min-width: 0; }
+.mstrip.sel { background: linear-gradient(180deg, var(--orange), var(--rust)); box-shadow: inset 0 0 0 2px var(--yellow); }
+.mstrip .mn { font: 19px/1 var(--head); color: #fff; background: none; border: 0; cursor: pointer; min-height: 32px; padding: 0 2px; white-space: nowrap; max-width: 100%; overflow: hidden; }
+.mstrip .mn:focus-visible { outline: 3px solid var(--yellow); }
+.mstrip .lvv { font-size: 19px; color: var(--yellow); }
+.mstrip.sel .lvv { color: #fff; }
+.fader { writing-mode: vertical-lr; direction: rtl; width: 34px; height: 230px; flex: 1 1 auto; min-height: 120px; margin: 0; accent-color: var(--yellow); cursor: ns-resize; }
+.mstrip .msb { display: flex; gap: 3px; }
+.mstrip .ms { width: 28px; height: 28px; font-size: 17px; }
+.mstrip.muted .fader { opacity: .4; }
+@media (min-width: 1281px) {
+  main, body.jam main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 400px); align-items: stretch;
+         grid-template-areas: "dev mix" "msg msg" "low low"; }
+  .device { grid-area: dev; } .mixer { grid-area: mix; } #studiomsg { grid-area: msg; margin: 0; }
+  .guide, .vappanel, .samples, .fxpad { grid-area: low; }
+  body.jam .pads { flex-direction: row; padding: 14px; gap: 30px; }
+  body.jam .pad, .pad { width: 230px; height: 230px; }
+  body.jam .fxpad .hint { display: block; }
+}
+@media (max-width: 1280px) {
+  .device { order: 1; } .mixer { order: 2; } #studiomsg { order: 3; } .lowp { order: 4; }
+  .fader { height: 160px; }
+}
+/* a laptop's width: the screen and the face buttons side by side, the controls in two rows of four under them */
+@media (min-width: 1281px) and (max-width: 1899px) {
+  main, body.jam main { grid-template-columns: minmax(0, 1fr) minmax(300px, 340px); }
+  .device .body { display: grid; grid-template-columns: 216px auto; justify-content: center; align-items: start; gap: 14px; }
+  .device .side { grid-column: 1 / -1; gap: 10px; }
+  .device .knobs, .device .wheels { grid-template-columns: repeat(4, minmax(0, 148px)); justify-content: center; }
+  .device .wheels { padding-top: 10px; }
+}
+.vappanel.lowp.on .vknobs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.keybar { left: 220px; }
+body.boxv .rail { display: none; }
+body.boxv .app { grid-template-columns: minmax(0, 1fr); }
+body.boxv .keybar { left: 0; }
+@media (max-width: 720px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: relative; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; border-right: 0; border-bottom: 3px solid var(--rule); overflow: visible; }
+  .rail .logo { margin: 0 6px 0 0; } .rail .logo span { font-size: 19px; }
+  .tabs { flex-direction: row; flex-wrap: wrap; gap: 4px; width: 100%; order: 3; }
+  .tabs .tab { flex: 1 1 0; justify-content: center; padding: 0 4px; font-size: 18px; } .tab i { display: none; }
+  .rail hr, .railstat { display: none; }
+  #railplay, #railshare { display: none; }               /* (SHARE's menu at the top has both) */
+  .railfoot { order: 2; margin: 0 0 0 auto; padding: 0; flex-direction: row; align-items: center; gap: 6px; }
+  .theme { flex-direction: row; align-items: center; font-size: 0; } .theme select { min-height: 36px; font-size: 17px; max-width: 128px; }
+  .rail .power { font-size: 16px; padding: 2px 8px; min-height: 36px; }
+  .keybar { left: 0; }
+  .strips { gap: 4px; padding: 8px; } .fader { height: 140px; } .mstrip .mn { font-size: 16px; }
+  .vappanel.lowp.on .vknobs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ================================================================ SKIN: PRIME TIME (Ed, Nov 25): the cable TV guide over
+ * the Control Room layout: square chunky panels with a hard drop shadow, the side menu as a channel list (numbers, the
+ * orange slab behind the logo), listing strips with a yellow tab, zebra rows, faint scanlines on the page. Colours stay
+ * the THEME's (every var), so each skin works with every theme. */
+:root[data-skin="primetime"] body { background-image: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, .13) 2px 4px),
+  linear-gradient(180deg, var(--g1) 0%, var(--g2) 38%, var(--g3) 74%, var(--g4) 100%); background-attachment: fixed; }
+:root[data-skin="primetime"] .panel { border-radius: 0; border-width: 4px; box-shadow: 0 0 0 3px var(--night), 8px 8px 0 3px rgba(0, 0, 0, .35); }
+:root[data-skin="primetime"] .panel .title b::before, :root[data-skin="primetime"] .trackbar .num::before { content: none; }
+:root[data-skin="primetime"] .panel > .title.strip, :root[data-skin="primetime"] .vapor > .title.strip, :root[data-skin="primetime"] .trackbar.strip,
+:root[data-skin="primetime"] .ghead.strip { border-left: 10px solid var(--yellow); }
+:root[data-skin="primetime"] .panel .title b, :root[data-skin="primetime"] .trackbar .num { letter-spacing: .06em; text-transform: uppercase; }
+:root[data-skin="primetime"] .rail { background: var(--indigo); border-right: 4px solid var(--night); box-shadow: inset -3px 0 0 var(--rule); padding-top: 0; }
+:root[data-skin="primetime"] .rail .logo { margin: 0 -10px 12px; padding: 14px 14px; background: var(--orange); border-bottom: 4px solid var(--night); }
+:root[data-skin="primetime"] .rail .logo span { color: var(--indigo); }
+:root[data-skin="primetime"] .tabs { counter-reset: ch 1; gap: 0; border: 3px solid var(--rule); background: var(--panel); }
+:root[data-skin="primetime"] .tab { border-radius: 0; border-bottom: 2px solid var(--rule); color: #fff; }
+:root[data-skin="primetime"] .tabs .tab:last-child { border-bottom: 0; }
+:root[data-skin="primetime"] .tab i { display: none; }
+:root[data-skin="primetime"] .tabs .tab::before { counter-increment: ch; content: counter(ch); font: 26px/1 var(--head); color: var(--yellow); width: 26px; text-align: right; }
+:root[data-skin="primetime"] .tab[aria-selected="true"]::before { color: #fff; }
+:root[data-skin="primetime"] #railplay, :root[data-skin="primetime"] #railshare { border-radius: 0; border: 2px solid var(--rule); margin-top: 4px; background: var(--panel); color: #fff; }
+:root[data-skin="primetime"] .rail hr { display: none; }
+:root[data-skin="primetime"] .railstat { border-radius: 0; border: 3px solid var(--rule); background: var(--night); color: var(--ink); }
+:root[data-skin="primetime"] .songbar { background: var(--strip); border-bottom: 4px solid var(--rule); }
+:root[data-skin="primetime"] header { border-bottom: 4px solid var(--rule); }
+:root[data-skin="primetime"] .mstrip { border-radius: 0; }
+:root[data-skin="primetime"] .bezel { border-radius: 0; border-width: 4px; box-shadow: 6px 6px 0 rgba(0, 0, 0, .4); }
+:root[data-skin="primetime"] .grow:nth-child(even):not(.sel) .ghd { background: var(--row); }
+:root[data-skin="primetime"] .grow:nth-child(even) .blk:not(.now):not(.rest) { filter: brightness(.9); }
+:root[data-skin="primetime"] .keybar { background: var(--indigo); border-top: 4px solid var(--yellow); }
+:root[data-skin="primetime"] footer { border-top: 4px solid var(--rule); }
+@media (max-width: 720px) {
+  :root[data-skin="primetime"] .rail { padding-top: 8px; box-shadow: none; border-right: 0; border-bottom: 4px solid var(--rule); }
+  :root[data-skin="primetime"] .rail .logo { margin: 0 6px 0 0; padding: 6px 10px; border: 3px solid var(--night); }
+  :root[data-skin="primetime"] .tabs { counter-reset: none; } :root[data-skin="primetime"] .tabs .tab::before { content: none; }
+  :root[data-skin="primetime"] .tabs .tab { border-bottom: 0; border-right: 2px solid var(--rule); }
+  :root[data-skin="primetime"] .tabs .tab:last-child { border-right: 0; }
+}
+
+/* ================================================================ SKIN: SPGB AMP (Ed, Nov 25): a late-90s desktop media
+ * player over the same layout: every panel a bevelled window with a pinstriped title bar (the name in the middle), small
+ * bevelled buttons, glowing LCD readouts (the track bar, tempo / swing, the status box), the tracks as a playlist window,
+ * the mixer as an equaliser, a dark desktop behind. Colours only through the theme's vars. */
+:root[data-skin="amp"] { --bev: var(--rule2) var(--night) var(--night) var(--rule2); --bevin: var(--night) var(--rule2) var(--rule2) var(--night); }
+:root[data-skin="amp"] body { background: radial-gradient(circle at 18% 8%, var(--strip) 0, var(--indigo) 45%, var(--night) 100%) fixed; }
+:root[data-skin="amp"] .panel { border-radius: 0; border: 3px solid; border-color: var(--bev); background: var(--panel); box-shadow: 6px 6px 0 rgba(0, 0, 0, .45); }
+:root[data-skin="amp"] .panel > .title.strip, :root[data-skin="amp"] .vapor > .title.strip {
+  display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 26px; padding: 2px 8px;
+  background: linear-gradient(180deg, var(--orange), var(--rust)); border-bottom: 2px solid var(--night); }
+:root[data-skin="amp"] .panel > .title.strip::before, :root[data-skin="amp"] .panel > .title.strip::after,
+:root[data-skin="amp"] .vapor > .title.strip::before, :root[data-skin="amp"] .vapor > .title.strip::after {
+  content: ""; flex: 1 1 0; min-width: 12px; height: 10px; background: repeating-linear-gradient(180deg, var(--yellow) 0 2px, transparent 2px 4px); opacity: .85; }
+:root[data-skin="amp"] .panel .title b { font-size: 19px !important; letter-spacing: .18em; color: var(--yellow); text-shadow: 0 1px 0 var(--night); }
+:root[data-skin="amp"] .panel .title b::before { content: none; }
+/* the device and the tracks have no title strip of their own: their title bars drawn here */
+:root[data-skin="amp"] .device::before, :root[data-skin="amp"] .guide::before { display: block; min-height: 26px; padding: 3px 0 0; text-align: center;
+  font: 19px/1 var(--head); letter-spacing: .18em; color: var(--yellow); text-shadow: 0 1px 0 var(--night); border-bottom: 2px solid var(--night);
+  background: linear-gradient(90deg, transparent 0 38%, var(--rust) 38% 62%, transparent 62%),
+    repeating-linear-gradient(180deg, var(--yellow) 0 2px, transparent 2px 4px) center / calc(100% - 24px) 10px no-repeat,
+    linear-gradient(180deg, var(--orange), var(--rust)); }
+:root[data-skin="amp"] .device::before { content: "SPGB AMP"; }
+:root[data-skin="amp"] .guide::before { content: "TRACK EDITOR"; position: sticky; left: 0; }
+:root[data-skin="amp"] .panel .title span { font-size: 15px; color: #fff; opacity: .85; white-space: nowrap; }
+:root[data-skin="amp"] .vappanel .title .btn { order: 9; margin-left: 0; }
+:root[data-skin="amp"] .btn, :root[data-skin="amp"] .stepper .arr { border: 2px solid; border-color: var(--bev); border-radius: 0; }
+:root[data-skin="amp"] .btn:active, :root[data-skin="amp"] .stepper .arr:active { border-color: var(--bevin); }
+:root[data-skin="amp"] .btn.lit { border-color: var(--litedge) var(--rust) var(--rust) var(--litedge); }
+:root[data-skin="amp"] .btn.orange { border-color: var(--hotedge) var(--rust) var(--rust) var(--hotedge); }
+/* the LCD readouts */
+:root[data-skin="amp"] .trackbar.strip { margin: 8px; background: var(--night); border: 2px solid; border-color: var(--bevin); }
+:root[data-skin="amp"] .trackbar .num::before { content: "▶ "; color: var(--orange); }
+:root[data-skin="amp"] .trackbar .num, :root[data-skin="amp"] .trackbar .who, :root[data-skin="amp"] .trackbar .state, :root[data-skin="amp"] .songbar .sbv,
+:root[data-skin="amp"] .railstat b { color: var(--yellow); text-shadow: 0 0 8px var(--yellow); }
+:root[data-skin="amp"] .songbar { background: var(--panel); border-bottom: 3px solid; border-color: var(--night); }
+:root[data-skin="amp"] .songbar .sbv { background: var(--night); border: 2px solid; border-color: var(--bevin); padding: 3px 6px; font-family: var(--mono); font-size: 30px; }
+:root[data-skin="amp"] .stepper .val { border: 2px solid; border-color: var(--bevin); color: var(--yellow); }
+:root[data-skin="amp"] .railstat { border-radius: 0; background: var(--night); border: 2px solid; border-color: var(--bevin); color: var(--yellow); }
+:root[data-skin="amp"] .bezel { border-radius: 0; border: 3px solid; border-color: var(--bevin); }
+/* the side menu: the player's main window */
+:root[data-skin="amp"] .rail { background: var(--panel); border-right: 3px solid; border-color: var(--night); box-shadow: inset 3px 0 0 var(--rule2); }
+:root[data-skin="amp"] .tab { border-radius: 0; min-height: 38px; font-size: 19px; color: #fff; background: var(--btn); border: 2px solid; border-color: var(--bev); margin-bottom: 2px; }
+:root[data-skin="amp"] .tab i { width: 8px; height: 8px; border-radius: 50%; background: var(--night); box-shadow: inset 0 0 0 1px var(--rule2); }
+:root[data-skin="amp"] .tab[aria-selected="true"] { background: var(--gold); color: var(--indigo); box-shadow: none; border-color: var(--litedge) var(--rust) var(--rust) var(--litedge); }
+:root[data-skin="amp"] .tab[aria-selected="true"] i { background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+:root[data-skin="amp"] .rail hr { border-top-color: var(--night); }
+:root[data-skin="amp"] .theme select, :root[data-skin="amp"] .songbar select { border-radius: 0; border: 2px solid; border-color: var(--bevin); }
+:root[data-skin="amp"] header { background: var(--panel) !important; border-bottom: 3px solid var(--night); }
+/* the tracks: a playlist window */
+:root[data-skin="amp"] .guide .inner { background: var(--night); }
+:root[data-skin="amp"] .ghead.strip { background: var(--strip); border-bottom: 2px solid var(--night); }
+:root[data-skin="amp"] .ghead .c0, :root[data-skin="amp"] .ghead .col { font-size: 18px; letter-spacing: .08em; }
+:root[data-skin="amp"] .grow { height: 50px; border-bottom: 1px solid var(--strip); }
+:root[data-skin="amp"] .ghd { background: var(--night); }
+:root[data-skin="amp"] .ghd .n { font-size: 30px; }
+:root[data-skin="amp"] .ghd .nm b { color: var(--soft); }
+:root[data-skin="amp"] .grow.sel .ghd { background: var(--orange); }
+:root[data-skin="amp"] .grow.sel .ghd .nm b, :root[data-skin="amp"] .grow.sel .ghd .n { color: #fff; }
+:root[data-skin="amp"] .grow.sel { outline: 0; }
+:root[data-skin="amp"] .blk { background: var(--night); border-left: 1px solid var(--strip); }
+:root[data-skin="amp"] .blk .bar { height: 10px; background: transparent; }
+:root[data-skin="amp"] .blk .bar i { background: repeating-linear-gradient(90deg, var(--yellow) 0 6px, transparent 6px 8px); }
+:root[data-skin="amp"] .blk.now { background: var(--rest); }
+:root[data-skin="amp"] .blk.rest { color: var(--faint); }
+:root[data-skin="amp"] .ghd .ic { border-radius: 0; }
+/* the mixer: an equaliser */
+:root[data-skin="amp"] .strips { background: var(--night); margin: 8px; border: 2px solid; border-color: var(--bevin); }
+:root[data-skin="amp"] .mstrip { border-radius: 0; background: transparent; }
+:root[data-skin="amp"] .mstrip.sel { background: var(--rest); box-shadow: inset 0 0 0 1px var(--orange); }
+:root[data-skin="amp"] .mstrip .mn { font-size: 15px; letter-spacing: .06em; color: var(--soft); }
+:root[data-skin="amp"] .mstrip.sel .mn { color: var(--yellow); }
+:root[data-skin="amp"] .mstrip .ms { width: 24px; height: 22px; font-size: 14px; }
+:root[data-skin="amp"] .pad { border: 3px solid; border-color: var(--bevin); }
+:root[data-skin="amp"] .keybar { background: var(--panel); border-top: 3px solid; border-color: var(--rule2); }
+:root[data-skin="amp"] .key { border-radius: 0; }
+:root[data-skin="amp"] footer { background: var(--panel); border-top: 3px solid var(--night); }
+:root[data-skin="amp"] .slot { border: 2px solid; border-color: var(--bev); }
+:root[data-skin="amp"] #smpwave { border: 2px solid; border-color: var(--bevin); }
+@media (max-width: 720px) {
+  :root[data-skin="amp"] .rail { box-shadow: none; border-right: 0; border-bottom: 3px solid var(--night); }
+  :root[data-skin="amp"] .tab { margin: 0; }
+}
+
+/* ================================================================ SKIN: AERO GLASS (Frutiger Aero; Ed, Nov 25: "more
+ * options for a Frutiger Aero or Frutiger Metro skin", then "Aero Glass is easily my favorite": AERO SKY and METRO
+ * dropped). Frosted glass panels (a blur over the page), glossy gel buttons (the top half lit), pills, rounded bezels,
+ * bubbles in the night sky; Nunito for the headings and buttons. Colours only through the theme's vars. */
+:root[data-skin^="aero"] { --head: 'Nunito', 'Arial Rounded MT Bold', sans-serif; --gloss: linear-gradient(180deg, rgba(255, 255, 255, .55) 0%, rgba(255, 255, 255, .16) 46%, rgba(255, 255, 255, 0) 52%, rgba(255, 255, 255, .1) 100%); }
+:root[data-skin="aero"] body {
+  background: radial-gradient(circle at 8% 22%, rgba(255, 255, 255, .22) 0 18px, rgba(255, 255, 255, 0) 19px),
+    radial-gradient(circle at 92% 14%, rgba(255, 255, 255, .16) 0 44px, rgba(255, 255, 255, 0) 45px),
+    radial-gradient(circle at 78% 64%, rgba(255, 255, 255, .12) 0 30px, rgba(255, 255, 255, 0) 31px),
+    radial-gradient(circle at 24% 86%, rgba(255, 255, 255, .14) 0 54px, rgba(255, 255, 255, 0) 55px),
+    radial-gradient(140% 70% at 50% 115%, var(--g4) 0%, var(--g3) 30%, var(--g2) 58%, var(--g1) 85%) fixed; }
+:root[data-skin^="aero"] .panel { border-radius: 22px; border: 1px solid rgba(255, 255, 255, .45);
+  background: var(--gloss), color-mix(in srgb, var(--panel) 72%, transparent); -webkit-backdrop-filter: blur(14px) saturate(1.3); backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .7); }
+:root[data-skin^="aero"] .strip, :root[data-skin^="aero"] .panel > .title.strip { background: transparent; border-bottom: 1px solid rgba(255, 255, 255, .25); }
+:root[data-skin^="aero"] .panel .title b, :root[data-skin^="aero"] .trackbar .num { font-weight: 800; letter-spacing: 0; text-transform: none; }
+:root[data-skin^="aero"] .panel .title b::before, :root[data-skin^="aero"] .trackbar .num::before { content: none; }
+:root[data-skin^="aero"] .btn, :root[data-skin^="aero"] .stepper .arr { border-radius: 999px; border: 1px solid rgba(255, 255, 255, .55); background-image: var(--gloss);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .3); font-weight: 800; }
+:root[data-skin^="aero"] .btn { font-size: 17px; }
+:root[data-skin^="aero"] .face .btn .a { font-size: 16px; }
+:root[data-skin^="aero"] .face .btn .d { font-size: 12px; }
+:root[data-skin^="aero"] .face .btn { border-radius: 18px; }
+:root[data-skin^="aero"] .ghd .tl { font-size: 12px; }
+:root[data-skin^="aero"] .stepper .val { border-radius: 999px; border: 1px solid rgba(255, 255, 255, .3); background: color-mix(in srgb, var(--night) 70%, transparent); }
+:root[data-skin^="aero"] .stepper .bar { border-radius: 999px; overflow: hidden; height: 7px; }
+:root[data-skin^="aero"] .stepper .bar i { background: linear-gradient(180deg, #fff 0%, var(--yellow) 50%, var(--gold) 100%); }
+:root[data-skin^="aero"] .stepper .lab { font-size: 17px !important; }
+:root[data-skin^="aero"] .bezel { border-radius: 28px; border: 0; padding: 14px; background: linear-gradient(180deg, #fff, var(--rule2) 40%, var(--rule)); box-shadow: 0 14px 30px rgba(0, 0, 0, .45); }
+:root[data-skin^="aero"] #screen { border-radius: 14px; }
+:root[data-skin^="aero"] .rail { background: color-mix(in srgb, var(--rail) 60%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-right: 1px solid rgba(255, 255, 255, .3); }
+:root[data-skin^="aero"] .tab { border-radius: 999px; font-weight: 800; font-size: 19px; }
+:root[data-skin^="aero"] .tab i { width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff 0 15%, var(--rule2) 60%, var(--rule)); }
+:root[data-skin^="aero"] .tab[aria-selected="true"] { background: var(--gloss), linear-gradient(180deg, var(--orange), var(--rust)); box-shadow: 0 4px 12px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(255, 255, 255, .6); }
+:root[data-skin^="aero"] .tab[aria-selected="true"] i { background: radial-gradient(circle at 35% 30%, #fff 0 15%, var(--yellow) 60%, var(--gold)); }
+:root[data-skin^="aero"] .railstat { border-radius: 16px; border: 1px solid rgba(255, 255, 255, .3); background: rgba(255, 255, 255, .06); }
+:root[data-skin^="aero"] .theme select, :root[data-skin^="aero"] .songbar select { border-radius: 999px; border: 1px solid rgba(255, 255, 255, .4); padding-left: 12px; }
+:root[data-skin^="aero"] .rail .power { border-radius: 999px; }
+:root[data-skin^="aero"] header, :root[data-skin^="aero"] header[class] { background: color-mix(in srgb, var(--indigo) 55%, transparent) !important; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255, 255, 255, .3); }
+:root[data-skin^="aero"] .songbar { background: color-mix(in srgb, var(--night) 45%, transparent); border-bottom: 1px solid rgba(255, 255, 255, .2); }
+:root[data-skin^="aero"] .trackbar { border-radius: 20px 20px 0 0; }
+:root[data-skin^="aero"] .mstrip { border-radius: 16px; background: rgba(255, 255, 255, .07); }
+:root[data-skin^="aero"] .mstrip.sel { background: var(--gloss), linear-gradient(180deg, var(--orange), var(--rust)); }
+:root[data-skin^="aero"] .ms { border-radius: 50% !important; }
+:root[data-skin^="aero"] .guide .inner { padding: 6px 8px 8px; }
+:root[data-skin^="aero"] .ghead.strip { border-radius: 14px; background: rgba(255, 255, 255, .08); }
+:root[data-skin^="aero"] .grow { border-bottom: 0; margin-top: 6px; height: 56px; }
+:root[data-skin^="aero"] .ghd { border-radius: 16px 0 0 16px; background: rgba(255, 255, 255, .08); }
+:root[data-skin^="aero"] .grow.sel { outline: 0; }
+:root[data-skin^="aero"] .grow.sel .ghd { background: var(--gloss), linear-gradient(90deg, var(--orange), var(--rust)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6); }
+:root[data-skin^="aero"] .blk { border-left: 0; margin-left: 4px; border-radius: 12px; background: var(--gloss), color-mix(in srgb, var(--row) 80%, transparent); }
+:root[data-skin^="aero"] .blk:last-child { border-radius: 12px 16px 16px 12px; }
+:root[data-skin^="aero"] .blk.rest { background: rgba(255, 255, 255, .04); }
+:root[data-skin^="aero"] .blk .bar { border-radius: 999px; height: 8px; }
+:root[data-skin^="aero"] .blk .bar i { border-radius: 999px; background: linear-gradient(180deg, #fff, var(--dim)); }
+:root[data-skin^="aero"] .ghd .ic { border-radius: 50%; }
+:root[data-skin^="aero"] .pad { border-radius: 20px; border: 1px solid rgba(255, 255, 255, .5); background-color: color-mix(in srgb, var(--row) 70%, transparent); }
+:root[data-skin^="aero"] .slot { border-radius: 14px; }
+:root[data-skin^="aero"] #smpwave { border-radius: 14px; }
+:root[data-skin^="aero"] .keybar { background: color-mix(in srgb, var(--night) 55%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-top: 1px solid rgba(255, 255, 255, .35); }
+:root[data-skin^="aero"] .key { border-radius: 0 0 12px 12px; border: 1px solid rgba(0, 0, 0, .2); background-image: linear-gradient(180deg, rgba(255, 255, 255, 0) 60%, rgba(0, 0, 0, .08)); }
+:root[data-skin^="aero"] .key.blk2 { background-image: linear-gradient(180deg, rgba(255, 255, 255, .18), rgba(255, 255, 255, 0) 40%); }
+:root[data-skin^="aero"] footer { background: color-mix(in srgb, var(--night) 60%, transparent); }
+:root[data-skin^="aero"] dialog { border-radius: 22px; }
+
+@media (max-width: 720px) {
+  :root[data-skin^="aero"] .rail { border-right: 0; border-bottom: 1px solid rgba(255, 255, 255, .3); }
+}
+
+/* (fixes after a look: AERO GLASS's wider type in the tight spots; a phone's side menu with three pickers) */
+:root[data-skin^="aero"] .ghd .n { font-size: 28px; width: 40px; }
+:root[data-skin^="aero"] .ghd .nm b { font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root[data-skin^="aero"] .ghd .nm span { font-size: 15px; }
+:root[data-skin^="aero"] .mstrip .mn { font-size: 12px; }
+:root[data-skin^="aero"] .trackbar .num { font-size: 26px; } :root[data-skin^="aero"] .trackbar .who { font-size: 23px; }
+:root[data-skin^="aero"] .trackbar .state { font-size: 18px; } :root[data-skin^="aero"] .trackbar .pg { font-size: 17px; }
+:root[data-skin^="aero"] .ghead .c0, :root[data-skin^="aero"] .ghead .col { font-size: 20px; }
+@media (max-width: 720px) {
+  .railfoot { flex-wrap: wrap; width: 100%; margin: 0; order: 2; }
+  .theme, .theme[class] { font-size: 0 !important; flex: 1 1 28%; min-width: 0; }
+  .theme select { width: 100%; max-width: none; }
+  .rail .power { flex: 1 1 100%; justify-content: center; }
+}
+
+
+/* JAM PADS (Ed, Nov 25: "put them above the mixer and just make the mixer shorter"): the two pads in the right column
+ * over a shorter mixer, the tracks (live: mute, solo, cue; no row tools) under the device as on TRACKS */
+body[data-pane="jam"] .fxpad .hint { display: none !important; }
+body[data-pane="jam"] .fxpad .pads { flex-direction: row; flex-wrap: nowrap; justify-content: center; padding: 10px; gap: 12px; }
+body[data-pane="jam"] .pad, body.jam[data-pane="jam"] .pad { width: 150px; height: 150px; }
+body[data-pane="jam"] .pad .lbl { font-size: 13px; white-space: nowrap; }
+body[data-pane="jam"] .padbox .name { white-space: nowrap; } body[data-pane="jam"] .padfoot .lock { min-height: 28px; padding: 1px 8px; font-size: 15px; }
+body[data-pane="jam"] .padfoot { gap: 6px; } body[data-pane="jam"] .padbox .name { font-size: 15px; }
+body[data-pane="jam"] .fader { height: 140px; min-height: 90px; }
+@media (min-width: 1281px) {
+  body.jam[data-pane="jam"] main { grid-template-areas: "dev pads" "dev mix" "msg msg" "low low"; grid-template-rows: auto 1fr auto auto; }
+  body[data-pane="jam"] .fxpad { grid-area: pads; }
+  body[data-pane="jam"] .guide { grid-area: low; }
+}
+@media (max-width: 1280px) {
+  body[data-pane="jam"] .fxpad { order: 2; } body[data-pane="jam"] .mixer { order: 3; } body[data-pane="jam"] .guide { order: 5; }
+}
+
+/* VAPOR (Ed, Nov 25: "the vapor option should appear just below the tempo and midi bar and above the main screen"): a
+ * strip across the top, its four controls in a row; the tracks under the device as on TRACKS */
+body[data-pane="vapor"] .vappanel .vapor { display: flex; flex-wrap: wrap; align-items: center; }
+body[data-pane="vapor"] .vappanel .vapor > .title { flex: 0 0 auto; border-bottom: 0; align-self: stretch; align-items: center; gap: 12px; padding: 8px 16px; }
+body[data-pane="vapor"] .vappanel .vapor > .title .btn { margin-left: 6px; }
+body[data-pane="vapor"] .vappanel .vknobs { flex: 1 1 560px; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 8px 12px; }
+body[data-pane="vapor"] .vappanel .hint { display: none; }
+@media (min-width: 1281px) {
+  body[data-pane="vapor"] main { grid-template-areas: "vap vap" "dev mix" "msg msg" "low low"; }
+  body[data-pane="vapor"] .vappanel { grid-area: vap; }
+  body[data-pane="vapor"] .guide { grid-area: low; }
+}
+@media (max-width: 1280px) {
+  body[data-pane="vapor"] .vappanel { order: 0; } body[data-pane="vapor"] .guide { order: 5; }
+}
+@media (max-width: 720px) {
+  body[data-pane="vapor"] .vappanel .vknobs { flex-basis: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body[data-pane="vapor"] .vappanel .vapor > .title { flex: 1 1 100%; }
+}
+
+/* CONTROLS (Ed, Nov 25): the four knobs and four wheels at the top of the right column, level with the device's top, two
+ * 2 x 2 blocks of smaller steppers; the mixer under them; the device just its buttons and the screen */
+.ctrls { display: none; }
+body.sideout .ctrls { display: flex; flex-direction: column; }
+.ctrls .title { display: flex; align-items: baseline; gap: 10px; padding: 6px 14px; }
+.ctrls .title b { font: 28px/1 var(--head); color: var(--yellow); }
+.ctrls .title span { color: var(--soft); font-size: 17px; }
+.ctrls .side { padding: 10px 12px 12px; gap: 10px; }
+.ctrls .knobs, .ctrls .wheels { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px 10px; }
+.ctrls .wheels { padding-top: 10px; }
+.ctrls .stepper { width: auto; gap: 3px; }
+.ctrls .stepper .lab { font-size: 19px; }
+.ctrls .wheels .stepper .lab { font-size: 18px; }
+.ctrls .stepper .arr { width: 32px; height: 32px; font-size: 14px; }
+.ctrls .stepper .val { font-size: 18px; padding: 2px; }
+@media (min-width: 1281px) {
+  main, body.jam main { grid-template-rows: auto 1fr auto auto; grid-template-areas: "dev ctrl" "dev mix" "msg msg" "low low"; }
+  body.jam[data-pane="jam"] main { grid-template-rows: auto auto 1fr auto auto; grid-template-areas: "dev ctrl" "dev pads" "dev mix" "msg msg" "low low"; }
+  body[data-pane="vapor"] main { grid-template-rows: auto auto 1fr auto auto; grid-template-areas: "vap vap" "dev ctrl" "dev mix" "msg msg" "low low"; }
+  .ctrls { grid-area: ctrl; }
+  .device { align-self: start; }
+  body.sideout .fader { height: 150px; min-height: 90px; }
+  body.sideout[data-pane="jam"] .fader { height: 110px; min-height: 80px; }
+  body.sideout .device .body { display: flex; justify-content: center; }
+}
+
+/* (CONTROLS tightened so the right column ends about where the device does) */
+.ctrls .title { padding: 4px 12px; } .ctrls .title b { font-size: 24px; } .ctrls .title span { font-size: 15px; }
+.ctrls .side { padding: 8px 10px 10px; gap: 8px; }
+.ctrls .knobs, .ctrls .wheels { gap: 6px 8px; } .ctrls .wheels { padding-top: 8px; }
+.ctrls .stepper .lab, .ctrls .wheels .stepper .lab { font-size: 16px !important; }
+.ctrls .stepper .arr { width: 28px; height: 28px; font-size: 12px; }
+.ctrls .stepper .val { font-size: 16px; }
+.ctrls .stepper .bar { height: 4px; }
+@media (min-width: 1281px) {
+  body.sideout .fader { height: 110px; min-height: 70px; }
+  body.sideout[data-pane="jam"] .fader { height: 60px; min-height: 50px; }
+  body.sideout[data-pane="jam"] .mixer .title span { display: none; }
+}
+
+@media (min-width: 1281px) {
+  body[data-pane="jam"] .pad, body.jam[data-pane="jam"] .pad { width: 136px; height: 136px; }
+  body[data-pane="jam"] .padbox .name { font-size: 13px; }
+  body[data-pane="jam"] .padfoot .lock { font-size: 13px; padding: 1px 6px; min-height: 26px; }
+  body[data-pane="jam"] .fxpad .pads { padding: 8px; gap: 10px; }
+}
+
+@media (min-width: 1281px) {
+  body.jam[data-pane="jam"]:not(.sideout) main { grid-template-rows: auto 1fr auto auto; grid-template-areas: "dev pads" "dev mix" "msg msg" "low low"; }
+}
+
+/* the keys' pull tab (Ed, Nov 25: "a little tab on the piano to hide that, like have it slide down with a peaked tab to
+ * pull it back up"): the keys slide off the bottom, the tab stays peeking; remembered in this browser */
+.keybar { transition: transform .28s ease; }
+.keytab { position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); margin-bottom: 3px; min-height: 32px; padding: 3px 18px 1px;
+  font: 18px/1 var(--head); letter-spacing: .04em; color: var(--yellow); background: var(--night); border: 3px solid var(--rule); border-bottom: 0;
+  border-radius: 12px 12px 0 0; cursor: pointer; white-space: nowrap; }
+.keytab:hover { color: #fff; background: var(--rowhot); }
+.keytab:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+body.keyshid .keybar { transform: translateY(calc(100% + 3px)); }
+body.keyshid footer { margin-bottom: 46px; }
+body.keyshid .tour { bottom: 52px; }
+@media (prefers-reduced-motion: reduce) { .keybar { transition: none; } }
+:root[data-skin="amp"] .keytab { border-radius: 0; border: 2px solid; border-bottom: 0; border-color: var(--rule2) var(--night) transparent var(--rule2); background: var(--panel); }
+:root[data-skin^="aero"] .keytab { border-radius: 16px 16px 0 0; border: 1px solid rgba(255, 255, 255, .45); border-bottom: 0; background-image: var(--gloss);
+  background-color: color-mix(in srgb, var(--panel) 80%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-weight: 800; font-size: 15px; }
 </style>
 </head>
 <body>
-<header>
+<div class="app">
+<!-- Control Room (Ed, Nov 24: "Let's start with that as our new default design"): a side menu swaps the panel under the
+     device and the mixer (TRACKS, VAPOR, SAMPLES, JAM); PLAYLIST and SHARE open their pop-ups; the THEME picker recolours
+     the page (the screen keeps its own colours until the firmware gets the same palettes) -->
+<aside class="rail" aria-label="Sections">
   <a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr" title="spelunkr.tv: the channel this groovebox is made for (leaves this page; your song stays saved here)."><b aria-hidden="true">S</b><span>Spelunkr<br>Groovebox</span></a>
+  <nav class="tabs" role="tablist" aria-label="Panels">
+    <button class="tab" type="button" role="tab" data-pane="tracks" aria-selected="true"><i aria-hidden="true"></i>TRACKS</button>
+    <button class="tab" type="button" role="tab" data-pane="vapor" aria-selected="false"><i aria-hidden="true"></i>VAPOR</button>
+    <button class="tab" type="button" role="tab" data-pane="samples" id="smpgo" aria-selected="false"><i aria-hidden="true"></i>SAMPLES</button>
+    <button class="tab" type="button" role="tab" data-pane="jam" aria-selected="false"><i aria-hidden="true"></i>JAM PADS</button>
+  </nav>
+  <hr>
+  <button class="tab" type="button" id="railplay"><i aria-hidden="true"></i>PLAYLIST</button>
+  <button class="tab" type="button" id="railshare"><i aria-hidden="true"></i>SHARE</button>
   <!-- the two scenes (Ed, Nov 23): CREATE writes the song (VAPOR, SAMPLES), JAM plays over it (the FX PAD, the FX keys) -->
   <div class="scenes" role="tablist" aria-label="Scene">
     <button type="button" role="tab" id="sccreate" aria-selected="true">CREATE<small>write the song</small></button>
     <button type="button" role="tab" id="scjam" aria-selected="false">JAM<small>play over it</small></button>
   </div>
+  <div class="railfoot">
+    <div class="railstat" id="railstat" aria-live="off">SWITCH ON<br>TO START</div>
+    <label class="theme">THEME <select id="theme" aria-label="The page's colours"></select></label>
+    <label class="theme">SCREEN <select id="screenpal" aria-label="The screen's colours"></select></label>
+    <label class="theme">SKIN <select id="skin" aria-label="The page's look"></select></label>
+    <label class="power" title="The device's own names (FX, SEQ, GLO, ...) instead of the plain ones"><input type="checkbox" id="power"> POWER USER</label>
+  </div>
+</aside>
+<div class="stage">
+<header>
   <!-- the top buttons in menus (Ed, Nov 23: "grouped together and collapsed into drop down options"); every item keeps
        its old id, so the code, the tour and the hover help find them as before -->
   <nav aria-label="Song">
@@ -561,7 +1027,6 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
         <label class="btn ddi" role="menuitem" tabindex="0" title="Open a .phantom project file"><input type="file" id="openproj" accept=".phantom,.json,application/json" hidden>OPEN PROJECT<small>a .phantom file you saved</small></label>
       </div>
     </div>
-    <button class="btn" id="smpgo" type="button" title="Load your own samples, slice them, put them on a track">SAMPLES</button>
     <div class="dd">
       <button class="btn ddbtn" id="ddhelp" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="ddhelpm">HELP <i aria-hidden="true">&#9662;</i></button>
       <div class="ddm" id="ddhelpm" role="menu" aria-label="Help" hidden>
@@ -571,7 +1036,6 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
       </div>
     </div>
   </nav>
-  <label class="power" title="The device's own names (FX, SEQ, GLO, ...) instead of the plain ones"><input type="checkbox" id="power"> POWER USER</label>
 </header>
 <!-- the song bar (Ed, Nov 22: out of the menus): tempo, tap, swing, key -->
 <div class="songbar" id="songbar">
@@ -615,7 +1079,17 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
       </div>
     </section>
 
-    <section class="panel fxpad" aria-label="FX PAD">
+    <section class="panel ctrls" id="ctrls" aria-label="Controls">
+      <div class="title strip"><b>CONTROLS</b><span>they follow the screen</span></div>
+      <div id="ctrlbox"></div>
+    </section>
+
+    <section class="panel mixer" id="mixer" aria-label="Mixer">
+      <div class="title strip"><b>MIXER</b><span>levels, mute, solo</span></div>
+      <div class="strips" id="mixstrips"></div>
+    </section>
+
+    <section class="panel fxpad lowp" aria-label="FX PAD">
       <div class="title strip"><b>FX PAD</b><span id="padtrack">on the selected track</span></div>
       <div class="pads">
         <div class="padbox"><div class="pad" id="pad0" tabindex="0" role="slider" aria-label="FILTER and GATE"><span class="dot"></span>
@@ -627,7 +1101,7 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
       </div>
       <div class="hint">Hold and drag to bend the track. Let go and it snaps back, unless <b>LOCK</b> is on: then it stays where you leave it. The middle is off.</div>
     </section>
-    <section class="panel vappanel" aria-label="VAPOR">
+    <section class="panel vappanel lowp" aria-label="VAPOR">
       <div class="vapor">
         <div class="title strip"><b>VAPOR</b><span>on the song</span>
           <button class="btn" type="button" id="vapgo" title="One tap: slowed, warbly, dusty. Tap again for clean">VAPORIZE</button></div>
@@ -639,14 +1113,14 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
 
   <p class="msg" id="studiomsg" role="status"></p>
 
-  <section class="panel guide" aria-label="The song">
+  <section class="panel guide lowp on" aria-label="The song">
     <div class="inner">
       <div class="ghead strip" id="ghead"></div>
       <div id="grows"></div>
     </div>
   </section>
 
-  <section class="panel samples" id="samples" aria-label="Your samples">
+  <section class="panel samples lowp" id="samples" aria-label="Your samples">
     <div class="title strip"><b>SAMPLES</b><span>your own sounds: load, trim, slice, put on a track</span></div>
     <div class="sbody">
       <div class="slots" id="smpslots" role="listbox" aria-label="Sample slots"></div>
@@ -693,9 +1167,22 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
   <div class="plate" id="plate"></div>
   <p class="boxnote">Left hand: the FX pad and the octave. Above the pad, the readout and the ANO wheel: turn its yellow ring for what the readout names, press the centre for the next card, the arrows on its outer ring scroll and change track (on the tracker they move round the steps), hold the centre and turn for the volume. Right hand: the 15 keys (the bottom nine change with the screen: the glitches with FX KEYS on, the tracker's moves on STEPS, mutes on the MIXER, A–F on PATTERNS, drum pads while recording drums, the cards on a page of cards; tap SHIFT for the second set) and the stick (pitch side to side, mod up). On the box the screen isn't touch: the wheel and the keys drive it.<span class="phone"> Turn your phone sideways for a bigger box.</span></p>
 </section>
+<footer>
+  <span><span id="foot">SWITCH ON TO START</span></span>
+  <span class="tag">Like cable TV, but weirder. SPELUNKR.TV</span>
+  <span class="boxline"><a href="?box=1" id="boxlink" title="See it laid out like the standalone box we're building, and play it">This software will be featured in a future standalone physical device.</a></span>
+  <span class="credits">Spelunkr Groovebox @VERSION@ beta@PREVIEW@ · <a href="manual.html" target="_blank" rel="noopener" title="The manual: the device under the hood, every page and setting (for POWER USERs).">the manual</a> · Space plays and stops · Z–M and Q–O play the keys (S D G H J, 2 3 5 6 7 9 the black ones) · [ ] octave · arrows scroll and pick the track ·
+    a Felucca fork: built on Phantom Tracker, Dungeon Tracker by Bourbon Weather and Felucca by Leo Kuroshita (Hügelton Instruments) ·
+    free software, <a href="https://www.gnu.org/licenses/gpl-3.0.html" title="The licence: free to use, change and share, as long as the source stays open.">GPL-3.0</a>: <a href="@SOURCE@" title="The source code of this groovebox.">the source</a> · VT323 and Jersey 10 fonts, SIL OFL ·
+    sampled instruments and kits from the <a href="https://github.com/sgossner/VCSL" title="Where the sampled instruments and drum kits come from (free, public domain).">Versilian Community Sample Library</a> (CC0) ·
+    M-VAVE and FM-1 are their owners' trademarks; this is not affiliated with them.</span>
+</footer>
+</div>
+</div>
 <div id="boxpanel"></div>
 
-<div class="keybar" aria-label="Keys">
+<div class="keybar" id="keybar" aria-label="Keys">
+  <button class="keytab" id="keytab" type="button" aria-expanded="true" aria-controls="keys" title="Slide the keys down out of the way (the tab stays to pull them back up). The computer keys still play.">&#9660; HIDE KEYS</button>
   <button class="btn quiet" type="button" id="octdn">OCT &#8722;</button>
   <div class="keys" id="keys"></div>
   <button class="btn quiet" type="button" id="octup">OCT +</button>
@@ -710,16 +1197,6 @@ dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top
     <button class="btn quiet" type="button" id="tourback">BACK</button><button class="btn orange" type="button" id="tournext">NEXT</button></div>
 </div>
 
-<footer>
-  <span><span id="foot">SWITCH ON TO START</span></span>
-  <span class="tag">Like cable TV, but weirder. SPELUNKR.TV</span>
-  <span class="boxline"><a href="?box=1" id="boxlink" title="See it laid out like the standalone box we're building, and play it">This software will be featured in a future standalone physical device.</a></span>
-  <span class="credits">Spelunkr Groovebox @VERSION@ beta@PREVIEW@ · <a href="manual.html" target="_blank" rel="noopener" title="The manual: the device under the hood, every page and setting (for POWER USERs).">the manual</a> · Space plays and stops · Z–M and Q–O play the keys (S D G H J, 2 3 5 6 7 9 the black ones) · [ ] octave · arrows scroll and pick the track ·
-    a Felucca fork: built on Phantom Tracker, Dungeon Tracker by Bourbon Weather and Felucca by Leo Kuroshita (Hügelton Instruments) ·
-    free software, <a href="https://www.gnu.org/licenses/gpl-3.0.html" title="The licence: free to use, change and share, as long as the source stays open.">GPL-3.0</a>: <a href="@SOURCE@" title="The source code of this groovebox.">the source</a> · VT323 and Jersey 10 fonts, SIL OFL ·
-    sampled instruments and kits from the <a href="https://github.com/sgossner/VCSL" title="Where the sampled instruments and drum kits come from (free, public domain).">Versilian Community Sample Library</a> (CC0) ·
-    M-VAVE and FM-1 are their owners' trademarks; this is not affiliated with them.</span>
-</footer>
 
 <dialog id="bouncedlg">
   <form method="dialog" id="bounceform">
@@ -1387,6 +1864,12 @@ function showGuide(g) {
     if ($("padtrack").textContent !== t) $("padtrack").textContent = t;
   }
   smpTrack(g);
+  mixerShow(g, order);
+  if (palNode !== node && node) { palNode = node; if (g.pal !== screenPalIndex()) screenPalSend(); }   // (a new start: the screen's colours)
+  {
+    const st = `<b>${g.play ? "PLAYING" : "STOPPED"}</b> · ${g.bpm} BPM<br>PATTERN ${letter(g.cur)}${g.queue >= 0 ? " → " + letter(g.queue) : ""}<br>SAVED IN THIS BROWSER`;
+    if ($("railstat").innerHTML !== st) $("railstat").innerHTML = st;
+  }
   $("octlab").textContent = phoneMQ.matches ? `C${3 + g.oct}–C${4 + g.oct}` : `C${3 + g.oct}–D${5 + g.oct}`;
   g.knobs.forEach((k, i) => {                              // KNOB 1..4: what their cards on the screen say now
     const el = knobEls[i], lab = k.label ? (power ? k.label : KNOB_PLAIN[k.label] || k.label) : "—";
@@ -1527,6 +2010,77 @@ function showGuide(g) {
       } else if (h) h.remove();
     }
   }
+}
+// the keys' pull tab (Ed, Nov 25): slide the keys down out of the way, the tab stays to pull them back up
+const KEYSKEY = "spelunkr-groovebox-keyshid";
+function setKeysHidden(h) {
+  document.body.classList.toggle("keyshid", h);
+  $("keytab").innerHTML = h ? "&#9650; KEYS" : "&#9660; HIDE KEYS";
+  $("keytab").setAttribute("aria-expanded", String(!h));
+  for (const id of ["keys", "octdn", "octup"]) $(id).inert = h;   // (no tabbing into keys that are off the screen)
+  try { localStorage.setItem(KEYSKEY, h ? "1" : ""); } catch {}
+}
+$("keytab").addEventListener("click", () => setKeysHidden(!document.body.classList.contains("keyshid")));
+try { if (localStorage.getItem(KEYSKEY)) setKeysHidden(true); } catch {}
+// the controls beside the screen (Ed, Nov 25: "put this above the mixer bars flush with the top of the main device
+// screen ... stack them 2x2"): from 1281 px wide the device's four knobs and four wheels move into #ctrls at the top of
+// the right column; narrower they go back under the screen
+// (Ed, Nov 25: on JAM PADS they go back under the screen: the right column is the pads and the mixer there)
+var sidePlace = () => {};
+{
+  const sideEl = document.querySelector(".device .side"), sideHome = sideEl.parentElement, wideMQ = matchMedia("(min-width: 1281px)");
+  sidePlace = () => {
+    const out = wideMQ.matches && document.body.dataset.pane !== "jam", want = out ? $("ctrlbox") : sideHome;
+    if (sideEl.parentElement !== want) want.append(sideEl);
+    document.body.classList.toggle("sideout", out);
+  };
+  wideMQ.addEventListener("change", sidePlace);
+  sidePlace();
+}
+// the mixer (Control Room): a fader a track (P_LEVEL, felucca_web.c web_level) and LEAD's, mute / solo, the name picks it
+let mixSig = "", mixTouched = 0;
+const mixShort = (k) => ROLE[k].replace("SYNTH ", "SYN ");
+function mixerShow(g, order) {
+  const box = $("mixstrips"), lead = g.lead && g.lead.lv !== undefined;
+  const items = order.map((k) => ({ k, name: mixShort(k), long: ROLE[k], lv: g.tracks[k].lv ?? 104, mute: g.tracks[k].mute, solo: g.tracks[k].solo,
+    sel: k === g.sel && !(g.lead && g.lead.f) }));
+  if (lead) items.push({ k: g.tracks.length, name: power ? "PHANT" : "LEAD", long: power ? "PHANTOM" : "LEAD", lv: g.lead.lv, lead: true, sel: !!g.lead.f });
+  const sig = items.map((i) => i.k + i.name).join();
+  if (sig !== mixSig) {
+    mixSig = sig;
+    box.innerHTML = "";
+    for (const it of items) {
+      const d = document.createElement("div"), nm = document.createElement("button"), f = document.createElement("input"), v = document.createElement("span");
+      d.className = "mstrip"; d.dataset.k = it.k;
+      nm.type = "button"; nm.className = "mn"; nm.textContent = it.name;
+      nm.title = `${it.long}: work on this track (the keys, the screen and the controls follow).`;
+      nm.addEventListener("click", () => it.lead ? send({ type: "leadfocus", on: 1 }) : send({ type: "track", k: it.k }));
+      f.type = "range"; f.className = "fader"; f.min = 0; f.max = 127; f.step = 1;
+      f.setAttribute("aria-label", it.long + " level");
+      f.title = `${it.long}'s level: drag it up or down (the mixer page's fader, kept with the song).`;
+      f.addEventListener("input", () => { mixTouched = performance.now(); v.textContent = Math.round(f.value / 1.27); send({ type: "level", k: it.k, v: +f.value }); });
+      v.className = "lvv";
+      d.append(nm, f, v);
+      const msb = document.createElement("span");
+      msb.className = "msb";
+      if (!it.lead) for (const [t, ty, tip] of [["M", "mute", "Mute"], ["S", "solo", "Solo"]]) {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "btn ms"; b.textContent = t; b.dataset.w = ty;
+        b.setAttribute("aria-label", `${tip} ${it.long}`); b.title = `${tip} ${it.long}` + (ty === "mute" ? ": silence it (again: back)." : ": hear only this track (again: all).");
+        b.addEventListener("click", () => send({ type: ty, k: it.k }));
+        msb.append(b);
+      }
+      d.append(msb);
+      box.append(d);
+    }
+  }
+  const drag = performance.now() - mixTouched < 700;
+  [...box.children].forEach((d, i) => {
+    const it = items[i], f = d.querySelector(".fader");
+    d.classList.toggle("sel", it.sel); d.classList.toggle("muted", !!it.mute);
+    if (!drag && document.activeElement !== f && +f.value !== it.lv) { f.value = it.lv; d.querySelector(".lvv").textContent = Math.round(it.lv / 1.27); }
+    for (const b of d.querySelectorAll(".ms")) { const on = !!it[b.dataset.w]; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); }
+  });
 }
 $("tprev").addEventListener("click", () => send({ type: "enc", role: 1, n: -1 }));
 $("tnext").addEventListener("click", () => send({ type: "enc", role: 1, n: 1 }));
@@ -1936,8 +2490,8 @@ function smpShow() {
 function smpDraw() {
   const cv = $("smpwave"), dpr = devicePixelRatio || 1, w = Math.max(100, Math.round(cv.clientWidth * dpr)), h = Math.round(160 * dpr);
   if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; smpPeaks = null; }
-  const g = cv.getContext("2d"), s = smp[smpSel];
-  g.fillStyle = "#0B0530"; g.fillRect(0, 0, w, h);
+  const g = cv.getContext("2d"), s = smp[smpSel], css = getComputedStyle(document.documentElement), C = (n) => css.getPropertyValue(n).trim();
+  g.fillStyle = C("--night"); g.fillRect(0, 0, w, h);
   if (!s) return;
   const n = s.pcm.length, X = (i) => i / n * w;
   if (!smpPeaks || smpPeaks.len !== n || smpPeaks.w !== w) {
@@ -1952,21 +2506,21 @@ function smpDraw() {
   }
   const xa = X(s.trim[0]), xb = X(s.trim[1]), mid = h / 2;
   for (let x = 0; x < w; x++) {
-    g.fillStyle = x >= xa && x <= xb ? "#9FB4FF" : "#3C48B8";
+    g.fillStyle = x >= xa && x <= xb ? C("--dim") : C("--keydim2");
     g.fillRect(x, mid - smpPeaks.mx[x] * mid * 0.92, 1, Math.max(1, (smpPeaks.mx[x] - smpPeaks.mn[x]) * mid * 0.92));
   }
-  g.fillStyle = "rgba(11, 5, 48, .55)";
-  g.fillRect(0, 0, xa, h); g.fillRect(xb, 0, w - xb, h);
-  g.fillStyle = "#E2741F";                                  // the trim's edges
+  g.fillStyle = C("--night"); g.globalAlpha = .55;
+  g.fillRect(0, 0, xa, h); g.fillRect(xb, 0, w - xb, h); g.globalAlpha = 1;
+  g.fillStyle = C("--orange");                              // the trim's edges
   g.fillRect(xa - 2 * dpr, 0, 4 * dpr, h); g.fillRect(xb - 2 * dpr, 0, 4 * dpr, h);
   g.fillRect(xa, 0, 10 * dpr, 6 * dpr); g.fillRect(xb - 10 * dpr, 0, 10 * dpr, 6 * dpr);
   g.font = `${18 * dpr}px VT323, monospace`;
   smpStarts(s).forEach((a, i) => {                         // the slices: a line and its number
     const x = X(a);
-    g.fillStyle = "#FFE13A";
+    g.fillStyle = C("--yellow");
     if (i) g.fillRect(x - 1 * dpr, 0, 2 * dpr, h);
     g.fillRect(x + (i ? 0 : 2 * dpr), h - 18 * dpr, 16 * dpr + (i + 1 > 9 ? 8 * dpr : 0), 18 * dpr);
-    g.fillStyle = "#1C0A57";
+    g.fillStyle = C("--indigo");
     g.fillText(String(i + 1), x + (i ? 3 : 5) * dpr, h - 4 * dpr);
   });
   if (smpPlay && ac) {                                      // the playhead
@@ -2169,7 +2723,7 @@ for (const b of document.querySelectorAll("[data-use]")) b.addEventListener("cli
   const t = G ? ROLE[G.sel] : "the track";
   $("smpinfo").textContent = `${t} plays ${s.name} ${USE[mode].replace("A3", noteName(s.root))}.`;
 });
-$("smpgo").addEventListener("click", () => { setScene("create"); $("samples").scrollIntoView({ behavior: "smooth", block: "start" }); });
+$("smpgo").addEventListener("click", () => { setPane("samples"); $("samples").scrollIntoView({ behavior: "smooth", block: "start" }); });
 // ------------------------------------------------------------------ the two scenes (Ed, Nov 23 2026: "one for creating
 // the song and the second would be for jamming to the song"). JAM puts the screen on the FX keys (FX KEYS tapped, if it
 // isn't on already); back to CREATE lets them go only if JAM turned them on. Remembered in this browser.
@@ -2197,7 +2751,86 @@ function setScene(sc, quiet) {
 }
 $("sccreate").addEventListener("click", () => setScene("create"));
 $("scjam").addEventListener("click", () => setScene("jam"));
-try { setScene(localStorage.getItem(SCENEKEY) || "create", true); } catch { setScene("create", true); }
+// Control Room (Ed, Nov 24): the side menu's panels under the device and the mixer; JAM PADS is the JAM scene (the FX
+// keys), the others CREATE. Remembered in this browser.
+const PANEKEY = "spelunkr-groovebox-pane", PANES = { tracks: ".guide", vapor: ".vappanel", samples: ".samples", jam: ".fxpad" };
+let paneNow = "tracks";
+function setPane(pn, quiet) {
+  if (!PANES[pn]) pn = "tracks";
+  paneNow = pn;
+  document.body.dataset.pane = pn;
+  for (const [k, sel] of Object.entries(PANES)) document.querySelector(sel).classList.toggle("on", k === pn || (k === "tracks" && (pn === "jam" || pn === "vapor")));
+  for (const b of document.querySelectorAll(".tab[data-pane]")) b.setAttribute("aria-selected", String(b.dataset.pane === pn));
+  setScene(pn === "jam" ? "jam" : "create", quiet);
+  try { sidePlace(); } catch {}                           // (the controls: beside the device, or under the screen on JAM PADS)
+  try { localStorage.setItem(PANEKEY, pn); } catch {}
+}
+for (const b of document.querySelectorAll(".tab[data-pane]")) if (b.id !== "smpgo") b.addEventListener("click", () => setPane(b.dataset.pane));
+$("railplay").addEventListener("click", () => $("playlistbtn").click());
+$("railshare").addEventListener("click", () => $("share").click());
+{
+  let pn = null;
+  try { pn = localStorage.getItem(PANEKEY) || (localStorage.getItem(SCENEKEY) === "jam" ? "jam" : null); } catch {}
+  setPane(pn || "tracks", true);
+}
+// the THEME picker: the page's colours (the :root[data-theme] sets in the style); the screen keeps its own for now
+const THEMEKEY = "spelunkr-groovebox-theme";
+const THEMES = [["", "SPELUNKR (original)"], ["mallneon", "MALL NEON"], ["gamecart", "GAME CART"], ["publicaccess", "PUBLIC ACCESS"],
+  ["snowday", "SNOW DAY"], ["latelate", "LATE LATE SHOW"]];
+function setTheme(t) {
+  if (!THEMES.some(([id]) => id === t)) t = "";
+  if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  $("theme").value = t;
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.content = getComputedStyle(document.documentElement).getPropertyValue("--indigo").trim() || "#1C0A57";
+  try { localStorage.setItem(THEMEKEY, t); } catch {}
+  if (typeof smpDraw === "function") try { smpDraw(); } catch {}
+  try { screenPalSend(); } catch {}                       // (not yet at the first call: the SCREEN picker comes next)
+}
+for (const [id, nm] of THEMES) $("theme").append(new Option(nm, id));
+$("theme").addEventListener("change", () => setTheme($("theme").value));
+{ let t = ""; try { t = localStorage.getItem(THEMEKEY) || ""; } catch {} setTheme(t); }
+// the SCREEN picker (Ed, Nov 25: "the actual firmware themes ... tie that to the overall theme as a default"): the
+// screen's own palette (the firmware's MENU > COLOR, gen_ui_palettes.py's order), by default the one that goes with
+// the THEME; sent at each start and on every change (felucca_web.c web_palette)
+const SCREENKEY = "spelunkr-groovebox-screen";
+const PAL_NAMES = ["GREY", "GREEN", "AMBER", "ICE", "VIOLET", "ROSE", "PAPER", "HI-CON", "NIGHT", "MONO", "PHANTOM", "SPELUNKR"];
+const THEME_PAL = { "": "SPELUNKR", mallneon: "VIOLET", gamecart: "GREEN", publicaccess: "AMBER", snowday: "ICE", latelate: "GREY" };
+let screenPal = "", palNode = null;
+function screenPalIndex() {
+  const nm = screenPal || THEME_PAL[document.documentElement.dataset.theme || ""] || "SPELUNKR";
+  return Math.max(0, PAL_NAMES.indexOf(nm));
+}
+function screenPalLabel() {
+  const o = $("screenpal").options[0];
+  if (o) o.text = "MATCH: " + (THEME_PAL[document.documentElement.dataset.theme || ""] || "SPELUNKR");
+}
+function screenPalSend() {
+  screenPalLabel();
+  if (node) node.port.postMessage({ type: "palette", i: screenPalIndex() });
+}
+$("screenpal").append(new Option("MATCH THEME", ""));
+for (const nm of PAL_NAMES) $("screenpal").append(new Option(nm, nm));
+$("screenpal").addEventListener("change", () => {
+  screenPal = $("screenpal").value;
+  try { localStorage.setItem(SCREENKEY, screenPal); } catch {}
+  screenPalSend();
+});
+try { screenPal = localStorage.getItem(SCREENKEY) || ""; } catch {}
+if (!PAL_NAMES.includes(screenPal)) screenPal = "";
+$("screenpal").value = screenPal;
+screenPalLabel();
+// the SKIN picker (Ed, Nov 25): the look over the same layout (:root[data-skin] rules in the style); any skin, any theme
+const SKINKEY = "spelunkr-groovebox-skin", SKINS = [["", "CONTROL ROOM"], ["primetime", "PRIME TIME"], ["amp", "SPGB AMP"], ["aero", "AERO GLASS"]];
+function setSkin(k) {
+  if (!SKINS.some(([id]) => id === k)) k = "";
+  if (k) document.documentElement.dataset.skin = k; else delete document.documentElement.dataset.skin;
+  $("skin").value = k;
+  try { localStorage.setItem(SKINKEY, k); } catch {}
+}
+for (const [id, nm] of SKINS) $("skin").append(new Option(nm, id));
+$("skin").addEventListener("change", () => setSkin($("skin").value));
+{ let k = ""; try { k = localStorage.getItem(SKINKEY) || ""; } catch {} setSkin(k); }
 let sceneBooted = false;                                 // (a page opened on JAM: the FX keys once the device is up)
 setInterval(() => {
   if (sceneBooted || !node || !btnCtx) return;
@@ -3297,7 +3930,16 @@ const TIPS = {
   "#sharecopycode": "Copy the code, to paste in chat or say on stream.",
   "#saveproj": "SAVE: download everything as a project file (.phantom), your samples too. OPEN brings it back.",
   "label:has(#openproj)": "OPEN: load a project file (.phantom) you saved before. It replaces what's here.",
-  "#smpgo": "SAMPLES: your own sounds (on CREATE). Load a file, trim it, slice it, put it on a track.",
+  "#smpgo": "SAMPLES: your own sounds. Load a file, trim it, slice it, put it on a track.",
+  ".tab[data-pane=tracks]": "TRACKS: the song under the device: each track's patterns, mute, solo, the row tools.",
+  ".tab[data-pane=vapor]": "VAPOR: slowed, warbly, dusty, crunchy, on the whole song.",
+  ".tab[data-pane=jam]": "JAM PADS: play over the song. The screen goes to the FX keys and the two FX PADs come out.",
+  "#railplay": "PLAYLIST: up to 10 song codes, played back to back like an album.",
+  "#railshare": "SHARE: a code and a link that play this song in anyone's browser (for a month).",
+  "#theme": "THEME: the page's colours. The screen keeps its own colours for now.",
+  "#screenpal": "SCREEN: the groovebox screen's own colours (MENU > COLOR on the device). MATCH goes with the THEME: SPELUNKR, VIOLET for MALL NEON, GREEN for GAME CART, AMBER for PUBLIC ACCESS, ICE for SNOW DAY, GREY for LATE LATE SHOW.",
+  "#skin": "SKIN: the page's look: CONTROL ROOM, PRIME TIME (the cable TV guide) SPGB AMP (a late-90s desktop player), or AERO GLASS (Frutiger Aero: glossy glass and bubbles). Works with every THEME.",
+  "#railstat": "What's playing, the tempo and the pattern. Your song saves itself in this browser.",
   "#sccreate": "CREATE: write the song. The device, VAPOR, your SAMPLES and the tracks.",
   "#scjam": "JAM: play over the song. The screen goes to the FX keys, the FX PADs come out, and the tracks stay live (mute, solo, cue the next pattern).",
   "#guidebtn": "GUIDE: how to use the groovebox, from the first beat to sharing it, in a new tab.",
@@ -3476,10 +4118,10 @@ const TOUR = [                                           // (Ed: "cover every pa
   { t: "11 · ARRANGE THE SONG", el: btnSel("GLO"), x: () => "Tap <kbd>MIX</kbd> again: the SONG screen. Easiest way: tap <kbd>RECORD</kbd> there, "
       + "press <kbd>PLAY</kbd>, and click the patterns below as the music goes (each one starts when the loop comes round); press <kbd>PLAY</kbd> to stop. "
       + "What you played becomes the song's parts, and the columns show them. <kbd>PLAY</kbd> on the SONG screen plays the song." },
-  { t: "12 · MIX IT", el: btnSel("HOME"), x: () => "On the home screen, tap <kbd>HOME</kbd> (its button says MIXER): each track's level, pan and reverb, "
-      + "on the four controls. <kbd>VOLUME</kbd> on the right is everything." },
-  { t: "13 · FX PADS", el: ".pads", x: () => "This is the <kbd>JAM</kbd> scene (the switch at the top): for playing over your song. "
-      + "The screen goes to the FX keys, and the tracks below stay live: mute, solo, click a pattern to play it next. <kbd>CREATE</kbd> takes you back. Hold a pad and drag to bend the selected track: FILTER · GATE darkens, thins and chops it; "
+  { t: "12 · MIX IT", el: "#mixer", x: () => "The <kbd>MIXER</kbd> beside the screen: a fader a track (and LEAD), <kbd>M</kbd> mutes, <kbd>S</kbd> solos, a name picks the track. "
+      + "For pan and reverb too, tap <kbd>HOME</kbd> on the home screen (its button says MIXER). <kbd>VOLUME</kbd> under the screen is everything." },
+  { t: "13 · FX PADS", el: ".pads", x: () => "This is <kbd>JAM PADS</kbd> (in the side menu): for playing over your song. "
+      + "The screen goes to the FX keys, and the tracks below stay live: mute, solo, click a pattern to play it next. <kbd>TRACKS</kbd> takes you back. Hold a pad and drag to bend the selected track: FILTER · GATE darkens, thins and chops it; "
       + "ECHO · FLANGE throws echoes and jets. Let go and it snaps back, unless <kbd>LOCK</kbd> is on: then it stays where you leave it, "
       + "on that track, and it's saved with the song." },
   { t: "14 · FX KEYS", el: btnSel("FX"), x: () => "Tap <kbd>FX KEYS</kbd> and the keys glitch the whole mix while you hold them: stutter, tunnel, jumps, crush "
@@ -3516,8 +4158,11 @@ function tourShow(i) {
   $("tourskip").hidden = i === TOUR.length - 1;
   tourEl = typeof st.el === "function" ? st.el() : st.el ? document.querySelector(st.el) : null;
   ddClose();
-  if (tourEl && tourEl.closest(".fxpad")) setScene("jam");
-  else if (tourEl && tourEl.closest(".vappanel, .samples")) setScene("create");
+  if (tourEl && tourEl.closest(".keybar")) setKeysHidden(false);   // (the keys pulled back up for the card about them)
+  if (tourEl && tourEl.closest(".fxpad")) setPane("jam");
+  else if (tourEl && tourEl.closest(".vappanel")) setPane("vapor");
+  else if (tourEl && tourEl.closest(".samples")) setPane("samples");
+  else if (tourEl && tourEl.closest(".guide")) setPane("tracks");
   const dd = tourEl && tourEl.closest(".dd");            // (an item in a top menu: the menu opened, all of it lit)
   if (dd) { ddOpen(dd); tourEl = dd.querySelector(".ddm"); }
   if (tourEl) {

@@ -26,18 +26,24 @@ the MIXER, patterns A–F on PATTERNS and SONG, drum pads while you record a dru
 arp, mute, redo, tempo and tap). The stick bends the pitch side to side and adds wobble pushed up. **BACK TO THE
 GROOVEBOX** returns.
 
-**Two scenes**, switched at the top left:
+**The side menu** on the left picks what sits under the groovebox and the mixer:
 
-- **CREATE** is for writing the song: the groovebox, **VAPOR** beside it, your **SAMPLES** under it and the tracks
-  along the bottom.
-- **JAM** is for playing over it: the screen goes straight to the **FX keys** (stutter, tunnel, jumps, crush on the
-  keys), the two **FX PADs** come out, and the tracks stay live below: mute, solo, click a pattern to play it next.
-  The row tools (BEAT, RANDOM, VARY, CLEAR) are hidden there, so nothing gets wiped mid-jam. Back on CREATE the keys
-  play notes again. The page remembers which scene you were on.
+- **TRACKS**: the song, a row a track (and LEAD), with mute, solo and the row tools (BEAT, RANDOM, VARY, CLEAR).
+- **VAPOR**: slowed, warbly, dusty, crunchy, on the whole song.
+- **SAMPLES**: your own sounds.
+- **JAM PADS** is for playing over the song: the screen goes straight to the **FX keys** (stutter, tunnel, jumps,
+  crush on the keys) and the two **FX PADs** come out. Back on any other panel the keys play notes again.
+- **PLAYLIST** and **SHARE** open their pop-ups. Under them: what's playing, the **THEME** (the page's colours:
+  the original SPELUNKR, MALL NEON, GAME CART, PUBLIC ACCESS, SNOW DAY or LATE LATE SHOW) and **POWER USER**.
+
+The page remembers the panel and the theme. On a phone the side menu sits along the top.
+
+**The mixer** beside the screen: a fader a track and one for LEAD (drag it up or down; kept with the song),
+**M** mutes, **S** solos, a name picks the track.
 
 The buttons at the top are menus: **SONG** (new, random), **AUDIO** (record live, export), **SHARE** (make a code,
-open one), **FILE** (save and open a project) and **HELP** (the tour, this guide, the manual). **UNDO** and
-**SAMPLES** are plain buttons.
+open one, the playlist), **FILE** (save and open a project) and **HELP** (the tour, this guide, the manual). **UNDO**
+is a plain button.
 
 - **SONG ▸ NEW SONG** and **SONG ▸ 🎲 RANDOM SONG**: a blank song, or a whole random one to play with (lo-fi,
   chillwave, electro or chiptune). Both ask first.
@@ -123,7 +129,7 @@ last track (or click the **LEAD** row under the tracks), then play the keys.
 
 ## Your own samples
 
-Press **SAMPLES** at the top (or scroll down to the SAMPLES panel). There are 8 slots.
+Press **SAMPLES** in the side menu. There are 8 slots.
 
 1. Pick a slot, then **LOAD A FILE** (or drop one on the panel): WAV, MP3, OGG or FLAC. A longer file keeps its
    first 30 seconds, however big it is. **▶ ALL** and the numbered buttons let you hear it; **■ STOP** (or Esc, or the
