@@ -961,6 +961,15 @@ body.keyshid .tour { bottom: 52px; }
 :root[data-skin="amp"] .keytab { border-radius: 0; border: 2px solid; border-bottom: 0; border-color: var(--rule2) var(--night) transparent var(--rule2); background: var(--panel); }
 :root[data-skin^="aero"] .keytab { border-radius: 16px 16px 0 0; border: 1px solid rgba(255, 255, 255, .45); border-bottom: 0; background-image: var(--gloss);
   background-color: color-mix(in srgb, var(--panel) 80%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-weight: 800; font-size: 15px; }
+
+/* CRT LINES (Ed, Nov 25: "a light scanline effect" over the screen): faint dark lines every 3 px and a soft darkening at
+ * the edges over the canvas only (inset = the bezel's padding), clicks pass through; always on (Ed: "no need for a toggle") */
+.bezel::after { content: ""; position: absolute; inset: 12px; z-index: 1; pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, .16) 2px 3px),
+    radial-gradient(130% 120% at 50% 50%, rgba(0, 0, 0, 0) 62%, rgba(0, 0, 0, .22) 100%); }
+.bscreen .bezel::after, #boxpanel .bezel::after { inset: 0; }
+:root[data-skin^="aero"] .bezel::after { inset: 14px; border-radius: 14px; }
+.bezel .start { z-index: 2; }
 </style>
 </head>
 <body>
