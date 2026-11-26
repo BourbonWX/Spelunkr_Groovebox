@@ -313,7 +313,7 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "cue") { ex.web_cue(m.p);
       } else if (m.type === "spk") { this.port.postMessage({ type: "spk", k: m.k, rc: spkPut(ex, m.k, m.data, m.meta, m.name) });
       } else if (m.type === "spkuse") { ex.web_spk_use(m.k, m.mode);
-      } else if (m.type === "newsong") { ex.web_new_song(m.random ? 1 : 0);
+      } else if (m.type === "newsong") { if (m.random && ex.web_rs_salt) ex.web_rs_salt((Math.random() * 4294967296) >>> 0); ex.web_new_song(m.random ? (m.genre >= 0 ? 2 + m.genre : 1) : 0);
       } else if (m.type === "fxkeys") { if (ex.web_fx_mode) ex.web_fx_mode(m.on ? 1 : 0, m.open ? 1 : 0);   // (FX: the keys, or the effects)
       } else if (m.type === "plain") { if (ex.web_plain) ex.web_plain(m.on ? 1 : 0);
       } else if (m.type === "vapor") { ex.web_vapor(m.k, m.v);

@@ -13,20 +13,6 @@ saves in this browser, and a link shares it.
 
 ## The page
 
-**The Spelunkr Box** (the line about a future standalone device, at the very bottom of the page): the same
-groovebox laid out like the faceplate of the standalone box we're building, at its real proportions. Everything works:
-the XY touch pad is the FX pad, the 13-key octave plays, and above the pad sit a small readout and the navigation
-wheel (the box's screen isn't a touch screen: the wheel and the keys drive it). Turn the wheel's yellow ring for what
-the readout names, press its centre for the next card, press the arrows on its outer ring to scroll (up / down) or change
-track (left / right); on the tracker the arrows move round the steps and the centre does the step's job. Hold the centre
-and turn: the volume. On the
-15 keys the top two rows stay put (scroll, HOME, play, record, SHIFT); the nine under them change with the screen:
-the glitches while FX KEYS is on, up / down / left / right and BEAT, RANDOM, VARY, CLEAR on STEPS, a mute a track on
-the MIXER, patterns A–F on PATTERNS and SONG, drum pads while you record a drum track, the cards on a page of cards
-(tap one and the encoder turns it), else the main buttons. Tap SHIFT for the second set (scale, envelope, wobble,
-arp, mute, redo, tempo and tap). The stick bends the pitch side to side and adds wobble pushed up. **BACK TO THE
-GROOVEBOX** returns.
-
 **The side menu** on the left picks what sits under the groovebox and the mixer:
 
 - **TRACKS**: the song, a row a track (and LEAD), with mute, solo and the row tools (BEAT, RANDOM, VARY, CLEAR).
@@ -49,8 +35,16 @@ The buttons at the top are menus: **SONG** (new, random), **AUDIO** (record live
 open one, the playlist), **FILE** (save and open a project) and **HELP** (the tour, this guide, the manual, the hover tips on or off). **UNDO**
 is a plain button.
 
-- **SONG ▸ NEW SONG** and **SONG ▸ 🎲 RANDOM SONG**: a blank song, or a whole random one to play with (lo-fi,
-  chillwave, electro or chiptune). Both ask first.
+- **SONG ▸ NEW SONG** and **SONG ▸ 🎲 RANDOM SONG**: a blank song, or a whole random one to play with. Both ask
+  first. RANDOM asks for a **GENRE**: VAPORWAVE, CHILLWAVE, LO-FI, CITY POP, FUTURE FUNK, CHIPTUNE, ELECTRO, or ANY
+  (the dice pick; your last pick is remembered). Each genre has its own tempos, chords (the 7ths and 9ths, the
+  borrowed minor IV of city pop), drum grooves, bass lines and sounds. **VAPORWAVE** is what vaporwave is: another
+  genre's song (city pop most often, else lo-fi, chillwave or future funk) put through **VAPOR**, slowed, warbly and
+  usually dusty; the VAPOR panel shows how much, and **CLEAN** takes it off. The song comes in six patterns:
+  **A** the intro, **B** the A section (the verse), **C** the B section (the chorus), **D** a bridge (its own chords,
+  lighter drums, a fill out), **E** the outro (thinning out and ending on the home chord) and **F** a build (the drums
+  rising into the B section), arranged into a song from the intro to the outro: **PLAY** on the SONG screen plays it
+  through; **PLAY** elsewhere loops the pattern you're on (B at first).
 - **↶ UNDO** takes back the last thing you did to the music (a NEW SONG or RANDOM, a sound picked, a row's BEAT /
   RANDOM / VARY / CLEAR, a pattern copied, cleared or made by accident, LEAD's last take); click it again to put it
   back.
@@ -172,8 +166,10 @@ plays along with its code.
 
 ## Make it vapor
 
-The **VAPOR** panel works on the whole song: **SLOWED** plays the record slower (lower and lazier), **WOW** warps the
-tape, **VINYL** adds crackle and hiss, **CRUSH** makes it crunchy (◀ ▶ on each). **VAPORIZE** sets all four in one tap. It is saved
+The **VAPOR** panel works on the whole song: **SLOWED** plays the record slower, down to half speed (lower and lazier;
+it shows the speed: 100 % is as written, 50 % half), **WOW** warps the tape, **VINYL** adds crackle and hiss, **CRUSH**
+makes it crunchy (◀ ▶ on each). **VAPORIZE** sets all four in one tap, different amounts every tap (tap again for
+another take); **CLEAN** takes it all off. It is saved
 with the song and heard in exports and shared links.
 
 **FX KEYS** (on **JAM PADS**, the button left of the screen): the keys glitch the whole mix while you hold them

@@ -494,7 +494,7 @@ static double vap_pos, vap_ph1, vap_ph2;               /* the read position past
 static float vap_hold_l, vap_hold_r, vap_crk, vap_crk_y, vap_hiss_y;
 static uint32_t vap_hc, vap_rng = 0x5EED1u;
 static float vap_rand(void) { vap_rng = vap_rng * 1664525u + 1013904223u; return (float)(int32_t)vap_rng / 2147483648.0f; }
-static double vap_speed(void) { return 1.0 - vap_get(0) * 0.3 / 127.0; }
+static double vap_speed(void) { return 1.0 - vap_get(0) * 0.5 / 127.0; }   /* (Nov 26, Ed: down to half speed; was 0.7) */
 EXPORT uint32_t web_vapor_get(uint32_t k) { return vap_get(k & 3u); }
 
 /* ---- Spelunkr: POLISH (Ed, Nov 25 2026: "some mastering options, maybe the option to put compression on one of the
@@ -1002,12 +1002,15 @@ EXPORT void web_key(uint32_t root, uint32_t scale, uint32_t snap)
     ui.force = 1;
 }
 
-EXPORT uint32_t web_rs_style(void) { return rsg.sty; }   /* the last RANDOM SONG's style (boot_song.c ST_*): tests */
+EXPORT uint32_t web_rs_style(void) { return rsg.genre; }   /* the last RANDOM SONG's genre asked for (ST_*): tests */
+EXPORT uint32_t web_rs_source(void) { return rsg.sty; }   /* .. and whose song it is (VAPORWAVE: another's) */
+EXPORT void web_rs_salt(uint32_t x) { rs_salt = x; }   /* (the next RANDOM SONG's: the page's randomness, boot_song.c) */   /* the last RANDOM SONG's style (boot_song.c ST_*): tests */
 
 /* NEW SONG (the page's button; the device's SAVE > TOOLS > NEW + DEFAULT SOUNDS): every track cleared, the power-on
  * sounds; RANDOM SONG (MENU > SYSTEM > RANDOM SONG): a song rolled. The page has asked first, so no arming here; playing
  * stops first. Either can be undone: SAVE held */
-EXPORT void web_new_song(uint32_t random)
+EXPORT void web_new_song(uint32_t random)          /* 0 NEW, 1 RANDOM (any genre), 2 + g RANDOM in genre g (boot_song.c ST_*:
+                                                    * the pop-up's GENRE, Nov 26 2026) */
 {
     if (chain.running || chain.armed)
         chain_stop();
@@ -1015,7 +1018,9 @@ EXPORT void web_new_song(uint32_t random)
         seq_stop();
     if (random) {
         rs_arm_t = fm1_ms | 1u;                    /* (boot_song.c: confirmed) */
+        rs_genre = (uint8_t)(random >= 2u && random - 2u < ST_N ? random - 2u : RS_ANY);
         random_song();
+        rs_genre = RS_ANY;
     } else
         new_song(1);
     lead_clear_all();                              /* (LEAD's lanes: the old song's) */

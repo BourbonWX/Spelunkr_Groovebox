@@ -417,12 +417,12 @@ body.boxpanel.mouseidle, body.boxpanel.mouseidle * { cursor: none !important; }
 .mlbar[hidden] { display: none !important; }
 #mlstat { color: var(--yellow); font-size: 19px; }
 #mlclear, #mldone { min-height: 34px; font-size: 18px; padding: 2px 10px; }
-body.mlearn :is(.stepper, .mstrip, #face .btn, .pad, #bpm, #swing, .pon, .chip, #vapgo, #poloff, .tab[data-pane], #tprev, #tnext) {
+body.mlearn :is(.stepper, .mstrip, #face .btn, .pad, #bpm, #swing, .pon, .chip, #vapgo, #vapclean, #poloff, .tab[data-pane], #tprev, #tnext) {
   outline: 2px dashed var(--yellow); outline-offset: 2px; cursor: copy; }
 body.mlearn .mlpick { outline: 3px solid var(--orange) !important; animation: breath 1s ease-in-out infinite; }
 .mlb { position: absolute; top: -8px; right: -6px; z-index: 3; padding: 1px 5px; font: 13px/1.2 var(--mono); color: var(--night);
        background: var(--yellow); border-radius: 4px; pointer-events: none; white-space: nowrap; }
-:is(.stepper, .mstrip, .panv, .pad, .chip, .pon, #face .btn, .tab, #bpm, #swing, #vapgo, #poloff, #tprev, #tnext):has(> .mlb) { position: relative; }
+:is(.stepper, .mstrip, .panv, .pad, .chip, .pon, #face .btn, .tab, #bpm, #swing, #vapgo, #vapclean, #poloff, #tprev, #tnext):has(> .mlb) { position: relative; }
 /* the guide */
 .guide { overflow-x: auto; }
 .guide .inner { min-width: 980px; }
@@ -490,6 +490,9 @@ dialog { border: 4px solid var(--rule); box-shadow: 0 0 0 3px var(--night); padd
 dialog::backdrop { background: rgba(11, 5, 48, .7); }
 dialog h2 { margin: 0 0 10px; font: 30px var(--head); color: var(--yellow); font-weight: normal; }
 dialog fieldset { border: 0; padding: 0; margin: 0 0 10px; display: grid; gap: 6px; }
+dialog .genre { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font: 24px var(--head); color: var(--yellow); }
+dialog .genre[hidden] { display: none; }
+dialog .genre select { flex: 1; font: 22px var(--mono); background: var(--night); color: #fff; border: 2px solid var(--rule2); padding: 4px 6px; }
 dialog input[type=number] { width: 4em; font: inherit; background: var(--night); color: #fff; border: 2px solid var(--rule2); }
 dialog small { color: var(--soft); }
 dialog progress { width: 100%; }
@@ -1232,7 +1235,7 @@ body.keyshid .tour { bottom: 52px; }
     <section class="panel vappanel lowp" aria-label="VAPOR">
       <div class="vapor">
         <div class="title strip"><b>VAPOR</b><span>on the song</span>
-          <button class="btn" type="button" id="vapgo" title="One tap: slowed, warbly, dusty. Tap again for clean">VAPORIZE</button></div>
+          <button class="btn" type="button" id="vapgo" title="One tap: slowed, warbly, dusty, different every tap">VAPORIZE</button><button class="btn" type="button" id="vapclean" title="Takes all of VAPOR off" disabled>CLEAN</button></div>
         <div class="vknobs" id="vknobs"></div>
         <div class="hint">Slow the record down, warp the tape, add dust and crunch. Saved with the song, heard in exports and shared links.</div>
       </div>
@@ -1337,7 +1340,6 @@ body.keyshid .tour { bottom: 52px; }
 <footer>
   <span><span id="foot">SWITCH ON TO START</span></span>
   <span class="tag">Like cable TV, but weirder. SPELUNKR.TV</span>
-  <span class="boxline"><a href="?box=1" id="boxlink" title="See it laid out like the standalone box we're building, and play it">This software will be featured in a future standalone physical device.</a></span>
   <span class="credits">Spelunkr Groovebox @VERSION@ beta@PREVIEW@ · <a href="manual.html" target="_blank" rel="noopener" title="The manual: the device under the hood, every page and setting (for POWER USERs).">the manual</a> · Space plays and stops · Z–M and Q–O play the keys (S D G H J, 2 3 5 6 7 9 the black ones) · [ ] octave · arrows scroll and pick the track ·
     a Felucca fork: built on Phantom Tracker, Dungeon Tracker by Bourbon Weather and Felucca by Leo Kuroshita (Hügelton Instruments) ·
     free software, <a href="https://www.gnu.org/licenses/gpl-3.0.html" title="The licence: free to use, change and share, as long as the source stays open.">GPL-3.0</a>: <a href="@SOURCE@" title="The source code of this groovebox.">the source</a> · VT323 and Jersey 10 fonts, SIL OFL ·
@@ -1387,6 +1389,7 @@ body.keyshid .tour { bottom: 52px; }
   <form method="dialog">
     <h2 id="newtitle">START A NEW SONG?</h2>
     <p style="margin:0 0 8px" id="newtext"></p>
+    <label class="genre" id="genrerow" hidden>GENRE <select id="genre" aria-label="The random song's genre"></select></label>
     <small>Changed your mind afterwards? Hold SAVE on the groovebox to undo it.</small>
     <div class="buttons"><button class="btn" value="cancel">CANCEL</button><button class="btn orange" value="go" id="newgo">START</button></div>
   </form>
@@ -1653,12 +1656,17 @@ function turn(k, n) {
 const knobEls = [3, 4, 5, 6].map((r) => makeKnob($("knobs"), r, false));
 // VAPOR: SLOWED WOW VINYL CRUSH, 0..127 each, the song's (the device keeps them: web_vapor)
 const VAPOR = [
-  { lab: "SLOWED", tip: "Plays the whole record slower: lower and lazier", show: (v) => v ? Math.round(100 - v * 30 / 127) + "%" : "OFF" },
+  { lab: "SLOWED", tip: "Plays the whole record slower: lower and lazier", show: (v) => v ? Math.round(100 - v * 50 / 127) + "%" : "OFF" },   // (the speed: down to 50 %, Nov 26)
   { lab: "WOW", tip: "A warbly old tape: the pitch drifts", show: (v) => v ? Math.round(v / 1.27) + "%" : "OFF" },
   { lab: "VINYL", tip: "Crackle and hiss of an old record", show: (v) => v ? Math.round(v / 1.27) + "%" : "OFF" },
   { lab: "CRUSH", tip: "Fewer bits, lower rate: crunchy", show: (v) => v ? Math.round(v / 1.27) + "%" : "OFF" },
 ];
-const VAPORIZE = [56, 40, 44, 0];
+// VAPORIZE (Ed, Nov 26: "the percentages randomize each time"): every tap rolls new amounts: SLOWED always (90..61 %
+// speed), WOW always, VINYL most of the time, CRUSH now and then; never the same as the last; CLEAN beside it
+const vapRoll = () => {
+  const r = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  return [r(25, 100), r(20, 80), Math.random() < 0.7 ? r(20, 90) : 0, Math.random() < 0.25 ? r(10, 50) : 0];
+};
 let vapTouched = 0;
 const vapEls = VAPOR.map((d, k) => Object.assign(makeKnob($("vknobs"), "vapor", false), { k, v: 0, d }));
 function vapShow(el, v) {
@@ -1674,13 +1682,18 @@ function vapSet(k, v) {
   vapTouched = performance.now();
   vapShow(vapEls[k], v);
   send({ type: "vapor", k, v });
-  $("vapgo").textContent = vapEls.some((e) => e.v) ? "CLEAN" : "VAPORIZE";
+  $("vapclean").disabled = !vapEls.some((e) => e.v);
 }
 vapEls.forEach((el) => vapShow(el, 0));
-$("vapgo").addEventListener("click", () => {
-  const on = vapEls.some((e) => e.v);
-  vapEls.forEach((el, k) => vapSet(k, on ? 0 : VAPORIZE[k]));
-});
+function vaporize() {
+  let v;
+  do v = vapRoll(); while (v.every((x, k) => x === vapEls[k].v));
+  v.forEach((x, k) => vapSet(k, x));
+}
+const vapClean = () => vapEls.forEach((el, k) => vapSet(k, 0));
+const vapToggle = () => (vapEls.some((e) => e.v) ? vapClean() : vaporize());   // (the box's page: one push)
+$("vapgo").addEventListener("click", vaporize);
+$("vapclean").addEventListener("click", vapClean);
 
 // ------------------------------------------------------------------ POLISH (Ed, Nov 25: "some mastering options, maybe the
 // option to put compression on one of the tracks, a simple 3 channel EQ and an exciter with a handful of options for
@@ -2256,7 +2269,7 @@ function showGuide(g) {
   }
   if (g.vapor && performance.now() - vapTouched > 600) {   // VAPOR as the song has it (a load, a shared link)
     g.vapor.forEach((v, k) => { if (vapEls[k].v !== v) vapShow(vapEls[k], v); });
-    $("vapgo").textContent = g.vapor.some((v) => v) ? "CLEAN" : "VAPORIZE";
+    $("vapclean").disabled = !g.vapor.some((v) => v);
   }
   $("foot").textContent = `${g.tracks.length} TRACKS · PATTERN ${letter(g.cur)} OF A–F · ${g.song.rows.length ? g.song.rows.length + " SECTIONS IN THE SONG" : "NO SONG YET"} · SAVED IN THIS BROWSER`;
 
@@ -2625,7 +2638,7 @@ function mlKeyOf(el) {
   if ((h = el.closest(".pon"))) return "pon:" + h.dataset.m;
   if ((h = el.closest(".chip"))) return "chip:" + h.parentElement.id + ":" + [...h.parentElement.children].indexOf(h);
   if ((h = el.closest(".tab[data-pane]"))) return "tab:" + h.dataset.pane;
-  if ((h = el.closest("#vapgo, #poloff, #tprev, #tnext"))) return "id:" + h.id;
+  if ((h = el.closest("#vapgo, #vapclean, #poloff, #tprev, #tnext"))) return "id:" + h.id;
   return null;
 }
 function mlHost(key) {
@@ -3969,7 +3982,7 @@ const vapOn = () => vapEls.some((e) => e.v);
 const PG_VAPOR = {
   id: "vapor",
   turn(n) { vapSet(vapPick, vapEls[vapPick].v + n * 4); boxPgDraw(); },
-  click() { $("vapgo").click(); boxPgDraw(); },
+  click() { vapToggle(); boxPgDraw(); },
   dir(d) { vapPick = d === "left" ? (vapPick + 3) % 4 : d === "right" ? (vapPick + 1) % 4 : (vapPick + 2) % 4; boxPgDraw(); },
   read() { const e = vapEls[vapPick]; return [e.d.lab, e.d.show(e.v), Math.round(e.v / 1.27)]; },
   mouse(kind, el, e, n) {                                  // a card: pick it (the wheel over one turns it); the line: on / off
@@ -4421,7 +4434,7 @@ function boxGo(mode) {
   setBoxView(mode);
   scrollTo(0, 0);
 }
-$("boxlink").addEventListener("click", (e) => { e.preventDefault(); boxGo("1"); });
+// (the footer's link to the Box View: gone while the Physical Build is paused, Ed Nov 26 2026; ?box=1 still opens it)
 $("boxback").addEventListener("click", () => boxGo(null));
 addEventListener("popstate", () => setBoxView(boxMode()));
 addEventListener("resize", boxFit);
@@ -4564,7 +4577,8 @@ async function shareUpload(packed, samples) {
 // the titles move to data-tip as they appear (a MutationObserver), so the browser's own slow tooltip never doubles it
 const TIPS = {
   "#newsong": "NEW SONG: start from nothing. Clears every track's steps and patterns A–F, and puts the starting sounds back. It asks first.",
-  "#randsong": "RANDOM: roll a whole song for you (lo-fi, chillwave, electro or chiptune): sounds, beat, chords, bass, tune and parts. It asks first.",
+  "#randsong": "RANDOM: roll a whole song for you in a genre you pick (vaporwave, chillwave, lo-fi, city pop, future funk, chiptune, electro): sounds, beat, chords, bass, tune, and six parts (intro, A, B, bridge, outro, build). It asks first.",
+  "#genre": "The random song's genre. VAPORWAVE: another genre's song (mostly city pop) through VAPOR, slowed and warbly. ANY lets the dice pick.",
   "#recbtn": "RECORD LIVE: record what you hear, live, to a WAV file (everything you play and turn). STOP RECORDING (same place) downloads it.",
   "#bounce": "EXPORT: make a WAV of the song or the pattern, faster than real time, with a WAV for each track if you like.",
   "#share": "SHARE: a short code and a link that play this song in anyone's groovebox, with the samples it uses.",
@@ -4626,7 +4640,8 @@ const TIPS = {
   "#pad1": "ECHO · FLANGE: hold and drag on the track. Left echo, right ping-pong; up a jet, down hollow. Let go: it snaps back (with LOCK on, it stays).",
   "#lock0": "LOCK the FILTER · GATE pad: where you let go, it stays, on the track you played it on (pick another track and it stays there). It's saved with the song and goes with a song code. Click again to let it snap back.",
   "#lock1": "LOCK the ECHO · FLANGE pad: where you let go, it stays, on the track you played it on (pick another track and it stays there). It's saved with the song and goes with a song code. Click again to let it snap back.",
-  "#vapgo": "VAPORIZE: slowed, warbly and dusty in one tap. When it's on, CLEAN takes it all off.",
+  "#vapgo": "VAPORIZE: slowed, warbly and dusty in one tap, different amounts every tap: tap again for another take.",
+  "#vapclean": "CLEAN: takes all of VAPOR off.",
   "#smpfile": "",
   "#smplimits": "What samples can and can't do here.",
   "label:has(#smpfile)": "LOAD A FILE: a WAV, MP3, OGG or FLAC into this slot. A longer one keeps its first 30 seconds, however big the file. You can also drop a file on the panel.",
@@ -4737,21 +4752,30 @@ tipsInit();
 
 // ------------------------------------------------------------------ NEW SONG, RANDOM (felucca_web.c web_new_song): the song
 // replaced, so asked first; the device's undo (SAVE held) still brings the old one back
+// RANDOM SONG's GENRE (Ed, Nov 26 2026): value = boot_song.c ST_* (-1 any), in Ed's order; the last pick remembered
+const GENRES = [["4", "VAPORWAVE"], ["1", "CHILLWAVE"], ["3", "LO-FI"], ["5", "CITY POP"], ["6", "FUTURE FUNK"],
+                ["0", "CHIPTUNE"], ["2", "ELECTRO"], ["-1", "ANY: SURPRISE ME"]];
+const GENREKEY = "spelunkr-groovebox-genre";
+for (const [v, n] of GENRES) $("genre").add(new Option(n, v));
+try { const g = localStorage.getItem(GENREKEY); if (g && GENRES.some(([v]) => v === g)) $("genre").value = g; } catch {}
+$("genre").addEventListener("change", () => { try { localStorage.setItem(GENREKEY, $("genre").value); } catch {} });
 function newSong(random) {
   if (!node) { studioSay("Switch the groovebox on first."); return; }
   $("newtitle").textContent = random ? "ROLL A RANDOM SONG?" : "START A NEW SONG?";
   $("newtext").textContent = random
-    ? "A whole song made up for you: a style (lo-fi, chillwave, electro or chiptune), sounds, a beat, chords, a bass and a tune, arranged into parts. It replaces the song you have now."
+    ? "A whole song made up for you in the genre you pick: sounds, a beat, chords, a bass and a tune, in six patterns: A intro, B the A section, C the B section, D a bridge, E the outro, F a build into the B section, arranged into a song. It replaces the song you have now."
     : "Every track's steps cleared, patterns A–F emptied, the starting sounds back. It replaces the song you have now.";
+  $("genrerow").hidden = !random;
   $("newgo").textContent = random ? "ROLL IT" : "START";
   const d = $("newdlg");
   d.returnValue = "";
   d.onclose = () => {
     if (d.returnValue !== "go") return;
-    node.port.postMessage({ type: "newsong", random });
+    node.port.postMessage({ type: "newsong", random, genre: random ? +$("genre").value : -1 });
     padsApply(null);                                    // (a new song: the locked FX pads off)
     polApply(null);                                     // (and POLISH)
-    studioSay(random ? "A random song: press PLAY (Space) to hear it. RANDOM again rolls another." : "A new song: pick a track and its sound, then make a beat.");
+    const gn = random ? $("genre").selectedOptions[0].textContent : "";
+    studioSay(random ? `A random ${+$("genre").value < 0 ? "" : gn.toLowerCase() + " "}song: PLAY (Space) plays its A section (pattern B); PLAY on the SONG screen (MIX twice) plays it intro to outro. RANDOM again rolls another.` : "A new song: pick a track and its sound, then make a beat.");
   };
   d.showModal();
 }
@@ -4771,8 +4795,9 @@ const TOUR = [                                           // (Ed: "cover every pa
       + (phoneMQ.matches ? "" : "Hover over anything on the page to see what it does. ")
       + "<kbd>HELP</kbd> at the top brings this tour back and opens the written guide." },
   { t: "1 · START A SONG", el: "#newsong", x: () => "The <kbd>SONG</kbd> menu at the top: <kbd>NEW SONG</kbd> starts from nothing: no steps, the starting sounds. "
-      + "<kbd>🎲 RANDOM SONG</kbd> writes a whole song for you to play with: lo-fi, chillwave, electro or chiptune, with its own beat, chords, "
-      + "bass, tune and parts. Both ask first, and <kbd>UNDO</kbd> next to them takes back the last thing you did, a pattern copied by mistake too "
+      + "<kbd>🎲 RANDOM SONG</kbd> writes a whole song for you to play with in the genre you pick (vaporwave, chillwave, lo-fi, city pop, future "
+      + "funk, chiptune, electro), with its own beat, chords, bass, tune and parts: A intro, B and C the song's two sections, D a bridge, "
+      + "E the outro, F a build. Both ask first, and <kbd>UNDO</kbd> next to them takes back the last thing you did, a pattern copied by mistake too "
       + "(click it again to put it back)." },
   { t: "2 · PLAY AND STOP", el: btnSel("PLAY"), x: () => `<kbd>PLAY</kbd>${phoneMQ.matches ? "" : " (or the space bar)"} starts and stops the music. `
       + "Leave it playing while you work: every change is heard on the next loop." },
@@ -4826,7 +4851,7 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "<kbd>EFFECTS</kbd>: the picked track's reverb, delay and chorus sends, distortion, an INSERT effect (phaser, flanger, filter, crush, ducking, "
       + "beat repeat) and the SLICER; tap it again for the next page, through to the reverb's, delay's and chorus's own settings." },
   { t: "17 · MAKE IT VAPOR", el: ".vapor", x: () => "<kbd>VAPOR</kbd> in the side menu: slow the whole song down, warp the tape, add crackle and crunch. "
-      + "Tap <kbd>VAPORIZE</kbd> or use the four controls. It's saved with the song." },
+      + "Tap <kbd>VAPORIZE</kbd> (new amounts every tap; <kbd>CLEAN</kbd> takes it off) or use the four controls. It's saved with the song." },
   { t: "18 · POLISH IT", el: "#polish .pmods", x: () => "<kbd>POLISH</kbd> finishes the mix. The <b>COMPRESSOR</b> squeezes one track, "
       + "or just the kick or snare (it starts on PUNCH on the kick, a classic); the <b>SIDECHAIN</b> makes the tracks you pick dip at each kick "
       + "(the classic pump); the <b>EQ</b> shapes the whole song's tone (try the presets); the <b>EXCITER</b> adds "

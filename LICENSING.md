@@ -20,7 +20,8 @@ Three source files are ports and keep the licence of their originals:
 `firmware/src/phys_dsp.c` (DaisySP, MIT), `firmware/src/phys_symp.c` (Rings, MIT) and
 `firmware/src/fm6_core.c` (msfa, Apache-2.0). The firmware built with them is GPL-3.0-only as
 a whole. `firmware/src/eng_vult.c` (Phantom Tracker's VULT, GPL-3.0-only) ports Vult's DSP examples (MIT, their notice
-kept in the file and in `LICENSES/MIT-Vult.txt`).
+kept in the file and in `LICENSES/MIT-Vult.txt`). `firmware/src/boot_song.c` (GPL-3.0-only) carries tables after
+JAMTRACK FM-1's (Philip Bos, MIT: its notice in `LICENSES/MIT-JAMTRACK.txt`).
 
 Five engines and the code they share are under the MIT licence, not the GPL. They are
 Hügelton Instruments' own work and live in their own repository, Felucca-Engines

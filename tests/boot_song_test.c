@@ -6,7 +6,7 @@
  *    class's own list (a ROGUE a kit: FMKIT's or a SAMPLE kit) and a 16-step part with notes in their registers; the
  *    tempo 70..150 (Spelunkr's styles).
  * 2. they differ: at least 280 of the 300 songs are distinct.
- * 3. the melodic notes belong to one seven-note scale (one key) per song.
+ * 3. the melodic notes belong to the song's scale or its chords (one key, borrowed chords) per song.
  * 4. the dungeon: the four adventurers join, at L1; HOME says PRESS PLAY until PLAY.
  * 5. settled (as the screens use it): the autosave sees it, pattern A's copy is the song, nothing dirty.
  * 6. heard: 50 songs, 8 bars each: never full scale, never silent for a bar, no voice left after the stop.
@@ -110,14 +110,15 @@ int main(int argc, char **argv)
                         uint32_t n = st->note[j];
                         bad += c[k] == CLS_CLERIC ? n < 48u || n > 104u : CLS_ROLE[c[k]] == ROLE_BASS ? n < 16u || n > 64u :
                                n < 60u || n > 100u;
-                        if (p != RS_EXTRA || rsg.fx != FX_LIFT) pcs |= (uint16_t)(1u << (n % 12u));
+                        if (CLS_ROLE[c[k]] != ROLE_BASS || i % 8u == 0u)   /* (the bass: its 1 and 3; between, approach notes) */
+                            pcs |= (uint16_t)(1u << (n % 12u));
                     }
                 }
             }
             bad += !any[k];
             bad += memcmp(trk[k].step, bank_pat[1].step[k], sizeof trk[k].step) != 0;   /* (the tracks: the verse) */
         }
-        bad += song.g[G_BPM] < 70 || song.g[G_BPM] > 150;   /* (Spelunkr: by the style, 70..150) */
+        bad += song.g[G_BPM] < 62 || song.g[G_BPM] > 150;   /* (Spelunkr: by the genre, 62..150) */
         {   /* 0.10: CHORDS' B side on, panned apart; PERC's two lanes both play; the verse's pans per step (locks) */
             uint32_t l1 = 0, l2 = 0, pans = 0;
             for (p = 0; p < 4u; p++)
@@ -132,13 +133,8 @@ int main(int argc, char **argv)
             bnew[2] += l1 && l2;
             bnew[3] += pans >= 4u;
         }
-        {   /* one key: the pitch classes fit some rotation of a seven-note mode (minor's, its rotations: dorian, major) */
-            static const uint16_t NAT = 0x0AD5;            /* C D E F G A B: the diatonic set (every mode here is one) */
-            uint32_t r, fit = 0;
-            for (r = 0; r < 12u; r++) {
-                uint16_t rot = (uint16_t)(((NAT << r) | (NAT >> (12u - r))) & 0xFFFu);
-                fit |= (pcs & ~rot) == 0;
-            }
+        {   /* one key: the pitch classes the song's scale's or its chords' (Nov 26: borrowed chords, the minor iv, bVII) */
+            uint32_t fit = (pcs & ~rs_song_pcs()) == 0;
             offkey += !fit;
             if (!fit && getenv("BS_DBG")) {
                 printf("  off: song %u pcs %03X classes %u %u %u %u\n", s, pcs, c[0], c[1], c[2], c[3]);
@@ -162,15 +158,15 @@ int main(int argc, char **argv)
     }
     for (k = 0, i = 0; k < NENGINES; k++)
         i += (engs >> k) & 1u;
-    snprintf(badwhy, sizeof what, "300 rolls: the fixed roles (T1 drums .. T4 lead); their sounds; PATTERN BANK A..D (intro verse "
-             "chorus break, 32 steps) in key and register; SONG A B C B C D C; on B (%u off; %u GEN KIT kits, %u other; %u engines)", bad, kits[0], kits[1], i);
+    snprintf(badwhy, sizeof what, "300 rolls: the fixed roles (T1 drums .. T4 lead); their sounds; PATTERN BANK A..F (intro, A, B, bridge, outro, build"
+             ", 32 or 64 steps) in key and register; SONG from the intro, a chorus in it; on B (%u off; %u GEN KIT kits, %u other; %u engines)", bad, kits[0], kits[1], i);
     okb(what, !bad && kits[0] && !kits[1] && i >= NENG_SHOWN);   /* (Phantom Cosmonaut: MOD KIT retired, every kit GEN KIT's) */
     snprintf(what, sizeof what, "  0.10: CHORDS' B side panned apart %u of 300, BASS / LEAD B sides %u, PERC's two lanes %u, "
              "the verse's per-step pans %u", bnew[0], bnew[1], bnew[2], bnew[3]);
     okb(what, bnew[0] == 300u && bnew[1] > 150u && bnew[1] < 450u && bnew[2] == 300u && bnew[3] >= 270u);   /* (Spelunkr: a kick can take a panned hat's step) */
     snprintf(what, sizeof what, "  they differ: %u of 300 distinct", distinct);
     okb(what, distinct >= 280u);
-    snprintf(what, sizeof what, "  one key each: the melodic notes in a seven-note scale (%u songs off)", offkey);
+    snprintf(what, sizeof what, "  one key each: the melodic notes in the scale or its chords (%u songs off)", offkey);
     okb(what, !offkey);
 
     /* 5. settled */
@@ -230,7 +226,7 @@ int main(int argc, char **argv)
         press(B_OCTUP); frames(50);
         rolled = song_hash();
         okb("  OCT+: a song rolled: patterns A..D, SONG's sections, on B (\"RANDOM SONG\", the name cleared), the MENU up",
-            rolled != before && ui.menu && msg_is("RANDOM SONG") && !proj_name[0] && trk[0].p[P_SLEN] == 32 &&
+            rolled != before && ui.menu && msg_is("RANDOM SONG") && !proj_name[0] && (trk[0].p[P_SLEN] == 32 || trk[0].p[P_SLEN] == 64) &&
             bank.used == 0x3Fu && bank.cur == 1u && chain_config.count >= 6u);
         press(B_OCTUP); frames(50);
         again = song_hash();

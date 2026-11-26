@@ -87,7 +87,7 @@ for (let k = 0; k < PRESETS.length; k++) {
   const base = ex.web_pattern_frames();
   [127, 64, 90, 50].forEach((v, k) => ex.web_vapor(k, v));
   const slow = ex.web_pattern_frames();
-  check(Math.abs(slow / base - 1 / 0.7) < 0.01, `SLOWED 127: the pattern ${(base / 44100).toFixed(2)} s -> ${(slow / 44100).toFixed(2)} s`);
+  check(Math.abs(slow / base - 1 / 0.5) < 0.01, `SLOWED 127 (half speed, Nov 26): the pattern ${(base / 44100).toFixed(2)} s -> ${(slow / 44100).toFixed(2)} s`);
   ex.web_buttons(1 << 10); play(ex, [], 0.06); ex.web_buttons(0);
   const a = play(ex, [], 3);
   check(a.l.every(Number.isFinite) && peak(a) > 0.02 && peak(a) < 0.99, `the four at once: sounds, finite, no clip (peak ${peak(a).toFixed(2)})`);
