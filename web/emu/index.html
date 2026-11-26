@@ -1147,8 +1147,8 @@ body.keyshid .tour { bottom: 52px; }
     <div class="dd">
       <button class="btn ddbtn" id="ddfile" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="ddfilem">FILE <i aria-hidden="true">&#9662;</i></button>
       <div class="ddm" id="ddfilem" role="menu" aria-label="File" hidden>
-        <button class="btn ddi" id="saveproj" type="button" role="menuitem" title="Download everything saved here as a .phantom file">SAVE PROJECT<small>download a .phantom file</small></button>
-        <label class="btn ddi" role="menuitem" tabindex="0" title="Open a .phantom project file"><input type="file" id="openproj" accept=".phantom,.json,application/json" hidden>OPEN PROJECT<small>a .phantom file you saved</small></label>
+        <button class="btn ddi" id="saveproj" type="button" role="menuitem" title="Download everything saved here as a .spgb file">SAVE PROJECT<small>download a .spgb file</small></button>
+        <label class="btn ddi" role="menuitem" tabindex="0" title="Open a .spgb project file"><input type="file" id="openproj" accept=".spgb,.phantom,.json,application/json" hidden>OPEN PROJECT<small>a .spgb file you saved</small></label>
       </div>
     </div>
     <div class="dd">
@@ -2942,7 +2942,7 @@ async function download(blob, name) {
   const cap = await dlCap;
   if (cap) {                                         // (published as a claude.ai artifact: its downloads take zip and json)
     if (/\.wav$/.test(name)) { blob = zip([{ name, data: await blob.arrayBuffer() }]); name = name.replace(/\.wav$/, ".zip"); }
-    else if (/\.phantom$/.test(name)) name += ".json";
+    else if (/\.(spgb|phantom)$/.test(name)) name += ".json";
     try { await cap.save({ filename: name, data: blob }); } catch (e) { if (e && e.code !== "declined") studioSay("Couldn't save the file here (" + (e.code || e) + ")."); }
     return;
   }
@@ -4438,7 +4438,7 @@ idbAll().then((o) => {
 });
 smpShow();
 
-// SAVE / OPEN: the saves as a .phantom file
+// SAVE / OPEN: the saves as a .spgb file (older saves were .phantom: OPEN still takes them)
 const PROJ_FORMAT = "phantom-tracker-flash";
 $("saveproj").addEventListener("click", async () => {
   if (!node) return;
@@ -4449,7 +4449,7 @@ $("saveproj").addEventListener("click", async () => {
   saveFlash(m.sectors);
   const samples = smp.map((s, k) => s && { k, ...stored(s), pcm16: SPK.b64of(new Uint8Array(SPK.toInt16(s.pcm, 0).buffer)) }).filter(Boolean);
   download(new Blob([JSON.stringify({ format: PROJ_FORMAT, version: 1, app: "spelunkr-groovebox", firmware: "@VERSION@", saved: new Date().toISOString(), sectors, samples, pads: padsState(), polish: polState() })],
-                    { type: "application/json" }), `spelunkr-${stamp()}.phantom`);
+                    { type: "application/json" }), `spelunkr-${stamp()}.spgb`);
   studioSay("Saved: OPEN that file here later to carry on.");
 });
 $("openproj").addEventListener("change", async (e) => {
@@ -4592,8 +4592,8 @@ const TIPS = {
   "#recwithout": "Record without clicks: the music starts and records right away.",
   "#recdlg button[value='cancel']": "Don't record (RECORD off again).",
   "#sharecopycode": "Copy the code, to paste in chat or say on stream.",
-  "#saveproj": "SAVE: download everything as a project file (.phantom), your samples too. OPEN brings it back.",
-  "label:has(#openproj)": "OPEN: load a project file (.phantom) you saved before. It replaces what's here.",
+  "#saveproj": "SAVE: download everything as a project file (.spgb), your samples too. OPEN brings it back.",
+  "label:has(#openproj)": "OPEN: load a project file (.spgb, or an older .phantom) you saved before. It replaces what's here.",
   "#smpgo": "SAMPLES: your own sounds. Load a file, trim it, slice it, put it on a track.",
   ".tab[data-pane=tracks]": "TRACKS: the song under the device: each track's patterns, mute, solo, the row tools.",
   ".tab[data-pane=vapor]": "VAPOR: slowed, warbly, dusty, crunchy, on the whole song.",
