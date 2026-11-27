@@ -1087,6 +1087,133 @@ body.keyshid .tour { bottom: 52px; }
 :root[data-skin^="aero"] .logo b i { font-family: 'Jersey 10', sans-serif; }
 :root[data-skin="amp"] .logo b { border-radius: 0; border: 3px solid; border-color: var(--rule2) var(--night) var(--night) var(--rule2); box-shadow: none; }
 @media (max-width: 720px) { .logo b, .rail .logo b { width: 42px; height: 42px; } .logo b i { font-size: 21px; } }
+
+/* ================================================================ PHONE (Ed, Nov 26: mobile Option C, "one card at a
+ * time"): on a phone (up to 720 px wide, or a sideways phone up to 520 px tall) the screen stays pinned at the top, the
+ * panels under it become cards (DEVICE, MIX, TRACKS, VAPOR, PADS, POLISH, SAMPLES: tap a name or swipe), PLAY, RECORD,
+ * the pattern and KEYS float at the bottom, the keys start tucked away, and the menus, the song bar and the looks go
+ * behind ☰. Sideways: the screen on the left, the cards on the right. body.phone (phoneSet below) */
+#phtop, #phdots, #phfab, #phsheet { display: none; }
+html.phone, body.phone { touch-action: manipulation; }       /* (no double-tap zoom: taps on the buttons are taps) */
+body.phone .app { display: block; min-height: 0; }
+body.phone .scenes { display: none !important; }
+body.phone .keybar { left: 0; }
+body.phone .keytab { display: none; }
+body.phone footer { margin-bottom: 104px; }
+body.phone:not(.keyshid) footer { margin-bottom: calc(var(--kbh, 160px) + 104px); }
+body.phone .tour, body.phone.keyshid .tour { bottom: 100px; }
+body.phone:not(.keyshid) .tour { bottom: calc(var(--kbh, 160px) + 96px); }
+body.phone .tour.high { bottom: auto; }
+
+/* the top: the badge, what's playing, ☰; the screen under it */
+body.phone #phtop { display: block; position: sticky; top: 0; z-index: 4; background: var(--night); border-bottom: 3px solid var(--rule); }
+.phbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--indigo); }
+.phbar .logo { width: auto; margin: 0; } .phbar .logo span { display: none; }
+.phbar .logo b { width: 40px; height: 40px; } .phbar .logo b i { font-size: 20px; }
+.phwho { flex: 1; min-width: 0; line-height: 1.05; }
+.phwho b { display: block; font: 21px/1 var(--head); color: var(--yellow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phwho span { display: block; font-size: 17px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phmenu { width: 48px; height: 44px; flex: none; font-size: 24px; padding: 0; justify-content: center; }
+body.phone #phtop .screenwrap { padding: 8px 0 6px; gap: 0; }
+body.phone #phtop .bezel { padding: 6px; }
+body.phone #phtop #screen { width: min(calc(100vw - 40px), 33vh, 360px); height: auto; }
+body.phone .trackbar #tstate, body.phone .trackbar #tpat { display: none; }   /* (on the floating bar) */
+body.phone #phtop .bezel::after { inset: 6px; }
+body.phone #phtop .start { gap: 8px; padding: 10px; }
+body.phone #phtop .start p { font-size: 18px; margin: 0; }
+
+/* the cards' names: tap one, or swipe the card */
+body.phone #phdots { display: flex; position: sticky; z-index: 3; top: var(--pht, 0px); gap: 6px; padding: 6px 10px; overflow-x: auto;
+  scrollbar-width: none; background: var(--night); border-bottom: 2px solid var(--strip); }
+#phdots::-webkit-scrollbar { display: none; }
+.phdot { flex: none; min-height: 40px; padding: 0 12px; border-radius: 20px; border: 2px solid var(--rule); background: var(--panel);
+  color: var(--soft); font: 19px/1 var(--head); cursor: pointer; }
+.phdot[aria-selected="true"] { background: linear-gradient(90deg, var(--orange), var(--rust)); color: #fff; border-color: var(--yellow); }
+.phdot:focus-visible { outline: 3px solid var(--yellow); outline-offset: 1px; }
+
+/* one card at a time */
+body.phone main { padding: 10px 8px 12px; display: block; }
+body.phone main > .top { display: flex; flex-direction: column; gap: 10px; }
+body.phone main .panel:not(.phon) { display: none !important; }
+body.phone main .panel.phon { display: flex !important; flex-direction: column; }
+body.phone main .guide.panel.phon { display: block !important; }
+body.phone main > .panel.phon { margin-top: 0; }
+body.phone #studiomsg { margin: 8px 0; font-size: 19px; }
+body.phone .device .body { display: flex; flex-direction: column; padding: 10px 6px; gap: 12px; }
+body.phone .face { order: 3; width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+body.phone .face .btn { min-height: 46px; font-size: 19px; padding: 2px; }
+body.phone .side { order: 2; width: 100%; gap: 12px; }
+body.phone .knobs, body.phone .wheels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.phone .wheels { border: 0; padding: 0; }
+body.phone .stepper { width: auto; } body.phone .stepper .arr { width: 44px; height: 44px; }
+body.phone .trackbar .btn.arrow { min-width: 44px; min-height: 44px; }
+body.phone .fader { height: 190px; }
+body.phone .mstrip .ms { height: 34px; }
+body.phone .pads { flex-direction: column; align-items: center; gap: 14px; }
+body.phone .pad, body.phone[data-pane="jam"] .pad, body.phone.jam[data-pane="jam"] .pad { width: min(78vw, 300px); height: min(78vw, 300px); }
+body.phone[data-pane="jam"] .fxpad .pads { flex-direction: column; }
+body.phone[data-pane="vapor"] .vappanel .vknobs, body.phone .vappanel .vknobs { grid-template-columns: repeat(2, minmax(0, 1fr)); flex-basis: 100%; }
+body.phone[data-pane="vapor"] .vappanel .vapor > .title { flex: 1 1 100%; flex-wrap: wrap; }
+body.phone #vapgo, body.phone #vapclean { min-height: 44px; }
+body.phone .pmods { grid-template-columns: minmax(0, 1fr); padding: 8px; }
+body.phone .slots { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.phone .sbar .hint { display: none; }
+
+/* PLAY, RECORD, the pattern, KEYS: always there, over the keys when they're up */
+body.phone #phfab { display: flex; position: fixed; z-index: 6; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  height: 68px; align-items: center; gap: 8px; padding: 0 8px; background: var(--indigo); border: 3px solid var(--yellow); border-radius: 34px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .45); transition: bottom .28s ease; }
+body.phone:not(.keyshid) #phfab { bottom: calc(var(--kbh, 160px) + 8px); }
+#phfab .btn { flex: none; width: 54px; height: 54px; min-height: 0; padding: 0; border-radius: 27px; justify-content: center; font-size: 24px; }
+#phfab .phplay { background: var(--panel); color: #fff; }
+#phfab .phplay.on { background: #2FAE4E; }
+#phfab .phrec { background: var(--panel); color: var(--rec); border: 2px solid var(--orange); }
+#phfab .phrec.on { background: var(--rec); color: #fff; }
+#phfab .phpat { flex: 1; min-width: 0; text-align: center; line-height: 1; font-size: 16px; color: var(--soft); }
+#phfab .phpat b { display: block; font: 23px/1 var(--head); color: var(--yellow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#phfab .phkeys { width: 72px; background: var(--yellow); color: var(--indigo); font: 20px/1 var(--head); }
+#phfab .phkeys[aria-expanded="true"] { background: var(--orange); color: #fff; }
+@media (prefers-reduced-motion: reduce) { body.phone #phfab { transition: none; } }
+
+/* ☰: the top menus, the song bar (tempo, swing, key, MIDI) and the looks, over the page */
+body.phone.phmenu #phsheet { display: block; position: fixed; inset: 0; z-index: 30; overflow-y: auto; background: var(--night); padding-bottom: 30px; }
+.phsheethd { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--indigo); border-bottom: 3px solid var(--rule);
+  position: sticky; top: 0; z-index: 2; }
+.phsheethd b { flex: 1; font: 26px/1 var(--head); color: var(--yellow); }
+.phsheethd .btn { min-height: 44px; }
+body.phone #phsheet header { padding: 10px; }
+body.phone #phsheet header nav { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+body.phone #phsheet header nav .btn { min-height: 44px; font-size: 19px; padding: 4px 6px; justify-content: center; }
+body.phone #phsheet .dd > .ddbtn { width: 100%; }
+body.phone #phsheet .ddm { min-width: 220px; }
+body.phone #phsheet .songbar { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; }
+body.phone #phsheet .songbar .sb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+body.phone #phsheet .songbar .btn, body.phone #phsheet .songbar select { min-height: 44px; }
+body.phone #phsheet .songbar .sbarr { min-width: 44px; }
+body.phone #phsheet .rail { position: static; height: auto; overflow: visible; padding: 12px; border: 0; background: transparent; display: block; }
+body.phone #phsheet .rail .logo, body.phone #phsheet .rail .tabs, body.phone #phsheet .rail hr, body.phone #phsheet .railstat { display: none; }
+body.phone #phsheet #railplay, body.phone #phsheet #railshare { display: none; }
+body.phone #phsheet .railfoot { margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+body.phone #phsheet .theme { flex-direction: column; align-items: stretch; font-size: 17px; }
+body.phone #phsheet .theme select { max-width: none; min-height: 44px; font-size: 18px; }
+body.phone #phsheet .rail .power { grid-column: 1 / -1; font-size: 19px; min-height: 44px; }
+body.phone.phmenu { overflow: hidden; }
+
+/* sideways: the screen on the left (as tall as the phone), the cards on the right */
+body.phone.land #phtop { position: fixed; left: 0; top: 0; bottom: 0; width: var(--phw, 360px); border-bottom: 0; border-right: 3px solid var(--rule);
+  display: flex; flex-direction: column; }
+body.phone.land #phtop .screenwrap { flex: 1; justify-content: center; padding: 4px 0; }
+body.phone.land #phtop #screen { width: min(calc(100vh - 150px), calc(var(--phw, 360px) - 30px)); }
+body.phone.land #phtop .screenwrap { padding-bottom: 82px; }   /* (the floating bar under the screen, in the left column) */
+body.phone.land .stage { margin-left: var(--phw, 360px); }
+body.phone.land #phdots { top: 0; }
+body.phone.land #phfab { left: 8px; right: auto; width: calc(var(--phw, 360px) - 19px); box-sizing: border-box; height: 64px; }
+body.phone.land:not(.keyshid) #phfab { left: auto; right: 10px; }
+body.phone.land footer { margin-bottom: 20px; }
+body.phone.land #phfab .phl { display: none; }   /* (PAT A: the narrow bar) */
+body.phone.land .keybar { z-index: 7; }
+body.phone.land .device .body { flex-direction: row; flex-wrap: wrap; }
+body.phone.land .fader { height: 120px; }
 </style>
 </head>
 <body>
@@ -2232,6 +2359,7 @@ function showGuide(g) {
   deckLights(); boxKnobDraw();
   if (boxPg && boxPg.id === "vapor" && !document.hidden) boxPgDraw();
   $("tpat").textContent = "PATTERN " + letter(g.cur) + (g.queue >= 0 ? " → " + letter(g.queue) : "");
+  try { phSync(g); } catch {}                             // (the phone's bar and floating buttons)
   {                                                       // (the pads' track: theirs while one is on, else the picked one)
     const on = g.xyk >= 0 && (padAt[0] || padAt[1]), t = "on " + ROLE[on ? g.xyk : g.sel] + (on && padsState() ? " · locked" : "");
     if ($("padtrack").textContent !== t) $("padtrack").textContent = t;
@@ -4817,7 +4945,7 @@ const TOUR = [                                           // (Ed: "cover every pa
   { t: "7 · PLAY THE KEYS", el: ".keybar", x: () => (phoneMQ.matches ? "Play on these keys. "
       : "Play on these keys, or on your computer keyboard: <kbd>Z</kbd> to <kbd>M</kbd> and <kbd>Q</kbd> to <kbd>O</kbd>. ")
       + "<kbd>OCT −</kbd> and <kbd>OCT +</kbd> move up and down. On a drum track each key is a drum. "
-      + "The tab on top (<kbd>▼ HIDE KEYS</kbd>) slides them out of the way" + (phoneMQ.matches ? "." : "; the computer keys still play.") },
+      + (phOn ? "<kbd>KEYS</kbd> on the bar at the bottom slides them up and down." : "The tab on top (<kbd>▼ HIDE KEYS</kbd>) slides them out of the way; the computer keys still play.") },
   { t: "8 · MIDI KEYBOARDS AND KNOBS", el: () => $("midilearn").closest(".sb"), x: () => phoneMQ.matches
       ? "A MIDI keyboard works on a computer (Chrome, Edge, Firefox): plug it in and <kbd>MIDI</kbd> shows its name. <kbd>LEARN</kbd> links its knobs to the page."
       : "Plug in a MIDI keyboard: <kbd>MIDI</kbd> shows its name and it plays the track you've picked. Got knobs, faders or pads on it? "
@@ -4856,7 +4984,7 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "or just the kick or snare (it starts on PUNCH on the kick, a classic); the <b>SIDECHAIN</b> makes the tracks you pick dip at each kick "
       + "(the classic pump); the <b>EQ</b> shapes the whole song's tone (try the presets); the <b>EXCITER</b> adds "
       + "sparkle or bass you can hear on small speakers. Picking a preset turns it on; it's saved with the song." },
-  { t: "19 · YOUR OWN SAMPLES", el: "#smpgo", x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file (a long one keeps its first 30 seconds), "
+  { t: "19 · YOUR OWN SAMPLES", el: () => (phOn ? document.querySelector('.phdot[data-c="samples"]') : $("smpgo")), x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file (a long one keeps its first 30 seconds), "
       + "trim it, slice it, hear it (<kbd>■ STOP</kbd> stops it), and put it on a track as a synth, as chops on the keys, or as a drum kit." },
   { t: "20 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>FILE</kbd> ▸ SAVE PROJECT downloads a project file (your samples too) "
       + "and OPEN PROJECT brings it back. <kbd>SHARE</kbd> ▸ SHARE THIS SONG gives a short code (SPGB_…) and a link, carrying the samples, VAPOR, "
@@ -4879,6 +5007,7 @@ function tourShow(i) {
   tourAt = i;
   if (i < 0 || i >= TOUR.length) {
     ddClose();
+    try { if (phOn) phMenu(false); } catch {}
     $("tour").hidden = true;
     try { localStorage.setItem(TOURKEY, "done"); } catch {}
     return;
@@ -4899,6 +5028,7 @@ function tourShow(i) {
   else if (tourEl && tourEl.closest(".samples")) setPane("samples");
   else if (tourEl && tourEl.closest(".polish")) setPane("polish");
   else if (tourEl && tourEl.closest(".guide")) setPane("tracks");
+  try { phReveal(tourEl); } catch {}                     // (on a phone: its card, or the ☰ menu)
   const dd = tourEl && tourEl.closest(".dd");            // (an item in a top menu: the menu opened, all of it lit)
   if (dd) { ddOpen(dd); tourEl = dd.querySelector(".ddm"); }
   if (tourEl) {
@@ -5205,6 +5335,164 @@ $("plgo").addEventListener("click", () => {
 });
 $("plnext").addEventListener("click", () => { if (pl.i >= 0) plPlay(pl.i + 1); });
 $("plprev").addEventListener("click", () => { if (pl.i >= 0) plPlay(Math.max(0, pl.i - 1)); });
+// PHONE (Ed, Nov 26: mobile Option C): the screen pinned at the top, the panels as cards (tap a name or swipe), PLAY /
+// RECORD / the pattern / KEYS floating at the bottom, the keys tucked away at first, the menus behind ☰; sideways the
+// screen on the left. Moves the screen, the top menus, the song bar and the side menu (the looks) into its own parts
+// while on, puts them back after (a phone turned into a tablet's width, or ?box views); every id stays the same.
+const PHCARDS = [
+  { id: "dev", n: "DEVICE", sel: [".device"] },
+  { id: "mix", n: "MIX", sel: [".mixer"] },
+  { id: "tracks", n: "TRACKS", sel: [".guide"], pane: "tracks" },
+  { id: "vapor", n: "VAPOR", sel: [".vappanel"], pane: "vapor" },
+  { id: "pads", n: "PADS", sel: [".fxpad", ".mixer"], pane: "jam" },
+  { id: "polish", n: "POLISH", sel: [".polish"], pane: "polish" },
+  { id: "samples", n: "SAMPLES", sel: [".samples"], pane: "samples" },
+];
+const PHKEY = "spelunkr-groovebox-phcard";
+const phMQ = matchMedia("(max-width: 720px), (max-height: 520px) and (pointer: coarse)");
+const phLandMQ = matchMedia("(orientation: landscape)");
+let phOn = false, phCard = "dev";
+const phHome = new Map();                                 // (where each moved part lives off the phone)
+const phTop = document.createElement("div"), phDots = document.createElement("nav"), phFab = document.createElement("div"),
+  phSheet = document.createElement("div");
+phTop.id = "phtop";
+phTop.innerHTML = `<div class="phbar"><a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr"><b aria-hidden="true"><i>SP</i><i>GB</i></b><span></span></a>
+  <div class="phwho"><b id="phwho">SPELUNKR GROOVEBOX</b><span id="phwhat">SWITCH ON TO START</span></div>
+  <button class="btn phmenu" type="button" id="phmenu" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu: song, audio, share, file, help, tempo, key, MIDI, looks">&#9776;</button></div>`;
+phDots.id = "phdots"; phDots.setAttribute("role", "tablist"); phDots.setAttribute("aria-label", "Cards");
+phDots.innerHTML = PHCARDS.map((c) => `<button class="phdot" type="button" role="tab" data-c="${c.id}" aria-selected="false">${c.n}</button>`).join("");
+phFab.id = "phfab";
+phFab.innerHTML = `<button class="btn phplay" type="button" id="phplay" aria-label="Play and stop">&#9654;</button>
+  <button class="btn phrec" type="button" id="phrec" aria-label="Record">&#9679;</button>
+  <div class="phpat" aria-live="off"><span id="phstate">STOPPED</span><b id="phpat">PATTERN A</b></div>
+  <button class="btn phkeys" type="button" id="phkeys" aria-expanded="false" aria-controls="keys">KEYS</button>`;
+phSheet.id = "phsheet"; phSheet.setAttribute("role", "dialog"); phSheet.setAttribute("aria-label", "Menu");
+phSheet.innerHTML = `<div class="phsheethd"><b>MENU</b><button class="btn orange" type="button" id="phclose">CLOSE</button></div>`;
+const phStage = document.querySelector(".stage");
+phStage.prepend(phTop, phDots);
+document.body.append(phFab, phSheet);
+
+function phMove(el, dest) {
+  if (!phHome.has(el)) { const mark = document.createComment("phone"); el.before(mark); phHome.set(el, mark); }
+  dest.append(el);
+}
+function phBack() { for (const [el, mark] of phHome) mark.replaceWith(el); phHome.clear(); }
+function phSizes() {
+  if (!phOn) return;
+  const land = phLandMQ.matches && innerWidth > innerHeight;
+  document.body.classList.toggle("land", land);
+  if (land) document.body.style.setProperty("--phw", Math.round(Math.max(240, Math.min(innerHeight - 30, innerWidth * 0.46))) + "px");
+  document.body.style.setProperty("--pht", (land ? 0 : phTop.offsetHeight) + "px");
+  document.body.style.setProperty("--kbh", $("keybar").offsetHeight + "px");
+}
+function phShow(id, how) {                                // how: "swipe" / "tap" / "quiet" (no pane message, no scroll)
+  const c = PHCARDS.find((x) => x.id === id) || PHCARDS[0];
+  phCard = c.id;
+  try { localStorage.setItem(PHKEY, c.id); } catch {}
+  const want = c.pane || (paneNow === "jam" ? "tracks" : null);   // (off PADS the keys play notes again)
+  if (want && want !== paneNow) setPane(want, how === "quiet");
+  const on = new Set(c.sel.flatMap((s) => [...document.querySelectorAll("main " + s)]));
+  for (const p of document.querySelectorAll("main .panel")) p.classList.toggle("phon", on.has(p));
+  for (const b of phDots.children) {
+    const sel = b.dataset.c === c.id;
+    b.setAttribute("aria-selected", String(sel));
+    if (sel) b.scrollIntoView({ block: "nearest", inline: "center", behavior: how === "quiet" ? "auto" : "smooth" });
+  }
+  if (c.id === "polish") requestAnimationFrame(() => { try { eqDraw(); } catch {} });
+  if (c.id === "samples") requestAnimationFrame(() => dispatchEvent(new Event("resize")));   // (the waveform sizes to its card)
+  if (how !== "quiet" && scrollY > 0) scrollTo(0, 0);    // (the new card from its top)
+}
+function phMenu(open) {
+  document.body.classList.toggle("phmenu", open);
+  $("phmenu").setAttribute("aria-expanded", String(open));
+  if (!open) ddClose();
+}
+function phSet() {
+  const want = phMQ.matches && !boxMode();
+  if (want === phOn) { phSizes(); return; }
+  phOn = want;
+  document.documentElement.classList.toggle("phone", want);
+  document.body.classList.toggle("phone", want);
+  if (want) {
+    phMove(document.querySelector(".device .screenwrap"), phTop);
+    phMove(document.querySelector(".stage > header"), phSheet);
+    phMove($("songbar"), phSheet);
+    phMove(document.querySelector(".rail"), phSheet);
+    let kept = null;
+    try { kept = localStorage.getItem(KEYSKEY); } catch {}
+    setKeysHidden(true);                                   // (the keys start tucked away: they'd cover the device and SWITCH ON)
+    try { localStorage.setItem(KEYSKEY, kept || ""); } catch {}
+    let c = null;
+    try { c = localStorage.getItem(PHKEY); } catch {}
+    phShow(c || (paneNow === "tracks" ? "dev" : (PHCARDS.find((x) => x.pane === paneNow) || PHCARDS[0]).id), "quiet");
+  } else {
+    phMenu(false);
+    phBack();
+    document.body.classList.remove("land");
+    for (const p of document.querySelectorAll("main .panel.phon")) p.classList.remove("phon");
+  }
+  requestAnimationFrame(phSizes);
+}
+function phReveal(el) {                                   // (the tour: the card or the menu its card points at)
+  if (!phOn || !el) return;
+  if (el.closest("#phsheet")) { phMenu(true); return; }
+  phMenu(false);
+  const p = el.closest("main .panel");
+  if (!p) return;
+  const c = PHCARDS.find((x) => x.sel.some((s) => p.matches(s)) && (!x.pane || x.pane === paneNow)) || PHCARDS.find((x) => x.sel.some((s) => p.matches(s)));
+  if (c && !p.classList.contains("phon")) phShow(c.id, "quiet");
+}
+function phSync(g) {                                      // (from showGuide: what's playing, on the bar and the floating buttons)
+  if (!phOn) return;
+  const letter = (p) => "ABCDEF"[p] ?? "-";
+  $("phwho").textContent = $("tnum").textContent + " · " + ($("twho").textContent || $("twhat").textContent);
+  $("phwhat").textContent = `${g.bpm} BPM · ${$("twhat").textContent}`;
+  $("phstate").textContent = g.rec ? "RECORDING" : g.play ? "PLAYING" : "STOPPED";
+  $("phpat").innerHTML = "PAT<span class=\"phl\">TERN</span> " + letter(g.cur) + (g.queue >= 0 ? " → " + letter(g.queue) : "");
+  $("phplay").classList.toggle("on", !!g.play);
+  $("phplay").innerHTML = g.play ? "&#9632;" : "&#9654;";
+  $("phplay").setAttribute("aria-label", g.play ? "Stop" : "Play");
+  $("phrec").classList.toggle("on", !!g.rec);
+}
+for (const b of phDots.children) b.addEventListener("click", () => phShow(b.dataset.c, "tap"));
+$("phplay").addEventListener("click", () => tapButton(B.PLAY));
+$("phrec").addEventListener("click", () => tapButton(B.REC));
+$("phkeys").addEventListener("click", () => {
+  const h = !document.body.classList.contains("keyshid");
+  setKeysHidden(h);
+  $("phkeys").setAttribute("aria-expanded", String(!h));
+  requestAnimationFrame(phSizes);
+});
+$("phmenu").addEventListener("click", () => phMenu(!document.body.classList.contains("phmenu")));
+$("phclose").addEventListener("click", () => phMenu(false));
+addEventListener("keydown", (e) => { if (e.key === "Escape" && document.body.classList.contains("phmenu") && !document.querySelector(".ddm:not([hidden])")) phMenu(false); });
+for (const id of ["newsong", "randsong", "recbtn", "bounce", "share", "codebtn", "playlistbtn", "saveproj", "helpbtn"])
+  $(id).addEventListener("click", () => { if (phOn) phMenu(false); });   // (a menu item that opens a pop-up or the tour: the sheet goes)
+$("openproj").addEventListener("change", () => { if (phOn) phMenu(false); });
+{                                                         // swipe a card left or right for the next one
+  let sx = 0, sy = 0, st = 0, ok = false;
+  const NOSWIPE = ".pad, .fader, .pank, input, select, textarea, canvas, .guide, .strips, .pchips, .chips, .slots, .wavewrap, .stepper, .keys, .vknobs, .pknobs";
+  const m = document.querySelector("main");
+  m.addEventListener("touchstart", (e) => {
+    ok = phOn && e.touches.length === 1 && !e.target.closest(NOSWIPE);
+    if (!ok) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now();
+  }, { passive: true });
+  m.addEventListener("touchend", (e) => {
+    if (!ok) return;
+    ok = false;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 2 || performance.now() - st > 700) return;
+    const i = PHCARDS.findIndex((x) => x.id === phCard), j = i + (dx < 0 ? 1 : -1);
+    if (j >= 0 && j < PHCARDS.length) phShow(PHCARDS[j].id, "swipe");
+  }, { passive: true });
+}
+phMQ.addEventListener("change", phSet);
+addEventListener("resize", phSizes);
+addEventListener("popstate", phSet);
+new ResizeObserver(phSizes).observe($("keybar"));
+new ResizeObserver(phSizes).observe(phTop);
+phSet();
 </script>
 </body>
 </html>
