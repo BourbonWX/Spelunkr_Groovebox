@@ -40,7 +40,7 @@ is a plain button.
   (the dice pick; your last pick is remembered). Each genre has its own tempos, chords (the 7ths and 9ths, the
   borrowed minor IV of city pop), drum grooves, bass lines and sounds. **VAPORWAVE** is what vaporwave is: another
   genre's song (city pop most often, else lo-fi, chillwave or future funk) put through **VAPOR**, slowed, warbly and
-  usually dusty; the VAPOR panel shows how much, and **CLEAN** takes it off. The song comes in six patterns:
+  usually dusty; the VAPOR panel shows how much, and **OFF** takes it off. The song comes in six patterns:
   **A** the intro, **B** the A section (the verse), **C** the B section (the chorus), **D** a bridge (its own chords,
   lighter drums, a fill out), **E** the outro (thinning out and ending on the home chord) and **F** a build (the drums
   rising into the B section), arranged into a song from the intro to the outro: **PLAY** on the SONG screen plays it
@@ -186,8 +186,15 @@ plays along with its code.
 The **VAPOR** panel works on the whole song: **SLOWED** plays the record slower, down to half speed (lower and lazier;
 it shows the speed: 100 % is as written, 50 % half), **WOW** warps the tape, **VINYL** adds crackle and hiss, **CRUSH**
 makes it crunchy (◀ ▶ on each). **VAPORIZE** sets all four in one tap, different amounts every tap (tap again for
-another take); **CLEAN** takes it all off. It is saved
+another take); **OFF** takes it all off. It is saved
 with the song and heard in exports and shared links.
+
+The drop-down beside the title picks the kind of VAPOR: **DIGITAL VAPOR** is the four controls above, emulating analog
+audio equipment; **ANALOG VAPOR** has two settings modeled after Bourby's
+[Fostex X-28](https://www.muzines.co.uk/articles/fostex-x28/7544) cassette 4-track, measured from his test tape: the song recorded at the deck's fastest speed with Dolby on, then
+played back slower, with the tape's dark top end, its little bump in the lows, the way it squeezes when it's pushed,
+the capstan's flutter and its quiet hiss. It has two settings: **SLOW** (the pitch knob at 12 o'clock, about 3
+semitones down) and **SLOWER** (all the way down, about 6.6). Loud songs saturate more, as on tape.
 
 **FX KEYS** (on **JAM PADS**, the button left of the screen): the keys glitch the whole mix while you hold them
 (stutter, tunnel, jumps, crush: the screen shows which key does what); tap **FX KEYS OFF** and the keys play notes.

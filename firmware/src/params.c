@@ -257,8 +257,8 @@ static const param_desc_t GP[G_COUNT] = {
     /* inert: they set the GM drum part (level, reverb send), which is gone (drums are the DRUM engine
      * on any part). On no page; kept so the ids and G_COUNT, which the project format and the
      * editor protocol depend on, do not move */
-    [G_DRLVL] = PD("-", F_INT, 0, 32639, 0),     /* Spelunkr: the page's VAPOR, two amounts a slot (felucca_web.c */
-    [G_DRREV] = PD("-", F_INT, 0, 32639, 0),     /* vap_get: SLOWED WOW, VINYL CRUSH, 0..127 each) */
+    [G_DRLVL] = PD("-", F_INT, 0, 32767, 0),     /* Spelunkr: the page's VAPOR, two amounts a slot (felucca_web.c */
+    [G_DRREV] = PD("-", F_INT, 0, 32767, 0),     /* vap_get: SLOWED WOW, VINYL CRUSH, 0..127 each; bit 7: FOSTEX, SLOWER) */
 };
 
 /* RONDO: the TRACKER's commands (core.h CMD_*) as the FX column and AUTOMATION name and step them */

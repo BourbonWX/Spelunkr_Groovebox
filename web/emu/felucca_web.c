@@ -494,8 +494,79 @@ static double vap_pos, vap_ph1, vap_ph2;               /* the read position past
 static float vap_hold_l, vap_hold_r, vap_crk, vap_crk_y, vap_hiss_y;
 static uint32_t vap_hc, vap_rng = 0x5EED1u;
 static float vap_rand(void) { vap_rng = vap_rng * 1664525u + 1013904223u; return (float)(int32_t)vap_rng / 2147483648.0f; }
-static double vap_speed(void) { return 1.0 - vap_get(0) * 0.5 / 127.0; }   /* (Nov 26, Ed: down to half speed; was 0.7) */
-EXPORT uint32_t web_vapor_get(uint32_t k) { return vap_get(k & 3u); }
+/* BOURBY'S FOSTEX (Ed, Nov 27 2026: "a VAPOR drop down ... CLEAN and Bourby's Fostex and the fostex just has 2
+ * settings SLOW and SLOWER"): Ed's own cassette multitracker, a song recorded at its fastest speed and played back at
+ * the pitch knob's middle (SLOW) or all the way down (SLOWER), Dolby on, measured from his captures of a test tape
+ * (2026-11-27): the speed (0.8396, 0.6817), the record's tone (a bump near 100 Hz, the highs gone from 2 kHz: 5
+ * biquads fitted to the sweep, within half a dB), its squeeze (odd harmonics, fitted to 100 Hz at four levels), the
+ * capstan's flutter (4.65 Hz x the speed, its octave, a jitter of 6..40 Hz: within 0.02 %), the hiss (dark: Dolby's)
+ * and a breath of 60 Hz hum. Bit 7 of G_DRLVL: on; bit 7 of G_DRREV: SLOWER (the CLEAN amounts stay as they were) */
+static const double FOS_EQ[2][5][5] = {{{0.996549, -1.993098, 0.996549, -1.99309418, 0.993101819}, {1.00153853, -1.98118779, 0.97982228, -1.98118779, 0.981360805}, {0.209731891, 0.419463782, 0.209731891, -0.528424282, 0.367351847}, {0.0792506121, 0.158501224, 0.0792506121, -0.986508902, 0.30351135}, {0.919440348, -1.29434899, 0.528883645, -1.29434899, 0.448323994}},
+    {{0.994829072, -1.98965814, 0.994829072, -1.98964956, 0.989666731}, {1.00176101, -1.97955827, 0.977960411, -1.97955827, 0.979721422}, {0.0613849693, 0.122769939, 0.0613849693, -1.07845938, 0.323999254}, {0.207871943, 0.415743885, 0.207871943, -0.574368493, 0.405856264}, {0.923260516, -1.33824655, 0.551224151, -1.33824655, 0.474484666}}};   /* b0 b1 b2 a1 a2: SLOW, SLOWER */
+static const double FOS_JIT[2][5] = {{5.84648026e-06, 1.16929605e-05, 5.84648026e-06, -1.99421844, 0.994244436}, {1.0, -2.0, 1.0, -1.99892116, 0.998922068}};   /* the jitter's band: 6..40 Hz; white in, std 0.0411884 out */
+#define FOS_JIT_NORM 24.2787
+static const double FOS_LO[5] = {0.0105731108, 0.0105731108, 0.0, -0.978853778, 0.0};   /* the hiss's dark part: 150 Hz */
+#define FOS_SP_SLOW 0.839583
+#define FOS_SP_SLOWER 0.681709
+static uint32_t vap_fostex(void) { return ((uint32_t)(uint16_t)song.g[G_DRLVL] & 0x80u) ? 1u + (((uint32_t)(uint16_t)song.g[G_DRREV] >> 7) & 1u) : 0u; }
+static double vap_speed(void)
+{
+    uint32_t f = vap_fostex();
+    return f ? (f == 2u ? FOS_SP_SLOWER : FOS_SP_SLOW) : 1.0 - vap_get(0) * 0.5 / 127.0;   /* (Nov 26: CLEAN down to half speed) */
+}
+/* the tape path's state: the record (its tone's biquads, per channel), the last four frames as recorded (the cubic
+ * reads between them), the capstan, the jitter, the hiss */
+static double fos_eq[5][2][2], fos_jz[2][2], fos_lz[2][2], fos_ph, fos_hum, fos_pos;
+static float fos_h[4][2];
+static uint32_t fos_fill, fos_was;
+static float fos_rand(void) { return vap_rand() * 1.7320508f; }   /* (uniform, variance 1) */
+static double fos_bq(const double *c, double *z, double x)
+{
+    double y = c[0] * x + z[0];
+    z[0] = c[1] * x - c[3] * y + z[1];
+    z[1] = c[2] * x - c[4] * y;
+    return y;
+}
+static float fos_squeeze(float x)                       /* (fitted: held past full scale) */
+{
+    float a = x < 0 ? -x : x, a2, y;
+    if (a > 1.0f)
+        a = 1.0f;
+    a2 = a * a;
+    y = a * (1.0f + a2 * (-0.4124f + a2 * (-0.2172f + a2 * 0.1949f)));
+    return x < 0 ? -y : y;
+}
+static void fos_record(uint32_t set, uint32_t frame, float *out)   /* one device frame onto the tape */
+{
+    uint32_t c, i, j = (frame % RING) * 2u;
+    for (c = 0; c < 2u; c++) {
+        double v = fos_squeeze(ring[j + c]);
+        for (i = 0; i < 5u; i++)
+            v = fos_bq(FOS_EQ[set][i], fos_eq[i][c], v);
+        out[c] = (float)v;
+    }
+}
+EXPORT uint32_t web_vapor_get(uint32_t k) { return k == 4u ? vap_fostex() : vap_get(k & 3u); }
+/* (tests) frames of one's own into the ring, in place of the device's: VAPOR measured on a test signal */
+static float web_feed_b[2048];
+EXPORT float *web_feed_buf(void) { return web_feed_b; }
+EXPORT void web_feed(uint32_t n)
+{
+    uint32_t i;
+    for (i = 0; i < n && i < 1024u && ring_w - ring_r < RING - 1u; i++, ring_w++) {
+        ring[(ring_w % RING) * 2u] = web_feed_b[2u * i];
+        ring[(ring_w % RING) * 2u + 1u] = web_feed_b[2u * i + 1u];
+    }
+}
+/* VAPOR's kind (the page's drop-down): 0 CLEAN, 1 BOURBY'S FOSTEX at SLOW, 2 at SLOWER */
+EXPORT void web_vapor_kind(uint32_t m)
+{
+    uint16_t a = (uint16_t)song.g[G_DRLVL], b = (uint16_t)song.g[G_DRREV];
+    a = (uint16_t)(m ? a | 0x80u : a & ~0x80u);
+    b = (uint16_t)(m == 2u ? b | 0x80u : b & ~0x80u);
+    song.g[G_DRLVL] = (int16_t)a;
+    song.g[G_DRREV] = (int16_t)b;
+}
 
 /* ---- Spelunkr: POLISH (Ed, Nov 25 2026: "some mastering options, maybe the option to put compression on one of the
  * tracks, a simple 3 channel EQ and an exciter with a handful of options for each"). The page's, not the song's
@@ -1134,9 +1205,56 @@ EXPORT void web_vapor(uint32_t k, uint32_t v) { vap_set(k & 3u, v); }
 /* n frames (<= 1024) into out_l / out_r: the device runs until they exist */
 EXPORT void web_render(uint32_t n)
 {
-    uint32_t k, slow = vap_get(0), wow = vap_get(1), vinyl = vap_get(2), crush = vap_get(3);
+    uint32_t k, slow = vap_get(0), wow = vap_get(1), vinyl = vap_get(2), crush = vap_get(3), fos = vap_fostex();
     if (n > 1024u)
         n = 1024u;
+    if (fos) {                                         /* BOURBY'S FOSTEX: recorded, then played back slower */
+        uint32_t set = fos - 1u;
+        double sp = set ? FOS_SP_SLOWER : FOS_SP_SLOW, f1 = 4.65 * sp, a1 = set ? 0.00095 : 0.0019, a2 = set ? 0.0012 : 0.0008,
+               js = (set ? 0.00139 : 0.00125) * FOS_JIT_NORM, wn = 3.77e-4, ln = 5.03e-3;   /* (the hiss: -111.9 dB/Hz white, -89.4 dB/Hz under
+                                                     * 150 Hz: x sqrt(FS / 2)) */
+        if (fos_was != fos) {                          /* (a fresh tape: its state cleared, four frames recorded) */
+            memset(fos_eq, 0, sizeof fos_eq);
+            memset(fos_h, 0, sizeof fos_h);
+            fos_pos = 0;
+            fos_fill = 0;
+            fos_was = fos;
+        }
+        while (fos_fill < 3u) {                        /* (the frames ahead: r, r + 1, r + 2) */
+            while (ring_w - ring_r < 3u)
+                web_ms();
+            fos_record(set, ring_r + fos_fill, fos_h[1 + fos_fill]);
+            fos_fill++;
+        }
+        for (k = 0; k < n; k++) {
+            double f = fos_pos, dev, jit;
+            uint32_t c;
+            for (c = 0; c < 2u; c++) {                 /* (4-point cubic between the recorded frames) */
+                double p0 = fos_h[0][c], p1 = fos_h[1][c], p2 = fos_h[2][c], p3 = fos_h[3][c];
+                float v = (float)(p1 + 0.5 * f * (p2 - p0 + f * (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3 + f * (3.0 * (p1 - p2) + p3 - p0))));
+                double lo = fos_bq(FOS_LO, fos_lz[c], fos_rand() * ln);
+                (c ? out_r : out_l)[k] = v + (float)(fos_rand() * wn + lo + 6.3e-5 * sin_d(fos_hum) + 7.9e-5 * sin_d(2.0 * fos_hum));
+            }
+            fos_hum += 60.0 / FS;
+            fos_hum -= (double)(uint32_t)fos_hum;
+            jit = fos_bq(FOS_JIT[1], fos_jz[1], fos_bq(FOS_JIT[0], fos_jz[0], fos_rand()));
+            fos_ph += f1 / FS;
+            fos_ph -= (double)(uint32_t)fos_ph;
+            dev = a1 * sin_d(fos_ph) + a2 * sin_d(2.0 * fos_ph + 0.175) + jit * js;
+            fos_pos += sp * (1.0 + dev);
+            while (fos_pos >= 1.0) {                   /* (the tape moves on a frame: the next one recorded) */
+                fos_pos -= 1.0;
+                ring_r++;
+                memmove(fos_h[0], fos_h[1], sizeof fos_h[0] * 3u);
+                while (ring_w - ring_r < 3u)
+                    web_ms();
+                fos_record(set, ring_r + 2u, fos_h[3]);
+            }
+        }
+        pol_master(n);
+        return;
+    }
+    fos_was = 0;
     if (!slow && !wow) {
         vap_pos = 0;
         while (ring_w - ring_r < n)
@@ -1688,6 +1806,7 @@ EXPORT const char *web_guide(void)
     wj("],\"xy\":[%u,%u,%u,%u,%u,%u],\"xyk\":%d", xy_live[0].x, xy_live[0].y, xy_live[0].on, xy_live[1].x, xy_live[1].y, xy_live[1].on,
        web_pad ? (int)web_pad_k : -1);
     wj(",\"vapor\":[%u,%u,%u,%u]", vap_get(0), vap_get(1), vap_get(2), vap_get(3));
+    wj(",\"vkind\":%u", vap_fostex());                  /* (0 CLEAN, 1 BOURBY'S FOSTEX: SLOW, 2: SLOWER) */
     {                                                  /* the selected track's chop banks: slot + 1, 0 none (the PADS page, SAMPLES) */
         uint32_t bk = web_spk_banks();
         smp_fx_t fa, fb;

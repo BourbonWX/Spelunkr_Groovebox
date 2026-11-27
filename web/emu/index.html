@@ -1249,6 +1249,16 @@ body.phone.land .fader { height: 120px; }
 .pad1.empty { opacity: .3; cursor: default; }
 .pad1.lit { background: linear-gradient(180deg, var(--ptheme, #FFE13A), var(--pacc, #E2741F)); border-color: var(--ptext, #FFFFFF); transition: none; }
 .pad1.lit .pn, .pad1.lit .pk { color: var(--pink, #1C0A57); }
+#vapkind { min-height: 36px; font: 19px/1 var(--head); background: var(--panel); color: var(--text); border: 2px solid var(--rule); border-radius: 6px; padding: 0 6px; }
+.vfos { display: flex; flex-direction: column; gap: 10px; flex: 1 1 100%; }
+.vfos[hidden] { display: none; }
+.vdesc { flex: 1 1 100%; margin: 0; padding: 4px 14px 10px; font: 17px/1.35 var(--mono); color: var(--text); opacity: .85; }
+.vfos .vdesc { padding: 4px 14px 0; }
+.vdesc a { color: var(--yellow); text-decoration: underline; text-underline-offset: 3px; }
+.vfosbtns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.vfosbtns .btn { min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: 26px/1 var(--head); }
+.vfosbtns .btn small { display: block; font: 16px/1.1 var(--mono); opacity: .85; text-transform: none; }
+.vfosbtns .btn[aria-pressed="true"] { background: linear-gradient(90deg, var(--orange), var(--rust)); color: #fff; border-color: var(--yellow); }
 .padfx { display: flex; align-items: stretch; gap: 1.6cqw; padding: 0 2cqw 2cqw; }
 .pfx { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: 7.6cqw 1fr 7.6cqw; grid-template-rows: auto 7.6cqw; align-items: center;
   background: var(--psurf, #0E1E78); border: 2px solid var(--pline, #2F49C8); border-radius: 1.6cqw; padding: 0.8cqw; }
@@ -1426,9 +1436,17 @@ body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
     <section class="panel vappanel lowp" aria-label="VAPOR">
       <div class="vapor">
         <div class="title strip"><b>VAPOR</b><span>on the song</span>
-          <button class="btn" type="button" id="vapgo" title="One tap: slowed, warbly, dusty, different every tap">VAPORIZE</button><button class="btn" type="button" id="vapclean" title="Takes all of VAPOR off" disabled>CLEAN</button></div>
+          <select id="vapkind" aria-label="The kind of VAPOR"><option value="0">DIGITAL VAPOR</option><option value="1">ANALOG VAPOR</option></select>
+          <button class="btn" type="button" id="vapgo" title="One tap: slowed, warbly, dusty, different every tap">VAPORIZE</button><button class="btn" type="button" id="vapclean" title="Takes all of VAPOR off" disabled>OFF</button></div>
+        <p class="vdesc" id="vaphint">Focuses on emulating analog audio equipment: a slowed record, warped tape, dust and crunch. Saved with the song, heard in exports and shared links.</p>
         <div class="vknobs" id="vknobs"></div>
-        <div class="hint">Slow the record down, warp the tape, add dust and crunch. Saved with the song, heard in exports and shared links.</div>
+        <div class="vfos" id="vfos" hidden>
+          <p class="vdesc">Two settings modeled after Bourby's <a href="https://www.muzines.co.uk/articles/fostex-x28/7544" target="_blank" rel="noopener">Fostex X-28</a>.</p>
+          <div class="vfosbtns" role="group" aria-label="The Fostex's speed">
+            <button class="btn" type="button" id="vfslow" aria-pressed="true">SLOW<small>the knob at 12 o'clock · −3 semitones</small></button>
+            <button class="btn" type="button" id="vfslower" aria-pressed="false">SLOWER<small>all the way down · −6.6 semitones</small></button>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -1875,7 +1893,7 @@ function vapSet(k, v) {
   vapTouched = performance.now();
   vapShow(vapEls[k], v);
   send({ type: "vapor", k, v });
-  $("vapclean").disabled = !vapEls.some((e) => e.v);
+  $("vapclean").disabled = !(typeof vapKind !== "undefined" && vapKind) && !vapEls.some((e) => e.v);
 }
 vapEls.forEach((el) => vapShow(el, 0));
 function vaporize() {
@@ -1883,10 +1901,34 @@ function vaporize() {
   do v = vapRoll(); while (v.every((x, k) => x === vapEls[k].v));
   v.forEach((x, k) => vapSet(k, x));
 }
-const vapClean = () => vapEls.forEach((el, k) => vapSet(k, 0));
-const vapToggle = () => (vapEls.some((e) => e.v) ? vapClean() : vaporize());   // (the box's page: one push)
+// VAPOR's kind (Ed, Nov 27 2026: "a VAPOR drop down ... CLEAN and Bourby's Fostex and the fostex just has 2 settings
+// SLOW and SLOWER"): CLEAN, the knobs above; BOURBY'S FOSTEX, his cassette deck modelled from his test tape
+// (felucca_web.c), at SLOW or SLOWER. The CLEAN amounts stay as they were under it. OFF: all of VAPOR off
+let vapKind = 0, vapFosSlower = false;
+function vapKindShow(k) {
+  vapKind = k ? 1 : 0;
+  if (k) vapFosSlower = k === 2;
+  $("vapkind").value = String(vapKind);
+  $("vknobs").style.display = vapKind ? "none" : "";     // (style, not [hidden]: .btn and the knobs' grid set display)
+  $("vfos").hidden = !vapKind;
+  $("vapgo").style.display = vapKind ? "none" : "";
+  $("vaphint").style.display = vapKind ? "none" : "";
+  $("vfslow").setAttribute("aria-pressed", String(!vapFosSlower));
+  $("vfslower").setAttribute("aria-pressed", String(vapFosSlower));
+  $("vapclean").disabled = !vapKind && !vapEls.some((e) => e.v);
+}
+function vapKindSet(k) {                                  // 0 CLEAN, 1 FOSTEX SLOW, 2 FOSTEX SLOWER
+  vapTouched = performance.now();
+  send({ type: "vaporkind", m: k });
+  vapKindShow(k);
+}
+const vapClean = () => { if (vapKind) vapKindSet(0); vapEls.forEach((el, k) => vapSet(k, 0)); };
+const vapToggle = () => (vapKind || vapEls.some((e) => e.v) ? vapClean() : vaporize());   // (the box's page: one push)
 $("vapgo").addEventListener("click", vaporize);
 $("vapclean").addEventListener("click", vapClean);
+$("vapkind").addEventListener("change", () => vapKindSet(+$("vapkind").value ? (vapFosSlower ? 2 : 1) : 0));
+$("vfslow").addEventListener("click", () => { vapFosSlower = false; vapKindSet(1); });
+$("vfslower").addEventListener("click", () => { vapFosSlower = true; vapKindSet(2); });
 
 // ------------------------------------------------------------------ POLISH (Ed, Nov 25: "some mastering options, maybe the
 // option to put compression on one of the tracks, a simple 3 channel EQ and an exciter with a handful of options for
@@ -2473,7 +2515,9 @@ function showGuide(g) {
   }
   if (g.vapor && performance.now() - vapTouched > 600) {   // VAPOR as the song has it (a load, a shared link)
     g.vapor.forEach((v, k) => { if (vapEls[k].v !== v) vapShow(vapEls[k], v); });
-    $("vapclean").disabled = !g.vapor.some((v) => v);
+    const vk = g.vkind || 0;
+    if ((vk ? 1 : 0) !== vapKind || (vk === 2) !== vapFosSlower) vapKindShow(vk);
+    $("vapclean").disabled = !vk && !g.vapor.some((v) => v);
   }
   $("foot").textContent = `${g.tracks.length} TRACKS · PATTERN ${letter(g.cur)} OF A–F · ${g.song.rows.length ? g.song.rows.length + " SECTIONS IN THE SONG" : "NO SONG YET"} · SAVED IN THIS BROWSER`;
 
@@ -4004,7 +4048,7 @@ const OCTROW = [{ bit: "OCT-", col: "util" }, { wheel: 1, n: 1, icon: "⇅", lab
 const DECK_FACE = [{ bit: "EDIT", col: "face" }, { bit: "SEQ", col: "face" }, { bit: "GLO", col: "face" },
   { bit: "FX", col: "fx" }, { bit: "SAVE", col: "util" }, UNDO, ...OCTROW];
 // (Ed, Nov 24: VAPOR and SAMPLES on the box: they lead the SHIFT set; ARP and REDO gave way: UNDO again is the redo)
-const DECK_SHIFT = [{ fn: () => boxPgOpen(PG_VAPOR), icon: "☁", lab: "VAPOR", col: "pat", lit: () => !!(typeof vapEls !== "undefined" && vapEls.some((e) => e.v)) },
+const DECK_SHIFT = [{ fn: () => boxPgOpen(PG_VAPOR), icon: "☁", lab: "VAPOR", col: "pat", lit: () => !!(typeof vapEls !== "undefined" && (vapKind || vapEls.some((e) => e.v))) },
   { fn: () => boxPgOpen(PG_SAMPLES), icon: "✂", lab: "SAMPLES", col: "tempo" },
   { fn: () => G && send({ type: "mute", k: G.sel }), icon: "M", lab: "MUTE", col: "rec", lit: () => !!(G && G.tracks[G.sel].mute) },
   { bit: "SCL", col: "face" }, { bit: "ENV", col: "face" }, { bit: "LFO", col: "face" },
@@ -4248,7 +4292,7 @@ const BACK = pgKey("↩", "BACK", "back", () => boxPgClose());
 
 // ---- VAPOR: SLOWED WOW VINYL CRUSH as four cards (2 x 2); the wheel turns the picked one, its centre VAPORIZE / CLEAN
 let vapPick = 0;
-const vapOn = () => vapEls.some((e) => e.v);
+const vapOn = () => !!vapKind || vapEls.some((e) => e.v);
 const PG_VAPOR = {
   id: "vapor",
   turn(n) { vapSet(vapPick, vapEls[vapPick].v + n * 4); boxPgDraw(); },
@@ -4262,12 +4306,12 @@ const PG_VAPOR = {
   },
   keys() {
     const pick = (k) => pgKey(String(Math.round(vapEls[k].v / 1.27)), VAPOR[k].lab, "vap", () => { vapPick = k; boxPgDraw(); }, () => vapPick === k);
-    return [pick(0), pick(1), pick(2), pick(3), pgKey("☁", vapOn() ? "CLEAN" : "VAPORIZE", "fx", () => this.click(), vapOn), BACK,
+    return [pick(0), pick(1), pick(2), pick(3), pgKey("☁", vapOn() ? "OFF" : "VAPORIZE", "fx", () => this.click(), vapOn), BACK,
       pgKey("−", "LESS", "util", () => this.turn(-4)), pgKey("0", "OFF", "util", () => { vapSet(vapPick, 0); boxPgDraw(); }), pgKey("+", "MORE", "util", () => this.turn(4))];
   },
   draw(el) {
     el.innerHTML = `<h3>VAPOR <small>the whole mix, live</small></h3><div class="bp-cards"></div>
-      <p class="bp-big go"></p><p class="bp-help">TURN: the amount · ◀ ▶ ▲ ▼: pick one · PUSH: ${vapOn() ? "CLEAN" : "VAPORIZE"} · HOME: back</p>`;
+      <p class="bp-big go"></p><p class="bp-help">TURN: the amount · ◀ ▶ ▲ ▼: pick one · PUSH: ${vapOn() ? "OFF" : "VAPORIZE"} · HOME: back</p>`;
     const cards = el.querySelector(".bp-cards");
     vapEls.forEach((e, k) => {
       const c = document.createElement("div");
@@ -4276,7 +4320,7 @@ const PG_VAPOR = {
       c.querySelector("b").textContent = e.d.lab; c.querySelector("span").textContent = e.d.show(e.v); c.querySelector("em").textContent = e.d.tip;
       cards.append(c);
     });
-    el.querySelector(".bp-big").textContent = vapOn() ? "VAPOR IS ON" : "CLEAN (VAPOR OFF)";
+    el.querySelector(".bp-big").textContent = vapOn() ? "VAPOR IS ON" : "VAPOR OFF";
   },
 };
 
@@ -4923,7 +4967,7 @@ const TIPS = {
   "#lock0": "LOCK the FILTER · GATE pad: where you let go, it stays, on the track you played it on (pick another track and it stays there). It's saved with the song and goes with a song code. Click again to let it snap back.",
   "#lock1": "LOCK the ECHO · FLANGE pad: where you let go, it stays, on the track you played it on (pick another track and it stays there). It's saved with the song and goes with a song code. Click again to let it snap back.",
   "#vapgo": "VAPORIZE: slowed, warbly and dusty in one tap, different amounts every tap: tap again for another take.",
-  "#vapclean": "CLEAN: takes all of VAPOR off.",
+  "#vapclean": "OFF: takes all of VAPOR off (DIGITAL VAPOR's knobs to zero, ANALOG VAPOR out).",
   "#smpfile": "",
   "#smplimits": "What samples can and can't do here.",
   "label:has(#smpfile)": "LOAD A FILE: a WAV, MP3, OGG or FLAC into this slot. A longer one keeps its first 30 seconds, however big the file. You can also drop a file on the panel.",
@@ -4935,6 +4979,9 @@ const TIPS = {
   "#smphits": "AUTO: a chop at each hit (12 at most), each ending where its sound dies away.",
   "[data-eq='4']": "4 equal chops, end to end.", "[data-eq='6']": "6 equal chops.", "[data-eq='8']": "8 equal chops.", "[data-eq='12']": "12 equal chops: every key of a bank.",
   "#smpnone": "NONE: no chops: the whole trimmed sample is one.",
+  "#vapkind": "The kind of VAPOR: DIGITAL VAPOR, the four knobs; ANALOG VAPOR, Bourby's Fostex X-28 cassette 4-track, measured from his test tape, at SLOW or SLOWER.",
+  "#vfslow": "SLOW: the Fostex's pitch knob at 12 o'clock: about 3 semitones down, the tape's tone and flutter.",
+  "#vfslower": "SLOWER: the pitch knob all the way down: about 6.6 semitones down, darker, the flutter slower.",
   "#padsgo": "PADS: this track's chops as 12 pads over the screen, like an MPC. Tap one to play it; with RECORD on, your taps go into the pattern.",
   "#padbka": "BANK A: the chops on C3 to B3.", "#padbkb": "BANK B: the second sample's chops, on C4 to B4.",
   "#padsx": "Close the pads: the screen again.",
@@ -5063,7 +5110,7 @@ function newSong(random) {
     firstSongOn = false;
     padsApply(null);                                    // (a new song: the locked FX pads off)
     polApply(null);                                     // (and POLISH)
-    if (!random) setTimeout(vapClean, 120);             // (Nov 27: NEW: VAPOR off too, as RANDOM sets its own; after the
+    if (!random) setTimeout(vapClean, 120);             // (Nov 27: NEW: VAPOR off too (the Fostex too), as RANDOM sets its own; after the
                                                         //  device has made the new song)
     const gn = random ? $("genre").selectedOptions[0].textContent : "";
     studioSay(random ? `A random ${+$("genre").value < 0 ? "" : gn.toLowerCase() + " "}song: PLAY (Space) plays its A section (pattern B); PLAY on the SONG screen (MIX twice) plays it intro to outro. RANDOM again rolls another.` : "A new song: pick a track and its sound, then make a beat.");
@@ -5149,8 +5196,10 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "jumps, crush (the screen shows which key does what); tap <kbd>FX KEYS OFF</kbd> and they play notes again. Everywhere else this button is "
       + "<kbd>EFFECTS</kbd>: the picked track's reverb, delay and chorus sends, distortion, an INSERT effect (phaser, flanger, filter, crush, ducking, "
       + "beat repeat) and the SLICER; tap it again for the next page, through to the reverb's, delay's and chorus's own settings." },
-  { t: "17 · MAKE IT VAPOR", el: ".vapor", x: () => "<kbd>VAPOR</kbd> (" + (phOn ? "its card" : "in the side menu") + "): slow the whole song down, warp the tape, add crackle and crunch. "
-      + "Tap <kbd>VAPORIZE</kbd> (new amounts every tap; <kbd>CLEAN</kbd> takes it off) or use the four controls. It's saved with the song." },
+  { t: "17 · MAKE IT VAPOR", el: ".vapor", x: () => "<kbd>VAPOR</kbd> (" + (phOn ? "its card" : "in the side menu") + ") makes the whole song sound like old gear. The drop-down picks the kind. "
+      + "<b>DIGITAL VAPOR</b> emulates analog equipment with four controls: slow the record down, warp the tape, add crackle and crunch; "
+      + "tap <kbd>VAPORIZE</kbd> for new amounts every tap. <b>ANALOG VAPOR</b> has two settings modeled after Bourby's own Fostex X-28 cassette 4-track, "
+      + "measured from his test tape: <kbd>SLOW</kbd> and <kbd>SLOWER</kbd>. <kbd>OFF</kbd> takes either off. It's saved with the song." },
   { t: "18 · POLISH IT", el: "#polish .pmods", x: () => "<kbd>POLISH</kbd> finishes the mix. The <b>COMPRESSOR</b> squeezes one track, "
       + "or just the kick or snare (it starts on PUNCH on the kick, a classic); the <b>SIDECHAIN</b> makes the tracks you pick dip at each kick "
       + "(the classic pump); the <b>EQ</b> shapes the whole song's tone (try the presets); the <b>EXCITER</b> adds "
