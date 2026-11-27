@@ -1104,7 +1104,8 @@ body.phone:not(.keyshid) footer { margin-bottom: calc(var(--kbh, 160px) + 104px)
 body.phone .tour, body.phone.keyshid .tour { bottom: 100px; }
 body.phone:not(.keyshid) .tour { bottom: calc(var(--kbh, 160px) + 96px); }
 body.phone .tour.high { bottom: auto; }
-body.phone .tour { display: flex; flex-direction: column; max-height: calc(100dvh - 120px); }   /* (a long step on a small phone:
+body.phone .tour:not([hidden]) { display: flex; flex-direction: column; max-height: calc(100dvh - 120px); }   /* (:not([hidden]):
+                                                     Nov 27, the flex here outranked .tour[hidden] and SKIP / DONE left it open) */   /* (a long step on a small phone:
                                                      the text scrolls inside the card, NEXT stays in reach) */
 body.phone:not(.keyshid) .tour { max-height: calc(100dvh - var(--kbh, 160px) - 110px); }
 body.phone .tour > p { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
@@ -1245,6 +1246,15 @@ body.phone.land .fader { height: 120px; }
 .pad1.empty { opacity: .3; cursor: default; }
 .pad1.lit { background: linear-gradient(180deg, #FFE13A, #E2741F); border-color: #FFFFFF; transition: none; }
 .pad1.lit .pn, .pad1.lit .pk { color: #1C0A57; }
+.padfx { display: flex; align-items: stretch; gap: 1.6cqw; padding: 0 2cqw 2cqw; }
+.pfx { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: 7.6cqw 1fr 7.6cqw; grid-template-rows: auto 7.6cqw; align-items: center;
+  background: #0E1E78; border: 2px solid #2F49C8; border-radius: 1.6cqw; padding: 0.8cqw; }
+.pfx b { grid-column: 1 / -1; font: 3.6cqw/1 var(--head); color: #FFE13A; text-align: center; padding-bottom: 0.6cqw; }
+.pfx button { height: 100%; border: 0; border-radius: 1cqw; background: #2E3FD8; color: #F4F4FF; font: 5cqw/1 var(--head); cursor: pointer; padding: 0; }
+.pfx i { font: 4.6cqw/1 var(--mono); font-style: normal; text-align: center; color: #F4F4FF; }
+.pfxrev { flex: 0 0 13cqw; border: 2px solid #2F49C8; border-radius: 1.6cqw; background: #0E1E78; color: #F4F4FF; font: 4.6cqw/1 var(--head); cursor: pointer; }
+.pfxrev[aria-pressed="true"] { background: #FF5FA2; border-color: #FFFFFF; color: #1C0A57; }
+.pfxrev:disabled { opacity: .35; cursor: default; }
 .padsgo { position: absolute; right: 18px; bottom: 18px; z-index: 2; padding: 4px 10px; border: 2px solid #FFE13A; border-radius: 6px;
   background: #1C0A57; color: #FFE13A; font: 18px/1 var(--head); cursor: pointer; opacity: .92; }
 .padsgo[hidden] { display: none; }
@@ -1365,6 +1375,12 @@ body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
                 <button type="button" class="padbk" id="padbka" aria-pressed="true">A</button><button type="button" class="padbk" id="padbkb" aria-pressed="false">B</button>
                 <button type="button" class="padx" id="padsx" aria-label="Close the pads: the screen again">&#10005;</button></div>
               <div class="padgrid" id="padgrid"></div>
+              <div class="padfx" id="padfx" role="group" aria-label="The bank's effects">
+                <span class="pfx" data-id="0"><b>PITCH</b><button type="button" data-d="-1" aria-label="Pitch down">&#8722;</button><i>0</i><button type="button" data-d="1" aria-label="Pitch up">+</button></span>
+                <button type="button" class="pfxrev" id="padrev" aria-pressed="false">REV</button>
+                <span class="pfx" data-id="2"><b>CRUSH</b><button type="button" data-d="-1" aria-label="Less crush">&#8722;</button><i>0</i><button type="button" data-d="1" aria-label="More crush">+</button></span>
+                <span class="pfx" data-id="3"><b>SAT</b><button type="button" data-d="-1" aria-label="Less saturation">&#8722;</button><i>0</i><button type="button" data-d="1" aria-label="More saturation">+</button></span>
+              </div>
             </div>
             <button type="button" class="padsgo" id="padsgo" hidden>&#9638; PADS</button>
             <div class="start" id="start">
@@ -4909,6 +4925,8 @@ const TIPS = {
   "#padsgo": "PADS: this track's chops as 12 pads over the screen, like an MPC. Tap one to play it; with RECORD on, your taps go into the pattern.",
   "#padbka": "BANK A: the chops on C3 to B3.", "#padbkb": "BANK B: the second sample's chops, on C4 to B4.",
   "#padsx": "Close the pads: the screen again.",
+  "#padrev": "REVERSE: every chop of the bank on show plays backwards.",
+  "#padfx": "The bank's effects, on all its chops: PITCH changes the speed with it, like an old sampler (lower is slower); CRUSH fewer bits and a lower rate; SAT drives it into warm distortion.",
   "[data-use='0']": "AS A SYNTH: the whole sample on the selected track, played at the pitch of each key.",
   "[data-use='1']": "AS CHOPS · BANK A: a chop on each key from C3 to B3, on the selected track. Each plays to its end mark, however short the tap (one-shot).",
   "[data-use='3']": "BANK B: this sample's chops on C4 to B4 of the same track (OCT+, or the keys past B3), beside the ones on BANK A. Both banks play in the same pattern.",
@@ -5133,7 +5151,9 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "A chop plays to its end however short the tap." },
   { t: "21 · THE PADS", el: () => ($("padsgo").hidden ? $("screen") : $("padsgo")), x: () => "On a track that plays chops, <kbd>▦ PADS</kbd> on the screen "
       + "opens them as 12 pads, numbered like an MPC (1 bottom left), with <kbd>A</kbd> and <kbd>B</kbd> for the banks. Tap a pad to play it; with "
-      + "<kbd>RECORD</kbd> on, your taps go into the pattern, and the pads light whenever their chop plays. <kbd>✕</kbd> brings the screen back." },
+      + "<kbd>RECORD</kbd> on, your taps go into the pattern, and the pads light whenever their chop plays. Under the pads, the bank's effects, on "
+      + "all its chops at once: <kbd>PITCH</kbd> (the speed goes with it, like an old SP sampler: lower is slower), <kbd>REV</kbd>, <kbd>CRUSH</kbd> "
+      + "and <kbd>SAT</kbd>; each bank keeps its own. <kbd>✕</kbd> brings the screen back." },
   { t: "22 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>FILE</kbd> ▸ SAVE PROJECT downloads a project file (your samples too) "
       + "and OPEN PROJECT brings it back. <kbd>SHARE</kbd> ▸ SHARE THIS SONG gives a short code (SPGB_…) and a link, carrying the samples, VAPOR, "
       + "POLISH and locked FX pads your song uses: whoever opens the link, or types the code into SHARE ▸ OPEN A CODE, hears your song and can "
@@ -5691,9 +5711,10 @@ function padDraw() {                                      // the bank's chops: t
     g.clearRect(0, 0, cv.width, cv.height);
     if (!seg) continue;
     g.fillStyle = "#9FB4FF";
-    const [a, b] = seg, w = cv.width, h = cv.height;
+    const [a, b] = seg, w = cv.width, h = cv.height, rev = typeof padFx !== "undefined" && padFx[padBank * 4 + 1];
     for (let x = 0; x < w; x++) {
-      const i0 = Math.floor(a + x / w * (b - a)), i1 = Math.max(i0 + 1, Math.floor(a + (x + 1) / w * (b - a)));
+      const xx = rev ? w - 1 - x : x;                     // (REV: the wave drawn turned too)
+      const i0 = Math.floor(a + xx / w * (b - a)), i1 = Math.max(i0 + 1, Math.floor(a + (xx + 1) / w * (b - a)));
       let pk = 0;
       for (let i = i0; i < i1; i += Math.max(1, (i1 - i0) >> 5)) pk = Math.max(pk, Math.abs(s.pcm[i] || 0));
       g.fillRect(x, h / 2 - pk * h / 2, 1, Math.max(1, pk * h));
@@ -5709,12 +5730,17 @@ function padShow(open) {
   padOpen = !!open && !!padBanks.a;
   $("padsv").hidden = !padOpen;
   $("padsgo").hidden = padOpen || !padBanks.a || !node;
-  if (padOpen) padDraw();
+  if (padOpen) { padDraw(); pfxShow(); }
 }
 function padSync(g) {                                     // (showGuide) the track's banks, what sounds
   const b = g.banks || { a: 0, b: 0, on: 0 };
   const sig = `${g.sel}:${b.a}:${b.b}:${smpSigOf(b.a)}:${smpSigOf(b.b)}`;
   padBanks = b;
+  if (b.fx && performance.now() - padFxT > 600) {         // (the device's, unless a tap here is on its way)
+    const same = b.fx.every((v, i) => v === padFx[i]);
+    padFx = b.fx.slice();
+    if (!same && padOpen) { pfxShow(); padDraw(); }
+  }
   if (sig !== padSig) {
     padSig = sig;
     if (!b.a) padShow(false);
@@ -5730,8 +5756,40 @@ const smpSigOf = (slot) => { const s = slot ? smp[slot - 1] : null; return s ? s
 $("padsgo").addEventListener("click", () => padShow(true));
 window.__chops = () => { const s = smp[smpSel]; return s ? { len: s.pcm.length, chops: smpChops(s) } : null; };   // (tests)
 $("padsx").addEventListener("click", () => padShow(false));
-$("padbka").addEventListener("click", () => { padBank = 0; padDraw(); });
-$("padbkb").addEventListener("click", () => { if (padBanks.b) { padBank = 1; padDraw(); } });
+$("padbka").addEventListener("click", () => { padBank = 0; padDraw(); pfxShow(); });
+$("padbkb").addEventListener("click", () => { if (padBanks.b) { padBank = 1; padDraw(); pfxShow(); } });
+
+// the bank's effects (Ed, Nov 27 2026: "adjust the pitch, reverse, bit crush and saturate all the chops in that bank
+// ... pitch effects time 1:1 ... just like an old sp-303"): PITCH -12..+12 semitones (the rate: lower is slower),
+// REV, CRUSH and SAT 0..120 (shown 0..100 %), on the bank on show; the device keeps them in the track's sound
+let padFx = [0, 0, 0, 0, 0, 0, 0, 0], padFxT = 0;
+const PFX_STEP = [1, 1, 12, 12], PFX_MIN = [-12, 0, 0, 0], PFX_MAX = [12, 1, 120, 120];
+const pfxShow = () => {
+  const o = padBank * 4;
+  for (const el of document.querySelectorAll("#padfx .pfx")) {
+    const id = +el.dataset.id, v = padFx[o + id];
+    el.querySelector("i").textContent = id === 0 ? (v > 0 ? "+" + v : String(v)) : v ? Math.round(v / 1.2) + "%" : "OFF";
+  }
+  const rv = padBanks.rv ? padBanks.rv[padBank] : 0;
+  $("padrev").setAttribute("aria-pressed", String(!!padFx[o + 1]));
+  $("padrev").disabled = !rv && !padFx[o + 1];
+  $("padrev").title = rv ? "REVERSE: every chop of this bank plays backwards" : "This sample is too long to reverse: trim it (or its chops) under about 20 seconds";
+};
+function pfxSet(id, v) {
+  const o = padBank * 4;
+  v = Math.max(PFX_MIN[id], Math.min(PFX_MAX[id], v));
+  padFx[o + id] = v;
+  padFxT = performance.now();
+  send({ type: "chopfx", bank: padBank, id, v });
+  pfxShow();
+  if (id === 1) padDraw();
+}
+for (const el of document.querySelectorAll("#padfx .pfx")) {
+  const id = +el.dataset.id;
+  for (const b of el.querySelectorAll("button")) b.addEventListener("click", () => pfxSet(id, padFx[padBank * 4 + id] + PFX_STEP[id] * +b.dataset.d));
+  el.addEventListener("wheel", (e) => { e.preventDefault(); pfxSet(id, padFx[padBank * 4 + id] + PFX_STEP[id] * (e.deltaY < 0 ? 1 : -1)); }, { passive: false });
+}
+$("padrev").addEventListener("click", () => pfxSet(1, padFx[padBank * 4 + 1] ? 0 : 1));
 </script>
 </body>
 </html>

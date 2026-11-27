@@ -779,7 +779,7 @@ EXPORT uint32_t web_polish_part(void) { return pol_part_now(); }   /* (the part 
  * They live in the page (its browser storage, the project file), not in the device's flash: a share link has none */
 #define SPK_CAP (704u * 1024u)                       /* bytes a slot: ~32 s whole + its slices */
 static uint8_t spk_pool[SPK_NU][SPK_CAP];
-static uint32_t spk_meta[4 + 2 * SPK_NSLICE];
+static uint32_t spk_meta[4 + 4 * SPK_NSLICE];          /* (the chops, then their reversed copies: REV) */
 static char spk_nm[16];
 static void spk_names(uint32_t k, const char *nm)
 {
@@ -810,7 +810,7 @@ EXPORT void web_spk_clear(uint32_t k)
 {
     uint32_t i;
     k %= SPK_NU;
-    usr_nz[k] = usr_nz[SPK_NU + k] = 0;
+    usr_nz[k] = usr_nz[SPK_NU + k] = usr_rnz[k] = 0;
     for (i = 0; i < SMP_UZ; i++)
         usr_zone[k][i].n = usr_zone[SPK_NU + k][i].n = 0;   /* (a voice on it ends: smp render's n) */
     for (i = 0; i < 8u; i++)
@@ -846,6 +846,20 @@ EXPORT uint32_t web_spk_commit(uint32_t k)
     }
     usr_nz[SPK_NU + k] = (uint8_t)ns;
     usr_nz[k] = 1;
+    if (spk_meta[3] == ns && ns) {                   /* REV: the chops turned, when the slot had the room for them */
+        uint32_t ok = 1;
+        for (i = 0; i < ns; i++) {
+            uint32_t off = spk_meta[4 + 2 * (ns + i)], sn = spk_meta[5 + 2 * (ns + i)];
+            if (!sn || (off & 1u) || off + (sn + 1u) / 2u > SPK_CAP)
+                ok = 0;
+        }
+        for (i = 0; ok && i < ns; i++) {
+            uint32_t off = spk_meta[4 + 2 * (ns + i)], sn = spk_meta[5 + 2 * (ns + i)], key = SPK_CHOP_KEY + i;
+            usr_rzone[k][i] = (smp_zone_t){base + off, sn, sn - 1u, sn - 1u, 32768u, (int16_t)(key * 16u), 0, 0,
+                                           (uint8_t)key, (uint8_t)key, 0};
+        }
+        usr_rnz[k] = (uint8_t)(ok ? ns : 0u);
+    }
     return 0;
 }
 static void spk_boot(void)
@@ -869,10 +883,18 @@ EXPORT void web_spk_use(uint32_t k, uint32_t mode)
         for (l = 0; l < 4u; l++)
             t->p[P_LN4 + l] = (int16_t)(CKM_N + FK_NSET + k);
     } else if (mode == 3u && t->eng_req % NENGINES == ENGI_SAMPLE && smp_is_chop(t)) {
+        if (smp_bank_b(t) >= SPK_NU) {               /* (a new BANK B: its effects off) */
+            t->p[P_LN4] = 64;
+            t->p[P_LN5] = t->p[P_LN6] = t->p[P_LN7] = 0;
+        }
         t->p[P_LN3] = (int16_t)k;                    /* BANK B (Nov 27): this sample's chops on C4..B4, BANK A's stay */
     } else {
         uint32_t chop = mode != 0u, keep = chop && t->eng_req % NENGINES == ENGI_SAMPLE && smp_is_chop(t);
         int16_t b = keep ? t->p[P_LN3] : 127;        /* (BANK A over a chop track: its BANK B stays) */
+        if (chop && !keep) {                         /* (a new chop track: BANK A's effects off) */
+            t->p[P_E1] = t->p[P_E2] = t->p[P_E6] = 0;
+            t->p[P_LN0] = 0;
+        }
         if (!keep) {
             set_engine_of(t, ENGI_SAMPLE);
             apply_preset_to(t, 9);                   /* (UPRIGHT: clean) */
@@ -895,6 +917,19 @@ EXPORT void web_chop_pad(uint32_t note, uint32_t vel)
     song.g[G_ROUTE] = ROUTE_SEL;
     midi_note_event(15u, note & 127u, vel & 127u);
     song.g[G_ROUTE] = r;
+}
+/* a chop bank's effects (Ed, Nov 27 2026: "adjust the pitch, reverse, bit crush and saturate all the chops in that
+ * bank ... pitch effects time 1:1 ... just like an old sp-303"): bank 0 A, 1 B; id 0 PITCH (-12..12 semitones: the rate,
+ * so the time with it), 1 REV (0 / 1), 2 CRUSH (0..120), 3 SAT (0..120); on the picked track (eng_sample.c smp_fx) */
+EXPORT void web_chop_fx(uint32_t bank, uint32_t id, int32_t v)
+{
+    track_t *t = TSEL;
+    static const uint8_t A[4] = {P_E1, P_LN0, P_E2, P_E6}, B[4] = {P_LN4, P_LN5, P_LN6, P_LN7};
+    if (t->eng_req % NENGINES != ENGI_SAMPLE || !smp_is_chop(t) || id > 3u || (bank && smp_bank_b(t) >= SPK_NU))
+        return;
+    v = id == 0u ? clamp(v, -12, 12) : id == 1u ? (v ? 1 : 0) : clamp(v, 0, 120);
+    t->p[(bank ? B : A)[id]] = (int16_t)(id == 0u && bank ? v + 64 : v);
+    ui.force = 1;
 }
 /* the selected track's chops sounding now: bit i BANK A's chop i, bit 12 + i BANK B's (the PADS view lights them) */
 static uint32_t web_chops_on(void)
@@ -1655,7 +1690,12 @@ EXPORT const char *web_guide(void)
     wj(",\"vapor\":[%u,%u,%u,%u]", vap_get(0), vap_get(1), vap_get(2), vap_get(3));
     {                                                  /* the selected track's chop banks: slot + 1, 0 none (the PADS page, SAMPLES) */
         uint32_t bk = web_spk_banks();
-        wj(",\"banks\":{\"a\":%u,\"b\":%u,\"on\":%u}", bk & 255u, bk >> 8, web_chops_on());
+        smp_fx_t fa, fb;
+        smp_fx(TSEL, 0, &fa);
+        smp_fx(TSEL, 1, &fb);
+        wj(",\"banks\":{\"a\":%u,\"b\":%u,\"on\":%u,\"fx\":[%d,%d,%d,%d,%d,%d,%d,%d],\"rv\":[%u,%u]}", bk & 255u, bk >> 8, web_chops_on(),
+           (int)fa.pitch, (int)fa.rev, (int)fa.crush, (int)fa.sat, (int)fb.pitch, (int)fb.rev, (int)fb.crush, (int)fb.sat,
+           (bk & 255u) ? (unsigned)usr_rnz[((bk & 255u) - 1u) % SPK_NU] : 0u, (bk >> 8) ? (unsigned)usr_rnz[((bk >> 8) - 1u) % SPK_NU] : 0u);
     }
     wj(",\"pal\":%u", (unsigned)palette_cur());
     wj(",\"polgr\":%d", (int)(pc_grmin * -10.0f));   /* POLISH: the compressor's deepest since the last (dB x 10) */

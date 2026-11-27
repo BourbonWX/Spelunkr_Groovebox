@@ -313,6 +313,7 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "cue") { ex.web_cue(m.p);
       } else if (m.type === "spk") { this.port.postMessage({ type: "spk", k: m.k, rc: spkPut(ex, m.k, m.data, m.meta, m.name) });
       } else if (m.type === "spkuse") { ex.web_spk_use(m.k, m.mode);
+      } else if (m.type === "chopfx") { if (ex.web_chop_fx) ex.web_chop_fx(m.bank, m.id, m.v | 0);   // (a chop bank's effects)
       } else if (m.type === "choppad") { if (ex.web_chop_pad) ex.web_chop_pad(m.note, m.vel);   // (PADS: a chop on the picked track)
       } else if (m.type === "newsong") { if (m.random && ex.web_rs_salt) ex.web_rs_salt((Math.random() * 4294967296) >>> 0); ex.web_new_song(m.random ? (m.genre >= 0 ? 2 + m.genre : 1) : 0);
       } else if (m.type === "fxkeys") { if (ex.web_fx_mode) ex.web_fx_mode(m.on ? 1 : 0, m.open ? 1 : 0);   // (FX: the keys, or the effects)

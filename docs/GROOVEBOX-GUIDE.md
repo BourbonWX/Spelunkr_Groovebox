@@ -160,6 +160,11 @@ Press **SAMPLES** in the side menu. There are 8 slots.
    MPC's: 1 bottom left, 12 top right), with **A** and **B** for the banks. Tap a pad to play it; with **RECORD** on,
    your taps go into the pattern. The pads light whenever their chop plays, from the steps or the keys too. **✕**
    puts the screen back.
+5. **The bank's effects**, under the pads, on every chop of the bank on show (each bank keeps its own, saved and
+   shared with the song): **PITCH** −12 to +12 semitones, and the speed goes with it, like an SP-303 (lower is slower
+   and longer, higher faster and shorter); **REV** plays every chop backwards (a sample whose chops run past about
+   20 seconds has no room to reverse: trim it); **CRUSH** fewer bits and a lower sample rate; **SAT** drives it into a
+   warm distortion.
 
 Your samples stay in this browser, and **FILE ▸ SAVE PROJECT** puts them in the project file. **SHARE** sends the ones your song
 plays along with its code.

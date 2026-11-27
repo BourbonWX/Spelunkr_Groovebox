@@ -72,6 +72,11 @@ typedef struct {
 static smp_zone_t usr_zone[SMP_USER_SLOTS][SMP_UZ];  /* RAM copy, off rebased onto SMP_DATA */
 static uint8_t usr_nz[SMP_USER_SLOTS];
 #if SPK_NU
+static smp_zone_t usr_rzone[SPK_NU][SMP_UZ];        /* REV: each chop turned (felucca_web.c web_spk_commit), the zone's
+                                                     * slot field 2 x SPK_NU + k (smp_zone) */
+static uint8_t usr_rnz[SPK_NU];
+#endif
+#if SPK_NU
 _Static_assert(SPK_NU == 8 && SPK_NSLICE <= SMP_UZ, "SMP_ALL_NAMES names 8 user samples");
 static const char *const SMP_ALL_NAMES[SMP_NALL] = {SMP_SET_NAMES_INIT, spk_name[0], spk_name[1], spk_name[2], spk_name[3],
     spk_name[4], spk_name[5], spk_name[6], spk_name[7], spk_chop[0], spk_chop[1], spk_chop[2], spk_chop[3], spk_chop[4],
@@ -155,6 +160,10 @@ static int smp_set_missing(uint32_t si)
 /* zone index in a voice: < 0x8000 built-in, else 0x8000 | slot << 5 | zone */
 static inline const smp_zone_t *smp_zone(uint32_t zi)
 {
+#if SPK_NU
+    if (zi >= 0x8000u && ((zi >> 5) & 31u) >= 2u * SPK_NU)   /* (a chop turned: REV) */
+        return &usr_rzone[(((zi >> 5) & 31u) - 2u * SPK_NU) % SPK_NU][zi & 31u];
+#endif
     return zi < 0x8000u ? &SMP_ZONES[zi] : &usr_zone[((zi >> 5) & 31u) % SMP_USER_SLOTS][zi & 31u];
 }
 
@@ -191,6 +200,24 @@ static inline int32_t sample_next(const smp_zone_t *z, voice_t *v, int loop)
 #if SPK_NU
 static uint32_t smp_bank_b(const track_t *t) { return t->p[P_LN3] >= 0 && t->p[P_LN3] < (int16_t)SPK_NU ? (uint32_t)t->p[P_LN3] : 0xFFu; }
 static int smp_is_chop(const track_t *t) { return (uint32_t)t->p[P_E0] % SMP_NALL >= SMP_NSETS + SPK_NU; }
+/* a chop bank's effects (Nov 27): BANK A in the SAMPLE's own TUNE, BITS, DRV and P_LN0 (REV), BANK B in P_LN4..7
+ * (PITCH + 64, REV, CRUSH, SAT; web_spk_use sets them when the bank is made: a value from before reads as off) */
+typedef struct { int16_t pitch, rev, crush, sat; } smp_fx_t;
+static void smp_fx(const track_t *t, uint32_t bank, smp_fx_t *f)
+{
+    const int16_t *p = t->p;
+    if (!bank) {
+        f->pitch = (int16_t)clamp(p[P_E1], -24, 24);
+        f->rev = p[P_LN0] == 1;
+        f->crush = (int16_t)clamp(p[P_E2], 0, 127);
+        f->sat = (int16_t)clamp(p[P_E6], 0, 127);
+    } else {
+        f->pitch = (int16_t)(p[P_LN4] >= 52 && p[P_LN4] <= 76 ? p[P_LN4] - 64 : 0);
+        f->rev = p[P_LN5] == 1;
+        f->crush = (int16_t)(p[P_LN6] >= 0 && p[P_LN6] <= 120 ? p[P_LN6] : 0);
+        f->sat = (int16_t)(p[P_LN7] >= 0 && p[P_LN7] <= 120 ? p[P_LN7] : 0);
+    }
+}
 static volatile uint32_t spk_struck[NTRK];          /* the chops each track started since the page last looked (felucca_web.c
                                                      * web_chops_on: the PADS view lights a short hit too) */
 #endif
@@ -222,6 +249,14 @@ static void sample_note_on(track_t *t, voice_t *v)
                 width = z->hi - z->lo;
             }
         }
+#if SPK_NU
+        if (zi != 0xFFFFu && k >= SPK_NU && usr_rnz[k - SPK_NU] > (zi & 31u)) {   /* REV: the bank's chops turned */
+            smp_fx_t f;
+            smp_fx(t, bank ? 1u : 0u, &f);
+            if (f.rev)
+                zi = 0x8000u | bank | (2u * SPK_NU + k - SPK_NU) << 5 | (zi & 31u);
+        }
+#endif
         v->s[4] = (int32_t)(zi == 0xFFFFu ? 0 : zi);
 #if SPK_NU
         if (zi != 0xFFFFu && k >= SPK_NU && t >= trk && t < trk + NTRK)
@@ -258,11 +293,28 @@ static void sample_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
         wd = (sine_i(ph) * wow * 10 + sine_i(ph * 11u + 0x40000000u) * wow * 3) >> 22;   /* 1/16 st: up to ~+-13 */
         v->ph[2] = ph + 53568u * n;                                 /* 0.55 Hz (the flutter 11 times that) */
     }
-    int32_t d16 = clamp(m->pitch16 + p[P_E1] * 16 - z->root16 + wd - ((uint32_t)v->s[4] & SMP_ZI_BANKB ? 16 * SPK_BANK : 0),
+    int32_t tune = p[P_E1], bits = p[P_E2], drv = p[P_E6];
+#if SPK_NU
+    if (((uint32_t)v->s[4] & 0x8000u) && (((uint32_t)v->s[4] >> 5) & 31u) >= SPK_NU) {   /* a chop: its bank's effects. PITCH
+                                                     * is the rate (an SP-303's: lower is slower, higher faster); CRUSH
+                                                     * the bits and the rate held; SAT the drive */
+        smp_fx_t f;
+        smp_fx(t, (uint32_t)v->s[4] & SMP_ZI_BANKB ? 1u : 0u, &f);
+        tune = f.pitch;
+        bits = f.crush;
+        drv = f.sat;
+        if (f.crush) {
+            uint32_t ch = 1u + (uint32_t)f.crush * 5u / 120u;
+            if (ch > hold)
+                hold = ch;
+        }
+    }
+#endif
+    int32_t d16 = clamp(m->pitch16 + tune * 16 - z->root16 + wd - ((uint32_t)v->s[4] & SMP_ZI_BANKB ? 16 * SPK_BANK : 0),
                         -1536, 576);   /* <= 3 octaves up: bounded decode load */
     uint32_t r = pow2_q16(d16), stepq = (r >> 8) * (z->rate >> 8);   /* Q16 samples per output */
-    int32_t bits = p[P_E2], lp = 4000 + ((clamp((p[P_E4] << 8) + m->cutoff - age * 48, 0, 127 << 8) * 28767) >> 15);
-    int32_t drv = p[P_E6], sh = bits / 10;
+    int32_t lp = 4000 + ((clamp((p[P_E4] << 8) + m->cutoff - age * 48, 0, 127 << 8) * 28767) >> 15);
+    int32_t sh = bits / 10;
     rn = v->ph[2] ^ (uint32_t)v->s[7] * 2654435761u;
     if (v->s[6] == 2) {                               /* no sample data: the sine at the note's pitch + TUNE */
         smp_sine(out, n, m, p[P_E1] * 16, lp, &v->ph[0], &v->s[7]);
@@ -296,9 +348,11 @@ static void sample_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
             s = (s >> sh) << sh;
         if (drv)
             s = softclip(s + (((s >> 2) * (drv * 150)) >> 11));   /* = s * drv * 600 / 32768, no overflow */
-        if (age) {                                    /* AGE: the hiss, then the rate held */
-            rn = rn * 1664525u + 1013904223u;
-            s += ((int32_t)rn >> 16) * hiss >> 15;
+        if (age || hold > 1u) {                       /* AGE: the hiss, then the rate held (CRUSH: held, no hiss) */
+            if (age) {
+                rn = rn * 1664525u + 1013904223u;
+                s += ((int32_t)rn >> 16) * hiss >> 15;
+            }
             if (hc == 0u)
                 held = clamp(s, -32768, 32767);
             hc = hc + 1u >= hold ? 0u : hc + 1u;

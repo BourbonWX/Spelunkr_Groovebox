@@ -119,6 +119,39 @@ check(chops.every((f, k) => near(f, TONES[k])) && hz(hear(ex, 1, 52)) === 0,
   check(near(bA, 440) && near(bB[0], 330) && near(bB[1], 660),
     `BANK A on C#3 (${bA.toFixed(0)} Hz), BANK B on C4 C#4 at their own pitch (${bB.map((f) => f.toFixed(0)).join(" ")} Hz)`);
   check((ex.web_spk_in_use() & 3) === 3, `SHARE takes both banks' samples (mask ${ex.web_spk_in_use()})`);
+  {                                                      // (Nov 27) the banks' effects: PITCH (the rate: the time with it),
+    const pad = (note, dur = 0.3) => {                   // REV, CRUSH, SAT; each bank its own
+      const out = new Float32Array(Math.round(dur * 44100));
+      ex.web_chop_pad(note, 110);
+      for (let o = 0; o < out.length; o += 128) { ex.web_render(128); out.set(new Float32Array(ex.memory.buffer, ex.web_out_l(), Math.min(128, out.length - o)), o); }
+      ex.web_chop_pad(note, 0);
+      for (let i = 0; i < 2.5 * 44100 / 128; i++) ex.web_render(128);
+      return out;
+    };
+    const fx = (b, id, v) => { ex.web_chop_fx(b, id, v); for (let i = 0; i < 20; i++) ex.web_render(128); };
+    const len = (x) => { let last = 0; for (let i = 0; i < x.length; i++) if (Math.abs(x[i]) > 0.02) last = i; return last / 44100; };
+    const clean = pad(49), cleanLen = len(clean);
+    fx(0, 0, 12);
+    const up = pad(49), f = hz(up.subarray(0, Math.round(0.1 * 44100)));
+    check(near(f, 880) && len(up) < cleanLen * 0.62, `PITCH +12 on BANK A: an octave up (${f.toFixed(0)} Hz) and half as long (${len(up).toFixed(3)} s vs ${cleanLen.toFixed(3)} s)`);
+    const bb = hz(pad(61).subarray(0, 0.1 * 44100 | 0));
+    check(near(bb, 660), `BANK B keeps its own pitch (${bb.toFixed(0)} Hz)`);
+    fx(0, 0, 0);
+    fx(0, 1, 1);
+    const rv = pad(49), head = rv.subarray(0, 0.03 * 44100 | 0), tailAt = Math.round((cleanLen - 0.04) * 44100), tail = rv.subarray(tailAt, tailAt + (0.03 * 44100 | 0));
+    const pk = (x) => x.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
+    check(pk(tail) > 1.5 * pk(head), `REV on BANK A: the chop (a fading tone) swells to its end instead (start ${pk(head).toFixed(3)}, end ${pk(tail).toFixed(3)})`);
+    fx(0, 1, 0);
+    fx(1, 2, 120);
+    const cr = pad(61), cl = (() => { fx(1, 2, 0); return pad(61); })();
+    let d = 0, e = 0;
+    for (let i = 0; i < 0.15 * 44100; i++) { d += (cr[i] - cl[i]) ** 2; e += cl[i] ** 2; }
+    check(d / e > 0.02, `CRUSH on BANK B: fewer bits, a held rate (${(10 * Math.log10(d / e)).toFixed(1)} dB of difference)`);
+    fx(1, 3, 120);
+    const sat = pad(61), crest = (x) => pk(x.subarray(0, 0.1 * 44100 | 0)) / Math.sqrt(x.subarray(0, 0.1 * 44100 | 0).reduce((m, v) => m + v * v, 0) / (0.1 * 44100));
+    check(crest(sat) < crest(cl) * 0.95, `SAT on BANK B: squarer, the peaks pressed (crest ${crest(sat).toFixed(2)} vs ${crest(cl).toFixed(2)})`);
+    fx(1, 3, 0);
+  }
   {                                                      // PADS: a pad plays its chop on the picked track, whatever the octave
     const padHear = (note) => {
       const out = new Float32Array(Math.round(0.2 * 44100));

@@ -59,7 +59,8 @@ export function chopsClean(chops, len) {
 }
 /* a sample: pcm (Float32 at RATE, already trimmed), its chops ([start, end] sample indexes into pcm; plain starts, as
  * before end marks, run each to the next), root (MIDI note) -> {data, meta} for web_spk_* */
-export function buildSlot(pcm, chops, root) {
+export const SLOT_CAP = 704 * 1024;                // (felucca_web.c SPK_CAP: a slot's bytes)
+export function buildSlot(pcm, chops, root, cap = SLOT_CAP) {
   const c = chopsClean(chops.length && typeof chops[0] === "number" ? chopsOfStarts(chops, pcm.length) : chops, pcm.length);
   const blocks = [imaEncode(toInt16(pcm, 64))], meta = [pcm.length, Math.round(root * 16), c.length, 0];
   let off = blocks[0].length + (blocks[0].length & 1);
@@ -68,6 +69,14 @@ export function buildSlot(pcm, chops, root) {
     meta.push(off, end - a);
     blocks.push(b);
     off += b.length + (b.length & 1);
+  }
+  // REV (Nov 27, a chop bank's REVERSE): each chop again, backwards, after them, when the slot has the room (meta[3]: how
+  // many; 0: this sample can't reverse, about 20 s of chops at most). ADPCM plays forwards only, so it's stored turned
+  const rev = c.map(([a, end]) => imaEncode(toInt16(pcm.slice(a, end).reverse())));
+  const need = rev.reduce((n, b) => n + b.length + (b.length & 1), 0);
+  if (c.length && off + need <= cap) {
+    meta[3] = c.length;
+    rev.forEach((b, i) => { meta.push(off, c[i][1] - c[i][0]); blocks.push(b); off += b.length + (b.length & 1); });
   }
   const data = new Uint8Array(off);
   let o = 0;
