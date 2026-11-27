@@ -140,5 +140,20 @@ check("an older song (no LEAD) clears the visitor's lanes", d.guide().lead.n.eve
 // a NEW song clears the lanes
 b.ex.web_new_song(0); b.render(300);
 check("NEW song: the lanes empty", b.guide().lead.n.every((n) => n === 0));
+// (Nov 27) RECORD with the metronome: two bars counted in, then recording
+{
+  const e = await device(null);
+  e.render(300);
+  e.tap(B.REC); e.render(100);
+  check("REC while stopped asks about the metronome", e.guide().recask === 1);
+  e.ex.web_rec_go(1);
+  let ms = 0;
+  e.render(20);
+  const step = Math.ceil(10 * 44.1 / 128) * 128 / 44.1;   // (render(10): whole blocks, 11.6 ms)
+  while (e.guide().cin === 1 && ms < 20000) { e.render(10); ms += step; }
+  ms = Math.round(ms);
+  const bar = 4 * 60000 / e.guide().bpm;
+  check(`WITH METRONOME: two bars counted in (${ms} ms, a bar ${bar.toFixed(0)} ms)`, Math.abs(ms - 2 * bar) < bar * 0.15 && e.guide().recask === 0);
+}
 console.log(fails ? `lead: ${fails} FAIL` : "lead: all ok");
 process.exit(fails ? 1 : 0);

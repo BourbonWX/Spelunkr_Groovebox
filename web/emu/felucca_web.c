@@ -1038,7 +1038,7 @@ EXPORT uint32_t web_undo(void)
     return 1;
 }
 /* REC tapped while stopped (Ed, Nov 22: "a prompt ... if they want a metronome"): the page asked; c 1 with the
- * metronome (a bar counted in, then the clicks while it records), 0 without, 2 cancel (disarmed). The metronome as it
+ * metronome (two bars counted in, then the clicks while it records), 0 without, 2 cancel (disarmed). The metronome as it
  * was comes back when the take is over (web_ms). REC armed while it already plays: no question, no metronome */
 EXPORT void web_rec_go(uint32_t c)
 {
@@ -1053,7 +1053,7 @@ EXPORT void web_rec_go(uint32_t c)
     web_click_held = 1;
     web_rec_ran = 0;
     web_click_mode = (uint8_t)(c == 1u ? CLICK_ON : CLICK_OFF);
-    web_cin_bars = (uint8_t)(c == 1u ? 1u : 0u);
+    web_cin_bars = (uint8_t)(c == 1u ? 2u : 0u);          /* (Ed, Nov 27: two bars counted in) */
     click_mode = web_click_mode;                          /* (now: the transport starts before the next frame's rp_apply) */
     cin_bars = web_cin_bars;
     transport_req = 1;

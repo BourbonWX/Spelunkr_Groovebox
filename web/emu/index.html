@@ -1602,7 +1602,7 @@ body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
 <dialog id="recdlg">
   <form method="dialog">
     <h2>RECORD WITH A METRONOME?</h2>
-    <p style="margin:0 0 8px">With the metronome, a bar of clicks counts you in, then the clicks keep time while you record.
+    <p style="margin:0 0 8px">With the metronome, two bars of clicks count you in, then the clicks keep time while you record.
       (Start recording while the music already plays and there's no metronome.)</p>
     <div class="buttons"><button class="btn" value="cancel">CANCEL</button><button class="btn" value="without" id="recwithout">WITHOUT</button><button class="btn orange" value="with" id="recwith" autofocus>WITH METRONOME</button></div>
   </form>
@@ -2380,18 +2380,27 @@ for (const id of ["keyroot", "keyscale", "keysnap"]) $(id).addEventListener("cha
 $("undobtn").addEventListener("click", () => { send({ type: "undo" }); studioSay("Undone (the screen says what). UNDO again puts it back."); });
 
 // REC tapped while stopped (Ed, Nov 22): the device waits (felucca_web.c web_rec_ask); the page asks about the metronome
-let recAsking = false;
+let recAsking = false, recQuietTill = 0;
 function recAsk(g) {
   if (!g.recask && recAsking && boxPg === PG_RECASK) { rqDone = null; recAsking = false; boxPgClose(); return; }   // (REC let go meanwhile)
-  if (!g.recask || recAsking) return;
+  if (!g.recask && recAsking && $("recdlg").open) {       // (the device stopped asking: started some other way)
+    recAsking = false;
+    $("recdlg").onclose = null;
+    $("recdlg").close();
+    return;
+  }
+  // (Ed, Nov 27: the question stayed up through the count-in: a frame sent before the answer reached the device still
+  //  said "asking" and opened it again. After an answer, the device's "asking" is old news for a moment)
+  if (!g.recask || recAsking || performance.now() < recQuietTill) return;
   recAsking = true;
   const d = $("recdlg");
   const answer = (v) => {
     recAsking = false;
+    recQuietTill = performance.now() + 1500;
     const c = v === "with" ? 1 : v === "without" ? 0 : 2;
     send({ type: "recgo", c });
-    if (boxMode()) boxSay(["RECORDING · NO CLICK", "ONE BAR OF CLICKS, THEN RECORDING", "RECORD CANCELLED"][c], 3000, true);
-    studioSay(c === 1 ? "Counting you in: one bar of clicks, then it records. RECORD again stops recording, PLAY stops the music." :
+    if (boxMode()) boxSay(["RECORDING · NO CLICK", "TWO BARS OF CLICKS, THEN RECORDING", "RECORD CANCELLED"][c], 3000, true);
+    studioSay(c === 1 ? "Counting you in: two bars of clicks, then it records. RECORD again stops recording, PLAY stops the music." :
               c === 0 ? "Recording: play the keys. RECORD again stops recording, PLAY stops the music." : "Recording cancelled.");
   };
   if (boxMode()) { rqDone = answer; boxPgOpen(PG_RECASK); return; }   // (the box: no touch screen; its own page)
@@ -4875,7 +4884,7 @@ const TIPS = {
   "#codein": "The code (SPGB_ and 7 letters or numbers), or the whole share link.",
   "#codego": "Open that song (it asks first if you have music open).",
   "#codedlg button[value='close']": "Close.",
-  "#recwith": "Record with a metronome: one bar of clicks first, then clicks on every beat while you record.",
+  "#recwith": "Record with a metronome: two bars of clicks first, then clicks on every beat while you record.",
   "#recwithout": "Record without clicks: the music starts and records right away.",
   "#recdlg button[value='cancel']": "Don't record (RECORD off again).",
   "#sharecopycode": "Copy the code, to paste in chat or say on stream.",
@@ -5110,7 +5119,7 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "Click <kbd>LEARN</kbd>, click anything on the page (a fader, a control, a button, an FX pad), then move a knob: linked. "
       + "Right-click a link while learning to forget it. The links stay in this browser." },
   { t: "9 · RECORD A PART", el: () => (phOn ? $("phrec") : document.querySelector(btnSel("REC"))), x: () => "Click a synth row (SYNTH 1) and pick its sound. With the music stopped, tap <kbd>RECORD</kbd>" + (phOn ? " (the ● at the bottom)" : "") + ": "
-      + "it asks whether you want a metronome (a bar of clicks counts you in, then they keep time). Then the music starts and what you play on "
+      + "it asks whether you want a metronome (two bars of clicks count you in, then they keep time). Then the music starts and what you play on "
       + "the keys goes into the loop. Tap <kbd>RECORD</kbd> again to stop recording (the music keeps going), <kbd>PLAY</kbd> to stop. "
       + "Tap RECORD while it's already playing and it just records, no metronome. Do the same for a bass on SYNTH 2." },
   { t: "10 · THE LEAD", el: "#grows .grow.lead", x: () => "<kbd>LEAD</kbd> is a voice over everything, for the tune on top, and it works "
@@ -5759,6 +5768,7 @@ function padSync(g) {                                     // (showGuide) the tra
 }
 const smpSigOf = (slot) => { const s = slot ? smp[slot - 1] : null; return s ? s.name + smpChops(s).map((c) => c.join("-")).join(",") : ""; };
 $("padsgo").addEventListener("click", () => padShow(true));
+window.__recAsk = (g) => recAsk(g);                       // (tests: a late "asking" frame)
 window.__chops = () => { const s = smp[smpSel]; return s ? { len: s.pcm.length, chops: smpChops(s) } : null; };   // (tests)
 $("padsx").addEventListener("click", () => padShow(false));
 $("padbka").addEventListener("click", () => { padBank = 0; padDraw(); pfxShow(); });
