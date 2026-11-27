@@ -1216,6 +1216,38 @@ body.phone.land footer { margin-bottom: 20px; }
 body.phone.land #phfab .phl { display: none; }   /* (PAT A: the narrow bar) */
 body.phone.land .keybar { z-index: 7; }
 body.phone.land .fader { height: 120px; }
+
+/* PADS (Ed, Nov 27 2026: "a menu in the display ... the samples chops display in a grid ... adjacent to an mpc ... the
+ * koala app"): over the screen, a chop track's 12 chops as pads, 4 x 3, MPC-numbered (1 bottom left, 12 top right);
+ * BANK A | B; tap a pad to play it (one-shot, to its end mark), lit when it plays from anywhere (the steps, the keys) */
+.padsv { position: absolute; inset: 12px; z-index: 2; display: flex; flex-direction: column; container-type: size;
+  background: #0B0530; border-radius: 2px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.padsv[hidden] { display: none; }
+.padhd { display: flex; align-items: center; gap: 2cqw; padding: 1.6cqw 2cqw; background: #1C0A57; border-bottom: 2px solid #2F49C8; }
+.padhd b { font: 6.4cqw/1 var(--head); color: #FFE13A; }
+.padhd span { flex: 1; min-width: 0; font: 4.6cqw/1 var(--mono); color: #B9C2FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.padbk, .padx { min-width: 9cqw; height: 8.4cqw; padding: 0 2cqw; border: 2px solid #2F49C8; border-radius: 1.4cqw; background: #0E1E78;
+  color: #F4F4FF; font: 5.4cqw/1 var(--head); cursor: pointer; }
+.padbk[aria-pressed="true"] { background: #FFE13A; color: #1C0A57; border-color: #FFE13A; }
+.padbk:disabled { opacity: .35; cursor: default; }
+.padbk.hit { box-shadow: 0 0 0 2px #E2741F; }
+.padgrid { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 1.8cqw; padding: 2cqw; }
+.pad1 { position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 1.4cqw 1.8cqw; border: 2px solid #2F49C8;
+  border-radius: 2cqw; background: linear-gradient(180deg, #16268C, #0E1E78); color: #F4F4FF; cursor: pointer; overflow: hidden;
+  transition: background .12s, border-color .12s; }
+.pad1 .pn { font: 7cqw/1 var(--head); color: #FFE13A; position: relative; z-index: 1; }
+.pad1 .pk { font: 3.8cqw/1 var(--mono); color: #B9C2FF; position: relative; z-index: 1; text-align: right; }
+.pad1 canvas { position: absolute; left: 0; right: 0; top: 30%; width: 100%; height: 45%; opacity: .55; }
+.pad1.empty { opacity: .3; cursor: default; }
+.pad1.lit { background: linear-gradient(180deg, #FFE13A, #E2741F); border-color: #FFFFFF; transition: none; }
+.pad1.lit .pn, .pad1.lit .pk { color: #1C0A57; }
+.padsgo { position: absolute; right: 18px; bottom: 18px; z-index: 2; padding: 4px 10px; border: 2px solid #FFE13A; border-radius: 6px;
+  background: #1C0A57; color: #FFE13A; font: 18px/1 var(--head); cursor: pointer; opacity: .92; }
+.padsgo[hidden] { display: none; }
+body.phone #phtop .padsv { inset: 6px; }
+body.phone #phtop .padsgo { right: 10px; bottom: 10px; font-size: 16px; }
+:root[data-skin^="aero"] .padsv { inset: 14px; border-radius: 14px; }
+body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
 </style>
 </head>
 <body>
@@ -1324,6 +1356,13 @@ body.phone.land .fader { height: 120px; }
         <div class="screenwrap">
           <div class="bezel">
             <canvas id="screen" width="480" height="480" role="img" aria-label="The groovebox's screen"></canvas>
+            <div class="padsv" id="padsv" hidden role="group" aria-label="PADS: the chops of the track">
+              <div class="padhd"><b>PADS</b><span id="padstrk"></span>
+                <button type="button" class="padbk" id="padbka" aria-pressed="true">A</button><button type="button" class="padbk" id="padbkb" aria-pressed="false">B</button>
+                <button type="button" class="padx" id="padsx" aria-label="Close the pads: the screen again">&#10005;</button></div>
+              <div class="padgrid" id="padgrid"></div>
+            </div>
+            <button type="button" class="padsgo" id="padsgo" hidden>&#9638; PADS</button>
             <div class="start" id="start">
               <button class="btn orange" id="go" type="button">SWITCH ON</button>
               <button class="btn bare" id="gobare" type="button" hidden>Switch on without it</button>
@@ -1431,27 +1470,29 @@ body.phone.land .fader { height: 120px; }
           <label class="fld">ROOT <select id="smproot" title="The note the sample plays at its own pitch (as a synth)"></select></label>
           <button class="btn quiet" type="button" id="smpclear">CLEAR SLOT</button>
         </div>
-        <div class="wavewrap"><canvas id="smpwave" height="160" aria-label="The waveform: drag the edges to trim, click to add a slice, drag a slice to move it, double-click it to remove it"></canvas>
+        <div class="wavewrap"><canvas id="smpwave" height="160" aria-label="The waveform: drag the orange edges to trim, click to add a chop, drag a chop's start (yellow) or end (pink) to move it, double-click either to remove the chop"></canvas>
           <div class="empty" id="smpempty">Empty slot. Load a WAV, MP3, OGG or FLAC: a longer one keeps its first 30 seconds.</div></div>
         <div class="sbar">
-          <span class="lab">SLICES</span>
-          <button class="btn quiet" type="button" id="smphits" title="A slice at each hit">AUTO</button>
-          <button class="btn quiet" type="button" data-eq="4">4</button><button class="btn quiet" type="button" data-eq="8">8</button>
-          <button class="btn quiet" type="button" data-eq="16">16</button>
+          <span class="lab">CHOPS</span>
+          <button class="btn quiet" type="button" id="smphits" title="A chop at each hit, ending where it dies away">AUTO</button>
+          <button class="btn quiet" type="button" data-eq="4">4</button><button class="btn quiet" type="button" data-eq="6">6</button>
+          <button class="btn quiet" type="button" data-eq="8">8</button><button class="btn quiet" type="button" data-eq="12">12</button>
           <button class="btn quiet" type="button" id="smpnone">NONE</button>
-          <span class="hint">Click the wave to add a slice, drag one to move it, double-click to remove. Drag the edges to trim.</span>
+          <span class="hint">Click the wave to add a chop. Drag its start (yellow, the number) or its end (pink, the ] tag): grab anywhere in the band beside the line. Double-click to remove. Drag the orange edges to trim.</span>
         </div>
-        <div class="chips" id="smpchips" aria-label="Hear a slice"></div>
+        <div class="chips" id="smpchips" aria-label="Hear a chop"></div>
         <div class="sbar use">
           <span class="lab" id="smpfor">PUT IT ON TRACK --</span>
           <button class="btn" type="button" data-use="0" title="The whole sample, played at the pitch of the key">AS A SYNTH</button>
-          <button class="btn" type="button" data-use="1" title="A slice a key, from C3 up">AS CHOPS</button>
-          <button class="btn" type="button" data-use="2" title="Slices 1 to 8 on the drum rows: kick, snare, clap, hat, open hat, tom, rim, cowbell">AS A DRUM KIT</button>
+          <button class="btn" type="button" data-use="1" title="A chop a key on C3 to B3: BANK A">AS CHOPS · BANK A</button>
+          <button class="btn" type="button" data-use="3" title="A chop a key on C4 to B4: BANK B, beside the track's BANK A">BANK B</button>
+          <button class="btn" type="button" data-use="2" title="Chops 1 to 8 on the drum rows: kick, snare, clap, hat, open hat, tom, rim, cowbell">AS A DRUM KIT</button>
           <span class="hint" id="smpinfo"></span>
         </div>
       <p class="smplimits" id="smplimits"><b>THE LIMITS</b> 8 slots · 30 seconds a sample (a longer file keeps its first 30 s) ·
-        kept in mono at 22 kHz, a little lo-fi, like an old sampler · up to 24 slices: CHOPS plays them from C3 up, a DRUM KIT
-        slices 1–8 · AS A SYNTH plays the sample once a note (no loop) · names 8 letters · any WAV, MP3, OGG or FLAC your
+        kept in mono at 22 kHz, a little lo-fi, like an old sampler · up to 12 chops a sample, each with its own start and end
+        (gaps allowed) · CHOPS: BANK A on C3–B3, BANK B (another sample's) on C4–B4 of the same track; a chop plays to its
+        end mark however short the tap · a DRUM KIT: chops 1–8 · AS A SYNTH plays the sample once a note (no loop) · names 8 letters · any WAV, MP3, OGG or FLAC your
         browser reads · they live in this browser (clearing its site data clears them): SAVE puts them in a file, and a song
         code carries the ones the song plays.</p>
       </div>
@@ -2362,6 +2403,7 @@ function showGuide(g) {
   if (boxPg && boxPg.id === "vapor" && !document.hidden) boxPgDraw();
   $("tpat").textContent = "PATTERN " + letter(g.cur) + (g.queue >= 0 ? " → " + letter(g.queue) : "");
   try { phSync(g); } catch {}                             // (the phone's bar and floating buttons)
+  try { padSync(g); } catch {}                            // (the PADS view: the track's chops, what sounds)
   {                                                       // (the pads' track: theirs while one is on, else the picked one)
     const on = g.xyk >= 0 && (padAt[0] || padAt[1]), t = "on " + ROLE[on ? g.xyk : g.sel] + (on && padsState() ? " · locked" : "");
     if ($("padtrack").textContent !== t) $("padtrack").textContent = t;
@@ -3190,7 +3232,7 @@ $("bounceform").addEventListener("submit", async (e) => {
 // ------------------------------------------------------------------ SAMPLES: the user's own (Ed, Nov 22 2026: "upload
 // user samples, slice them and assign them to a synth or drum track from inside the same page"). spk_samples.js makes
 // them, felucca_web.c web_spk_* plays them. Kept in this browser (IndexedDB) and in SAVE's file; a share link has none.
-const smp = Array.from({ length: SPK.NSLOT }, () => null);   // {name, root, pcm (Float32 at RATE), trim [a, b], starts []}
+const smp = Array.from({ length: SPK.NSLOT }, () => null);   // {name, root, pcm (Float32 at RATE), trim [a, b], chops [[start, end], ..]}
 let smpSel = 0, smpSendT = 0, smpSaveT = 0, smpPeaks = null, smpDrag = null, smpPlay = null;
 const IDB = "spelunkr-groovebox", IDBS = "samples";
 function idb() {
@@ -3222,12 +3264,38 @@ async function idbPut(k, v) {
   } catch {}
 }
 const stored = (s) => s && { ...SPK.toStored(s), trim: s.trim.slice() };
-const unstored = (o) => { const s = SPK.fromStored(o); s.trim = Array.isArray(o.trim) ? o.trim.slice() : [0, s.pcm.length]; return s; };
-// the slices as played: the trim's start, then each marker inside the trim
-const smpStarts = (s) => [s.trim[0], ...s.starts.filter((x) => x > s.trim[0] + 64 && x < s.trim[1] - 64)];
+const unstored = (o) => {
+  const s = SPK.fromStored(o);
+  s.trim = Array.isArray(o.trim) ? o.trim.slice() : [0, s.pcm.length];
+  if (!s.chops) {                                         // (stored before end marks: each slice to the next, the first 12)
+    const st = [s.trim[0], ...s.starts.filter((x) => x > s.trim[0] + 64 && x < s.trim[1] - 64)];
+    s.chops = st.map((a, i) => [a, i + 1 < st.length ? st[i + 1] : s.trim[1]]).slice(0, SPK.NSLICE);
+  }
+  delete s.starts;
+  return s;
+};
+// CHOPS (Nov 27 2026, Ed: end marks, 12 a sample): each its own start and end, gaps between them allowed, in order of
+// their starts; as played, the ones inside the trim (an end past it stops there); none: the whole trimmed sample, one
+const smpChops = (s) => {
+  const [t0, t1] = s.trim, c = s.chops.map(([a, b]) => [Math.max(a, t0), Math.min(b, t1)]).filter(([a, b]) => b - a >= 64)
+    .sort((x, y) => x[0] - y[0]).slice(0, SPK.NSLICE);
+  return c.length ? c : [[t0, t1]];
+};
 function smpBuilt(s) {
   const [a, b] = s.trim;
-  return SPK.buildSlot(s.pcm.subarray(a, b), smpStarts(s).map((x) => x - a), s.root);
+  return SPK.buildSlot(s.pcm.subarray(a, b), smpChops(s).map(([x, y]) => [x - a, y - a]), s.root);
+}
+// a chop added at `at`: inside one, it splits it there (the first ends at `at`, the new one keeps its end); in a gap,
+// it runs to the next chop's start or the trim's end. Its index, -1 if full or outside the trim
+function smpAddChop(s, at) {
+  if (at <= s.trim[0] + 64 || at >= s.trim[1] - 64 || s.chops.length >= SPK.NSLICE) return -1;
+  s.chops.sort((x, y) => x[0] - y[0]);
+  const inside = s.chops.find(([a, b]) => at > a + 64 && at < b - 64), next = s.chops.find(([a]) => a > at);
+  let c;
+  if (inside) { c = [at, inside[1]]; inside[1] = at; } else c = [at, next ? next[0] : s.trim[1]];
+  s.chops.push(c);
+  s.chops.sort((x, y) => x[0] - y[0]);
+  return s.chops.indexOf(c);
 }
 function smpSend(k, port = node && node.port) {
   if (!port) return;
@@ -3256,10 +3324,10 @@ function smpShow() {
     b.className = "slot" + (k === smpSel ? " on" : "") + (s ? "" : " empty");
     b.setAttribute("role", "option");
     b.setAttribute("aria-selected", k === smpSel);
-    const n = s ? smpStarts(s).length : 0;
+    const n = s ? smpChops(s).length : 0;
     b.innerHTML = `<span class="n">${k + 1}</span><span class="t"><b></b><span></span></span>`;
     b.querySelector("b").textContent = s ? s.name : "empty";
-    b.querySelector(".t span").textContent = s ? `${secs(s.trim[1] - s.trim[0])} · ${n} slice${n === 1 ? "" : "s"}` : "load a sound";
+    b.querySelector(".t span").textContent = s ? `${secs(s.trim[1] - s.trim[0])} · ${n} chop${n === 1 ? "" : "s"}` : "load a sound";
     b.title = s ? `Slot ${k + 1}: ${s.name}. Click to work on it below.` : `Slot ${k + 1}: empty. Click it, then LOAD A FILE.`;
     b.addEventListener("click", () => { smpStop(); smpSel = k; smpPeaks = null; smpShow(); });
     list.append(b);
@@ -3273,7 +3341,7 @@ function smpShow() {
   const chips = $("smpchips");
   chips.innerHTML = "";
   if (s) {
-    const st = smpStarts(s);
+    const st = smpChops(s);
     const all = document.createElement("button");
     all.type = "button"; all.className = "btn all"; all.textContent = "▶ ALL";
     all.addEventListener("click", () => smpHear(s.trim[0], s.trim[1]));
@@ -3281,11 +3349,11 @@ function smpShow() {
     stop.type = "button"; stop.className = "btn orange"; stop.id = "smpstop"; stop.textContent = "■ STOP"; stop.hidden = !smpPlay;
     stop.addEventListener("click", smpStop);
     chips.append(all, stop);
-    st.forEach((a, i) => {
+    st.forEach(([a, e], i) => {
       const c = document.createElement("button");
       c.type = "button"; c.className = "btn"; c.textContent = i + 1;
-      c.title = `Hear slice ${i + 1}` + (i < 8 ? ` (as a kit: ${["kick", "snare", "clap", "hat", "open hat", "tom", "rim", "cowbell"][i]})` : "") + `; as chops: ${noteName(SPK.CHOP_KEY + i)}`;
-      c.addEventListener("click", () => smpHear(a, i + 1 < st.length ? st[i + 1] : s.trim[1]));
+      c.title = `Hear chop ${i + 1}` + (i < 8 ? ` (as a kit: ${["kick", "snare", "clap", "hat", "open hat", "tom", "rim", "cowbell"][i]})` : "") + `; as chops: ${noteName(SPK.CHOP_KEY + i)} (BANK A), ${noteName(SPK.CHOP_KEY + 12 + i)} (BANK B)`;
+      c.addEventListener("click", () => smpHear(a, e));
       chips.append(c);
     });
   }
@@ -3309,6 +3377,10 @@ function smpDraw() {
     smpPeaks = { len: n, w, mn, mx };
   }
   const xa = X(s.trim[0]), xb = X(s.trim[1]), mid = h / 2;
+  smpChops(s).forEach(([a, e], i) => {                      // (under the wave: each chop's span, tinted)
+    g.fillStyle = i % 2 ? "rgba(159, 180, 255, .10)" : "rgba(159, 180, 255, .18)";
+    g.fillRect(X(a), 0, Math.max(1, X(e) - X(a)), h);
+  });
   for (let x = 0; x < w; x++) {
     g.fillStyle = x >= xa && x <= xb ? C("--dim") : C("--keydim2");
     g.fillRect(x, mid - smpPeaks.mx[x] * mid * 0.92, 1, Math.max(1, (smpPeaks.mx[x] - smpPeaks.mn[x]) * mid * 0.92));
@@ -3319,13 +3391,22 @@ function smpDraw() {
   g.fillRect(xa - 2 * dpr, 0, 4 * dpr, h); g.fillRect(xb - 2 * dpr, 0, 4 * dpr, h);
   g.fillRect(xa, 0, 10 * dpr, 6 * dpr); g.fillRect(xb - 10 * dpr, 0, 10 * dpr, 6 * dpr);
   g.font = `${18 * dpr}px VT323, monospace`;
-  smpStarts(s).forEach((a, i) => {                         // the slices: a line and its number
-    const x = X(a);
-    g.fillStyle = C("--yellow");
-    if (i) g.fillRect(x - 1 * dpr, 0, 2 * dpr, h);
-    g.fillRect(x + (i ? 0 : 2 * dpr), h - 18 * dpr, 16 * dpr + (i + 1 > 9 ? 8 * dpr : 0), 18 * dpr);
+  const ch = smpChops(s), hot = smpHover;                   // the chops: a tint over each, its start (a yellow line, its
+  ch.forEach(([a, e], i) => {                               // number's tag at the foot) and its end (a pink line, a tag
+    const x = X(a), xe = X(e), tw = SMP_GRAB * dpr;         // at the top); the tags as wide as the part you can grab
+    const hs = hot && hot.i === i && hot.kind === "s", he = hot && hot.i === i && hot.kind === "e";
+    g.fillStyle = hs ? "#FFFFFF" : C("--yellow");
+    g.fillRect(x, 0, 2 * dpr, h);
+    g.fillRect(x, h - 18 * dpr, tw, 18 * dpr);
+    if (hs) { g.globalAlpha = .18; g.fillRect(x, 0, tw, h); g.globalAlpha = 1; }
     g.fillStyle = C("--indigo");
-    g.fillText(String(i + 1), x + (i ? 3 : 5) * dpr, h - 4 * dpr);
+    g.fillText(String(i + 1), x + 4 * dpr, h - 4 * dpr);
+    g.fillStyle = he ? "#FFFFFF" : "#FF5FA2";
+    g.fillRect(xe - 2 * dpr, 0, 2 * dpr, h);
+    g.fillRect(xe - tw, 0, tw, 14 * dpr);
+    if (he) { g.globalAlpha = .18; g.fillRect(xe - tw, 0, tw, h); g.globalAlpha = 1; }
+    g.fillStyle = C("--indigo");
+    g.fillText("]", xe - tw + 5 * dpr, 12 * dpr);
   });
   if (smpPlay && ac) {                                      // the playhead
     const t = ac.currentTime - smpPlay.t0, at = smpPlay.a + t * SPK.RATE;
@@ -3361,14 +3442,28 @@ function smpStop() {
 }
 function smpStopShow() { const b = $("smpstop"); if (b) b.hidden = !smpPlay; if (typeof boxPg !== "undefined" && boxPg) boxPgDraw(); }   // (the box's HEAR ALL / STOP key)
 addEventListener("keydown", (e) => { if (e.key === "Escape" && smpPlay) { smpStop(); } });
-// the wave: drag an edge to trim, click to add a slice, drag a slice, double-click (or right-click) one to remove it
+// the wave: drag an orange edge to trim; click to add a chop; drag a chop's start (its yellow line and number tag) or
+// its end (the pink line and its tag); double-click (or right-click) either to remove the chop. Ed, Nov 27: "increase
+// the area on the slices that can be clicked and dragged ... like the thickness of the number tag running the length
+// of the full slice bar": a start is grabbed anywhere in a SMP_GRAB-wide band to its right (its tag's width), top to
+// bottom; an end in the band to its left; the trim's edges SMP_GRAB / 2 either side. The nearest wins
+const SMP_GRAB = 22;
+let smpHover = null;
 function smpHit(e) {
   const s = smp[smpSel], cv = $("smpwave"), r = cv.getBoundingClientRect();
   const x = e.clientX - r.left, at = Math.round(Math.max(0, Math.min(1, x / r.width)) * s.pcm.length), px = (i) => i / s.pcm.length * r.width;
-  if (Math.abs(x - px(s.trim[0])) <= 9) return { kind: "a", at };
-  if (Math.abs(x - px(s.trim[1])) <= 9) return { kind: "b", at };
-  const i = s.starts.findIndex((m) => Math.abs(x - px(m)) <= 7);
-  return i >= 0 ? { kind: "m", i, at } : { kind: "add", at };
+  const cands = [];
+  if (Math.abs(x - px(s.trim[0])) <= SMP_GRAB / 2) cands.push({ kind: "a", d: Math.abs(x - px(s.trim[0])) });
+  if (Math.abs(x - px(s.trim[1])) <= SMP_GRAB / 2) cands.push({ kind: "b", d: Math.abs(x - px(s.trim[1])) });
+  s.chops.sort((p, q) => p[0] - q[0]);
+  s.chops.forEach(([a, b], i) => {
+    const xa = px(a), xb = px(b);
+    if (x >= xa - 3 && x <= xa + SMP_GRAB) cands.push({ kind: "s", i, d: Math.abs(x - xa) });
+    if (x >= xb - SMP_GRAB && x <= xb + 3) cands.push({ kind: "e", i, d: Math.abs(x - xb) });
+  });
+  if (!cands.length) return { kind: "add", at };
+  cands.sort((p, q) => p.d - q.d || (p.kind === "e" ? -1 : 1));   // (a start and an end on one spot: the end first)
+  return { ...cands[0], at };
 }
 $("smpwave").addEventListener("pointerdown", (e) => {
   const s = smp[smpSel];
@@ -3378,36 +3473,40 @@ $("smpwave").addEventListener("pointerdown", (e) => {
   const h = smpHit(e);
   if (h.kind === "add") {
     if (h.at <= s.trim[0] + 64 || h.at >= s.trim[1] - 64) return;
-    if (smpStarts(s).length >= SPK.NSLICE) { $("smpinfo").textContent = `${SPK.NSLICE} slices at most.`; return; }
-    s.starts.push(h.at);
-    s.starts.sort((a, b) => a - b);
-    smpDrag = { kind: "m", i: s.starts.indexOf(h.at) };
+    if (s.chops.length >= SPK.NSLICE) { $("smpinfo").textContent = `${SPK.NSLICE} chops at most: remove one (double-click its line) to add another.`; return; }
+    const i = smpAddChop(s, h.at);
+    if (i < 0) return;
+    smpDrag = { kind: "s", c: s.chops[i] };
     smpChanged(smpSel);
-  } else smpDrag = h;
+  } else if (h.kind === "s" || h.kind === "e") {          // (held where it was grabbed: the line keeps its distance from
+    const c = s.chops[h.i];                                 //  the finger, no jump to it)
+    smpDrag = { kind: h.kind, c, off: c[h.kind === "s" ? 0 : 1] - h.at };
+  } else smpDrag = { ...h, off: s.trim[h.kind === "a" ? 0 : 1] - h.at };
 });
 $("smpwave").addEventListener("pointermove", (e) => {
   const s = smp[smpSel];
   if (!s) return;
   const h = smpHit(e);
-  $("smpwave").style.cursor = h.kind === "a" || h.kind === "b" ? "ew-resize" : h.kind === "m" ? "grab" : "crosshair";
+  $("smpwave").style.cursor = smpDrag ? (smpDrag.kind === "s" || smpDrag.kind === "e" ? "grabbing" : "ew-resize")
+    : h.kind === "a" || h.kind === "b" ? "ew-resize" : h.kind === "s" || h.kind === "e" ? "grab" : "crosshair";
+  const hov = !smpDrag && (h.kind === "s" || h.kind === "e") ? { kind: h.kind, i: h.i } : smpDrag && smpDrag.c ? { kind: smpDrag.kind, i: s.chops.indexOf(smpDrag.c) } : null;
+  if (JSON.stringify(hov) !== JSON.stringify(smpHover)) { smpHover = hov; if (!smpDrag) smpDraw(); }
   if (!smpDrag) return;
-  const min = Math.round(0.03 * SPK.RATE);
-  if (smpDrag.kind === "a") s.trim[0] = Math.max(0, Math.min(h.at, s.trim[1] - min));
-  else if (smpDrag.kind === "b") s.trim[1] = Math.min(s.pcm.length, Math.max(h.at, s.trim[0] + min));
-  else if (smpDrag.kind === "m") {
-    s.starts[smpDrag.i] = Math.max(s.trim[0] + 65, Math.min(s.trim[1] - 65, h.at));
-    const v = s.starts[smpDrag.i];
-    s.starts.sort((a, b) => a - b);
-    smpDrag.i = s.starts.indexOf(v);
-  }
+  const min = Math.round(0.03 * SPK.RATE), c = smpDrag.c, at = h.at + (smpDrag.off || 0);
+  if (smpDrag.kind === "a") s.trim[0] = Math.max(0, Math.min(at, s.trim[1] - min));
+  else if (smpDrag.kind === "b") s.trim[1] = Math.min(s.pcm.length, Math.max(at, s.trim[0] + min));
+  else if (smpDrag.kind === "s") c[0] = Math.max(s.trim[0], Math.min(c[1] - min, at));
+  else if (smpDrag.kind === "e") c[1] = Math.min(s.trim[1], Math.max(c[0] + min, at));
+  if (c) s.chops.sort((p, q) => p[0] - q[0]);
   smpChanged(smpSel);
 });
-for (const t of ["pointerup", "pointercancel"]) $("smpwave").addEventListener(t, () => { smpDrag = null; });
+for (const t of ["pointerup", "pointercancel"]) $("smpwave").addEventListener(t, () => { smpDrag = null; smpHover = null; smpDraw(); });
+$("smpwave").addEventListener("pointerleave", () => { if (!smpDrag && smpHover) { smpHover = null; smpDraw(); } });
 function smpRemoveAt(e) {
   const s = smp[smpSel];
   if (!s) return;
   const h = smpHit(e);
-  if (h.kind === "m") { e.preventDefault(); s.starts.splice(h.i, 1); smpChanged(smpSel); }
+  if (h.kind === "s" || h.kind === "e") { e.preventDefault(); s.chops.splice(h.i, 1); smpChanged(smpSel); }
 }
 $("smpwave").addEventListener("dblclick", smpRemoveAt);
 $("smpwave").addEventListener("contextmenu", smpRemoveAt);
@@ -3415,17 +3514,17 @@ $("smphits").addEventListener("click", () => {
   const s = smp[smpSel];
   if (!s) return;
   const [a, b] = s.trim;
-  s.starts = SPK.sliceTransients(s.pcm.subarray(a, b), 16).filter((x) => x > 0).map((x) => x + a);
+  s.chops = SPK.chopHits(s.pcm.subarray(a, b)).map(([x, y]) => [x + a, y + a]);
   smpChanged(smpSel);
 });
 for (const b of document.querySelectorAll("[data-eq]")) b.addEventListener("click", () => {
   const s = smp[smpSel];
   if (!s) return;
   const [a, e] = s.trim;
-  s.starts = SPK.sliceEqual(e - a, +b.dataset.eq).filter((x) => x > 0).map((x) => x + a);
+  s.chops = SPK.chopEqual(e - a, +b.dataset.eq).map(([x, y]) => [x + a, y + a]);
   smpChanged(smpSel);
 });
-$("smpnone").addEventListener("click", () => { const s = smp[smpSel]; if (s) { s.starts = []; smpChanged(smpSel); } });
+$("smpnone").addEventListener("click", () => { const s = smp[smpSel]; if (s) { s.chops = []; smpChanged(smpSel); } });
 $("smpname").addEventListener("input", () => {
   const s = smp[smpSel];
   if (!s) return;
@@ -3500,13 +3599,13 @@ function smpTake(pcm, base, cut) {
   if (pk > 0) for (let i = 0; i < n; i++) pcm[i] *= 0.9 / pk;   // (every sample as loud: its peak at -1 dB)
   const trim = SPK.autoTrim(pcm);
   const s = { name: base.toUpperCase().replace(/[^A-Z0-9 _-]/g, "").trim().slice(0, 8) || `USER ${smpSel + 1}`,
-              root: SPK.rootFromName(base), pcm, trim, starts: [] };
-  s.starts = SPK.sliceTransients(pcm.subarray(trim[0], trim[1]), 16).filter((x) => x > 0).map((x) => x + trim[0]);
+              root: SPK.rootFromName(base), pcm, trim, chops: [] };
+  s.chops = SPK.chopHits(pcm.subarray(trim[0], trim[1])).map(([x, y]) => [x + trim[0], y + trim[0]]);
   smp[smpSel] = s;
   smpPeaks = null;
   smpChanged(smpSel, true);
   $("smpinfo").textContent = (cut ? `Kept the first ${SPK.MAX_SECONDS} seconds. ` : "") +
-    `${s.name}: ${smpStarts(s).length} slices found at the hits. Now put it on a track.`;
+    `${s.name}: ${smpChops(s).length} chops found at the hits. Now put it on a track.`;
 }
 $("smpfile").addEventListener("change", async (e) => {
   const f = e.target.files[0]; e.target.value = "";
@@ -3516,16 +3615,20 @@ $("smpfile").addEventListener("change", async (e) => {
 for (const t of ["dragenter", "dragover"]) $("smped").addEventListener(t, (e) => { e.preventDefault(); $("smped").classList.add("drag"); });
 for (const t of ["dragleave", "drop"]) $("smped").addEventListener(t, () => $("smped").classList.remove("drag"));
 $("smped").addEventListener("drop", (e) => { e.preventDefault(); smpLoadFile(e.dataTransfer.files[0]); });
-const USE = ["as a synth: play it on the keys, A3 at its root pitch", "as chops: a slice a key, from C3 up",
-             "as a drum kit: slices 1 to 8 on the drum rows"];
+const USE = ["as a synth: play it on the keys, A3 at its root pitch", "as chops: BANK A, a chop a key on C3 to B3",
+             "as a drum kit: chops 1 to 8 on the drum rows", "as chops: BANK B, a chop a key on C4 to B4 (OCT+ or the keys past B3)"];
 for (const b of document.querySelectorAll("[data-use]")) b.addEventListener("click", () => {
   const s = smp[smpSel], mode = +b.dataset.use;
   if (!s) return;
   if (!node) { $("smpinfo").textContent = "Switch the groovebox on first."; return; }
   smpSend(smpSel);
+  const wasChop = !!(G && G.banks && G.banks.a);
   node.port.postMessage({ type: "spkuse", k: smpSel, mode });
+  if (mode === 1 || mode === 3) { padBank = mode === 3 && wasChop ? 1 : 0; padOpen = true; padSig = ""; }   // (the pads open on them)
   const t = G ? ROLE[G.sel] : "the track";
-  $("smpinfo").textContent = `${t} plays ${s.name} ${USE[mode].replace("A3", noteName(s.root))}.`;
+  $("smpinfo").textContent = mode === 3 && !wasChop
+    ? `${t} wasn't playing chops yet, so ${s.name} went on BANK A (C3 to B3). Put another sample on BANK B to fill C4 to B4.`
+    : `${t} plays ${s.name} ${USE[mode].replace("A3", noteName(s.root))}.`;
 });
 $("smpgo").addEventListener("click", () => { setPane("samples"); $("samples").scrollIntoView({ behavior: "smooth", block: "start" }); });
 // ------------------------------------------------------------------ the two scenes (Ed, Nov 23 2026: "one for creating
@@ -4181,7 +4284,7 @@ const PG_RECASK = {
 
 // ---- SAMPLES
 let bsMode = "edit", bsCur = 0, bsView = null, bsAuto = 0, bsClearAt = 0, bsMsg = "";
-const AUTOS = [["HITS", null], ["4", 4], ["8", 8], ["16", 16], ["NONE", 0]];
+const AUTOS = [["HITS", null], ["4", 4], ["6", 6], ["8", 8], ["12", 12], ["NONE", 0]];
 const bsS = () => smp[smpSel];
 function bsFixView() {                                     // the window on the wave: always holds the cursor
   const s = bsS();
@@ -4204,20 +4307,20 @@ function bsZoom(f) {
   bsFixView();
 }
 function bsSlot(d) { smpStop(); smpSel = (smpSel + d + SPK.NSLOT) % SPK.NSLOT; smpPeaks = null; bsView = null; bsCur = bsS() ? bsS().trim[0] : 0; smpShow(); }
-function bsSlices() { const s = bsS(); if (!s) return []; const st = smpStarts(s); return st.map((a, i) => [a, i + 1 < st.length ? st[i + 1] : s.trim[1]]); }
-function bsHearSlice(i) { const sl = bsSlices()[i]; if (sl) { smpHear(sl[0], sl[1]); bsMsg = `slice ${i + 1}`; } }
+function bsSlices() { const s = bsS(); return s ? smpChops(s) : []; }
+function bsHearSlice(i) { const sl = bsSlices()[i]; if (sl) { smpHear(sl[0], sl[1]); bsMsg = `chop ${i + 1}`; } }
 function bsNear() {                                        // the slice marker at the cursor (a 60th of the view either side)
   const s = bsS(); if (!s) return -1;
   const tol = Math.max(64, (bsView.b - bsView.a) / 60);
-  return s.starts.findIndex((m) => Math.abs(m - bsCur) <= tol);
+  s.chops.sort((p, q) => p[0] - q[0]);
+  return s.chops.findIndex(([m]) => Math.abs(m - bsCur) <= tol);
 }
 function bsAutoNext() {
   const s = bsS(); if (!s) return;
   bsAuto = (bsAuto + 1) % AUTOS.length;
   const [lab, nEq] = AUTOS[bsAuto], [a, e] = s.trim;
-  s.starts = nEq === null ? SPK.sliceTransients(s.pcm.subarray(a, e), 16).filter((x) => x > 0).map((x) => x + a)
-    : nEq ? SPK.sliceEqual(e - a, nEq).filter((x) => x > 0).map((x) => x + a) : [];
-  bsMsg = `slices: ${lab === "HITS" ? "at the hits" : lab === "NONE" ? "none" : lab + " equal"} (${smpStarts(s).length})`;
+  s.chops = (nEq === null ? SPK.chopHits(s.pcm.subarray(a, e)) : nEq ? SPK.chopEqual(e - a, nEq) : []).map(([x, y]) => [x + a, y + a]);
+  bsMsg = `chops: ${lab === "HITS" ? "at the hits" : lab === "NONE" ? "none" : lab + " equal"} (${smpChops(s).length})`;
   smpChanged(smpSel);
 }
 function bsTrim(end) {
@@ -4334,10 +4437,10 @@ const PG_SAMPLES = {
     const s = bsS(); if (!s) { bsMsg = "Empty slot: LOAD a file or REC IN first."; boxPgDraw(); return; }
     bsFixView();
     const i = bsNear();
-    if (i >= 0) { s.starts.splice(i, 1); bsMsg = "slice removed"; }
+    if (i >= 0) { s.chops.splice(i, 1); bsMsg = "chop removed"; }
     else if (bsCur <= s.trim[0] + 64 || bsCur >= s.trim[1] - 64) bsMsg = "move inside the trimmed part first";
-    else if (smpStarts(s).length >= SPK.NSLICE) bsMsg = `${SPK.NSLICE} slices at most`;
-    else { s.starts.push(bsCur); s.starts.sort((a, b) => a - b); bsMsg = "slice added at the cursor"; }
+    else if (s.chops.length >= SPK.NSLICE) bsMsg = `${SPK.NSLICE} chops at most`;
+    else { smpAddChop(s, bsCur); bsMsg = "chop added at the cursor"; }
     smpChanged(smpSel); boxPgDraw();
   },
   dir(d) {
@@ -4360,7 +4463,7 @@ const PG_SAMPLES = {
       bsFixView();
       const r = el.getBoundingClientRect(), at = Math.round(bsView.a + (e.clientX - r.left) / r.width * (bsView.b - bsView.a));
       if (Math.abs(at - bsCur) <= Math.max(64, (bsView.b - bsView.a) / 60)) this.click();
-      else { bsCur = at; bsFixView(); bsMsg = "click again here: a slice in / out"; }
+      else { bsCur = at; bsFixView(); bsMsg = "click again here: a chop in / out"; }
       return;
     }
     if (el.classList.contains("bp-big")) { this.click(); return; }
@@ -4424,9 +4527,9 @@ const PG_SAMPLES = {
         <p class="bp-help">PUSH: record / stop (${SPK.MAX_SECONDS} s at most) · TURN: level · ◀: back</p>`;
     } else {
       body = `<canvas class="bp-wave"></canvas>
-        <p class="bp-sub">${s ? `${escHtml(s.name)} · ${secs(s.trim[1] - s.trim[0])} · ${smpStarts(s).length} slice${smpStarts(s).length === 1 ? "" : "s"} · root ${noteName(s.root)} · cursor ${secs2(bsCur)}` : "EMPTY SLOT: LOAD USB or REC IN"}</p>
+        <p class="bp-sub">${s ? `${escHtml(s.name)} · ${secs(s.trim[1] - s.trim[0])} · ${smpChops(s).length} chop${smpChops(s).length === 1 ? "" : "s"} · root ${noteName(s.root)} · cursor ${secs2(bsCur)}` : "EMPTY SLOT: LOAD USB or REC IN"}</p>
         <p class="bp-msg">${escHtml(bsMsg || $("smpinfo").textContent || "")}</p>
-        <p class="bp-help">TURN: the cursor · PUSH: add / remove a slice · ◀ ▶: slices · ▲ ▼: zoom · KEYS: hear slices · SHIFT: trim, root, clear</p>`;
+        <p class="bp-help">TURN: the cursor · PUSH: add / remove a chop · ◀ ▶: chops · ▲ ▼: zoom · KEYS: hear chops · SHIFT: trim, root, clear</p>`;
     }
     el.innerHTML = `<h3>SAMPLES <small>${bsMode === "files" ? "USB" : bsMode === "rec" ? "LINE IN" : "SLICE"}</small></h3><div class="bp-slots">${slots}</div>${body}`;
     const cv = el.querySelector(".bp-wave");
@@ -4451,8 +4554,9 @@ function bsDrawWave(cv, s) {
   g.fillRect(0, 0, Math.max(0, X(s.trim[0])), h); g.fillRect(X(s.trim[1]), 0, w, h);
   g.fillStyle = "#E2741F"; g.fillRect(X(s.trim[0]) - 2, 0, 4, h); g.fillRect(X(s.trim[1]) - 2, 0, 4, h);
   g.font = `${Math.round(h / 7)}px VT323, monospace`;
-  smpStarts(s).forEach((m, i) => {
+  smpChops(s).forEach(([m, me], i) => {
     const x = X(m); if (x < -20 || x > w + 2) return;
+    g.fillStyle = "#FF5FA2"; g.fillRect(X(me) - 1, 0, 2, h / 8);
     g.fillStyle = "#FFE13A"; if (i) g.fillRect(x - 1, 0, 2, h);
     g.fillRect(x + (i ? 0 : 2), h - h / 6, h / 7 + (i + 1 > 9 ? h / 14 : 0), h / 6);
     g.fillStyle = "#1C0A57"; g.fillText(String(i + 1), x + (i ? 2 : 4), h - h / 30);
@@ -4701,9 +4805,9 @@ function sharePackageSamples(mask) {
   const out = [];
   smp.forEach((s, k) => {
     if (!s || !((mask >>> k) & 1)) return;
-    const [a, b] = s.trim, cut = { name: s.name, root: s.root, starts: s.starts.filter((x) => x > a && x < b).map((x) => x - a), pcm: s.pcm.subarray(a, b) };
+    const [a, b] = s.trim, cut = { name: s.name, root: s.root, chops: smpChops(s).map(([x, y]) => [x - a, y - a]), pcm: s.pcm.subarray(a, b) };
     const st = SPK.toStored(cut);
-    out.push({ k, name: st.name, root: st.root, starts: st.starts, trim: [0, b - a], pcm16: SPK.b64of(new Uint8Array(st.pcm16.buffer)) });
+    out.push({ k, name: st.name, root: st.root, chops: st.chops, starts: st.starts, trim: [0, b - a], pcm16: SPK.b64of(new Uint8Array(st.pcm16.buffer)) });
   });
   return out;
 }
@@ -4792,13 +4896,17 @@ const TIPS = {
   "#smpname": "The sample's name (8 letters): the tracks show it.",
   "#smproot": "ROOT: the key where the sample plays at its own pitch, when it's on a track AS A SYNTH.",
   "#smpclear": "CLEAR SLOT: empty this slot. A track that played it goes silent.",
-  "#smpwave": "The sample. Drag an orange edge to trim; click to add a slice; drag a slice to move it; double-click (or right-click) a slice to remove it.",
-  "#smphits": "AUTO: a slice at each hit.",
-  "[data-eq='4']": "4 equal slices.", "[data-eq='8']": "8 equal slices.", "[data-eq='16']": "16 equal slices.",
-  "#smpnone": "NONE: no slices, the whole sample.",
+  "#smpwave": "The sample. Drag an orange edge to trim; click to add a chop; drag a chop's start (the yellow line and its number) or its end (the pink line and its ] tag), grabbing anywhere in the band beside the line; double-click (or right-click) either to remove the chop.",
+  "#smphits": "AUTO: a chop at each hit (12 at most), each ending where its sound dies away.",
+  "[data-eq='4']": "4 equal chops, end to end.", "[data-eq='6']": "6 equal chops.", "[data-eq='8']": "8 equal chops.", "[data-eq='12']": "12 equal chops: every key of a bank.",
+  "#smpnone": "NONE: no chops: the whole trimmed sample is one.",
+  "#padsgo": "PADS: this track's chops as 12 pads over the screen, like an MPC. Tap one to play it; with RECORD on, your taps go into the pattern.",
+  "#padbka": "BANK A: the chops on C3 to B3.", "#padbkb": "BANK B: the second sample's chops, on C4 to B4.",
+  "#padsx": "Close the pads: the screen again.",
   "[data-use='0']": "AS A SYNTH: the whole sample on the selected track, played at the pitch of each key.",
-  "[data-use='1']": "AS CHOPS: a slice on each key from C3 up, on the selected track.",
-  "[data-use='2']": "AS A DRUM KIT: slices 1 to 8 on the selected track's drum rows: kick, snare, clap, hat, open hat, tom, rim, cowbell.",
+  "[data-use='1']": "AS CHOPS · BANK A: a chop on each key from C3 to B3, on the selected track. Each plays to its end mark, however short the tap (one-shot).",
+  "[data-use='3']": "BANK B: this sample's chops on C4 to B4 of the same track (OCT+, or the keys past B3), beside the ones on BANK A. Both banks play in the same pattern.",
+  "[data-use='2']": "AS A DRUM KIT: chops 1 to 8 on the selected track's drum rows: kick, snare, clap, hat, open hat, tom, rim, cowbell.",
   "#go": "SWITCH ON: start the groovebox (the sound starts here).",
   "#gobare": "Start without the shared song: your own saves instead.",
   "#tournext": "On to the next step.", "#tourback": "Back a step.", "#tourskip": "Close the tour (the ? button brings it back).",
@@ -5510,6 +5618,97 @@ addEventListener("popstate", phSet);
 new ResizeObserver(phSizes).observe($("keybar"));
 new ResizeObserver(phSizes).observe(phTop);
 phSet();
+
+// ------------------------------------------------------------------ PADS (Ed, Nov 27 2026): a chop track's chops as
+// pads over the screen. The device plays them (felucca_web.c web_chop_pad: the picked track, as a keyboard's note,
+// recorded under REC); it reports what sounds (the guide's banks.on), so the steps and the keys light them too
+const PAD_ORDER = [8, 9, 10, 11, 4, 5, 6, 7, 0, 1, 2, 3];   // (the grid's cells, top left first: MPC numbering)
+let padBank = 0, padOpen = false, padSig = "", padBanks = { a: 0, b: 0 };
+const padEls = [];
+for (const c of PAD_ORDER) {
+  const el = document.createElement("div");
+  el.className = "pad1";
+  el.dataset.i = c;
+  el.innerHTML = `<span class="pn">${c + 1}</span><canvas width="80" height="30" aria-hidden="true"></canvas><span class="pk"></span>`;
+  $("padgrid").append(el);
+  padEls[c] = el;
+  const off = (e) => {
+    if (!el.dataset.down) return;
+    send({ type: "choppad", note: +el.dataset.down, vel: 0 });
+    delete el.dataset.down;
+  };
+  el.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    if (el.classList.contains("empty") || !node) return;
+    try { el.releasePointerCapture(e.pointerId); } catch {}
+    const note = SPK.CHOP_KEY + 12 * padBank + c;
+    el.dataset.down = note;
+    send({ type: "choppad", note, vel: 110 });
+    padFlash(c);
+  });
+  for (const t of ["pointerup", "pointercancel", "pointerleave"]) el.addEventListener(t, off);
+  el.addEventListener("contextmenu", (e) => e.preventDefault());
+}
+const padTimers = [];
+function padFlash(c) {
+  const el = padEls[c];
+  if (!el) return;
+  el.classList.add("lit");
+  clearTimeout(padTimers[c]);
+  padTimers[c] = setTimeout(() => el.classList.remove("lit"), 140);
+}
+function padDraw() {                                      // the bank's chops: their names and little waves
+  const slot = padBank ? padBanks.b : padBanks.a, s = slot ? smp[slot - 1] : null, ch = s ? smpChops(s) : [];
+  $("padstrk").textContent = s ? `${G ? ROLE[G.sel] : ""} · ${s.name}` : padBank ? "BANK B: none yet" : "";
+  for (let c = 0; c < 12; c++) {
+    const el = padEls[c], cv = el.querySelector("canvas"), g = cv.getContext("2d"), seg = ch[c];
+    el.classList.toggle("empty", !seg);
+    el.querySelector(".pk").textContent = noteName(SPK.CHOP_KEY + 12 * padBank + c);
+    el.title = seg ? `Pad ${c + 1}: chop ${c + 1} of ${s.name} (${noteName(SPK.CHOP_KEY + 12 * padBank + c)})` : `Pad ${c + 1}: no chop`;
+    g.clearRect(0, 0, cv.width, cv.height);
+    if (!seg) continue;
+    g.fillStyle = "#9FB4FF";
+    const [a, b] = seg, w = cv.width, h = cv.height;
+    for (let x = 0; x < w; x++) {
+      const i0 = Math.floor(a + x / w * (b - a)), i1 = Math.max(i0 + 1, Math.floor(a + (x + 1) / w * (b - a)));
+      let pk = 0;
+      for (let i = i0; i < i1; i += Math.max(1, (i1 - i0) >> 5)) pk = Math.max(pk, Math.abs(s.pcm[i] || 0));
+      g.fillRect(x, h / 2 - pk * h / 2, 1, Math.max(1, pk * h));
+    }
+  }
+  $("padbka").setAttribute("aria-pressed", String(!padBank));
+  $("padbkb").setAttribute("aria-pressed", String(!!padBank));
+  $("padbkb").disabled = !padBanks.b && !padBank;
+  $("padbka").textContent = padBanks.a ? "A" : "A";
+  $("padbkb").title = padBanks.b ? `BANK B: ${smp[padBanks.b - 1] ? smp[padBanks.b - 1].name : "slot " + padBanks.b} on C4 to B4` : "BANK B: put a sample on BANK B in SAMPLES first";
+}
+function padShow(open) {
+  padOpen = !!open && !!padBanks.a;
+  $("padsv").hidden = !padOpen;
+  $("padsgo").hidden = padOpen || !padBanks.a || !node;
+  if (padOpen) padDraw();
+}
+function padSync(g) {                                     // (showGuide) the track's banks, what sounds
+  const b = g.banks || { a: 0, b: 0, on: 0 };
+  const sig = `${g.sel}:${b.a}:${b.b}:${smpSigOf(b.a)}:${smpSigOf(b.b)}`;
+  padBanks = b;
+  if (sig !== padSig) {
+    padSig = sig;
+    if (!b.a) padShow(false);
+    else { if (padBank && !b.b) padBank = 0; padShow(padOpen); }
+  }
+  if (padOpen && b.on) {
+    for (let c = 0; c < 12; c++) if ((b.on >> (c + 12 * padBank)) & 1) padFlash(c);
+    const other = padBank ? b.on & 0xFFF : b.on >> 12;
+    if (other) { const t = padBank ? $("padbka") : $("padbkb"); t.classList.add("hit"); setTimeout(() => t.classList.remove("hit"), 160); }
+  }
+}
+const smpSigOf = (slot) => { const s = slot ? smp[slot - 1] : null; return s ? s.name + smpChops(s).map((c) => c.join("-")).join(",") : ""; };
+$("padsgo").addEventListener("click", () => padShow(true));
+window.__chops = () => { const s = smp[smpSel]; return s ? { len: s.pcm.length, chops: smpChops(s) } : null; };   // (tests)
+$("padsx").addEventListener("click", () => padShow(false));
+$("padbka").addEventListener("click", () => { padBank = 0; padDraw(); });
+$("padbkb").addEventListener("click", () => { if (padBanks.b) { padBank = 1; padDraw(); } });
 </script>
 </body>
 </html>

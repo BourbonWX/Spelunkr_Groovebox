@@ -143,13 +143,23 @@ Press **SAMPLES** in the side menu. There are 8 slots.
 1. Pick a slot, then **LOAD A FILE** (or drop one on the panel): WAV, MP3, OGG or FLAC. A longer file keeps its
    first 30 seconds, however big it is. **▶ ALL** and the numbered buttons let you hear it; **■ STOP** (or Esc, or the
    same button again) stops it.
-2. **Trim**: drag the orange edges. **Slice**: it slices at the hits by itself; **AUTO**, **4**, **8**, **16** or
-   **NONE** slice it again; click the wave to add a slice, drag one to move it, double-click one to remove it.
+2. **Trim**: drag the orange edges. **Chop**: it chops at the hits by itself, each chop ending where its sound dies
+   away; **AUTO**, **4**, **6**, **8**, **12** or **NONE** chop it again. Each chop has its own **start** (the yellow
+   line and its number) and **end** (the pink line and its **]** tag), with gaps between them if you like: click the
+   wave to add a chop, drag a start or an end to move it (grab it anywhere in the band beside its line, top to
+   bottom), double-click either to remove the chop. Up to 12 chops a sample.
 3. Pick a track, then put the sample on it:
    - **AS A SYNTH**: the whole sample, played at the pitch of each key (**ROOT** is the key where it plays as
      recorded);
-   - **AS CHOPS**: a slice a key, from C3 up (up to 24 slices);
-   - **AS A DRUM KIT**: slices 1 to 8 on the drum rows (kick, snare, clap, hat, open hat, tom, rim, cowbell).
+   - **AS CHOPS · BANK A**: a chop a key, C3 to B3. Each chop plays to its end mark however short the tap
+     (one-shot, like an MPC's pads);
+   - **BANK B**: another sample's chops on C4 to B4 of the same track (OCT+, or the keys past B3), beside BANK A:
+     both banks play in the same pattern, at different times or together;
+   - **AS A DRUM KIT**: chops 1 to 8 on the drum rows (kick, snare, clap, hat, open hat, tom, rim, cowbell).
+4. **PADS**: on a track that plays chops, **▦ PADS** on the screen opens its chops as 12 pads (numbered like an
+   MPC's: 1 bottom left, 12 top right), with **A** and **B** for the banks. Tap a pad to play it; with **RECORD** on,
+   your taps go into the pattern. The pads light whenever their chop plays, from the steps or the keys too. **✕**
+   puts the screen back.
 
 Your samples stay in this browser, and **FILE ▸ SAVE PROJECT** puts them in the project file. **SHARE** sends the ones your song
 plays along with its code.
@@ -158,7 +168,9 @@ plays along with its code.
 
 - 8 slots, 30 seconds a sample: a longer file keeps its first 30 seconds.
 - Samples are kept in mono at 22 kHz: a little lo-fi, like an old sampler.
-- Up to 24 slices. **AS CHOPS** plays them from C3 up; **AS A DRUM KIT** uses slices 1 to 8.
+- Up to 12 chops a sample (a sample chopped before this kept more: it keeps its first 12). **AS CHOPS**: BANK A on
+  C3–B3, BANK B on C4–B4; **AS A DRUM KIT** uses chops 1 to 8.
+- The keys always reach a chop track's chops as they are: **keys stay in key** and **TRANSPOSE** don't move them.
 - **AS A SYNTH** plays the sample once a note: it doesn't loop, so a long held note stops when the sample does.
 - Names are up to 8 letters.
 - Any WAV, MP3, OGG or FLAC your browser can read.

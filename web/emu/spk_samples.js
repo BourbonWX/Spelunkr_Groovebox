@@ -4,7 +4,10 @@
 // each encoded IMA ADPCM from a fresh state. Kept in the page: the browser's storage (IndexedDB) and the project file.
 // The ADPCM is the FM-1 editor's (web/editor.html imaEncode, a port of tools/sampleio.py).
 
-export const RATE = 22050, NSLOT = 8, NSLICE = 24, MAX_SECONDS = 30, CHOP_KEY = 48;
+export const RATE = 22050, NSLOT = 8, NSLICE = 12, MAX_SECONDS = 30, CHOP_KEY = 48;
+// (Nov 27 2026, Ed: "keep chopped samples to just 12 per track and then also apply end marks to chops": a CHOP is a
+// start and an end of its own, gaps allowed; 12 a sample, one octave, C3..B3; a track's BANK B, another sample's 12, on
+// C4..B4: eng_sample.c. The device still takes up to 24, so a slot made before plays as it did until it's edited)
 
 const IMA_STEP = [7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88,
   97, 107, 118, 130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449, 494, 544, 598, 658,
@@ -44,15 +47,25 @@ export function toInt16(x, fade = 32) {
   return out;
 }
 
-/* a sample: pcm (Float32 at RATE, already trimmed), slice starts (sample indexes into pcm, ascending, the first 0
- * or later; each runs to the next or the end), root (MIDI note) -> {data, meta} for web_spk_* */
-export function buildSlot(pcm, starts, root) {
-  const s = [...new Set(starts.map((v) => Math.max(0, Math.min(pcm.length - 2, Math.round(v)))))].sort((a, b) => a - b).slice(0, NSLICE);
-  const blocks = [imaEncode(toInt16(pcm, 64))], meta = [pcm.length, Math.round(root * 16), s.length, 0];
+/* starts (ascending; each runs to the next or the end) -> chops [[start, end], ..] (the form before end marks) */
+export function chopsOfStarts(starts, len) {
+  const s = [...new Set(starts.map((v) => Math.max(0, Math.min(len - 2, Math.round(v)))))].sort((a, b) => a - b);
+  return s.map((a, i) => [a, i + 1 < s.length ? s[i + 1] : len]);
+}
+/* chops as played: in order of their starts, each inside 0..len and at least 32 samples long, NSLICE at most */
+export function chopsClean(chops, len) {
+  return chops.map(([a, b]) => [Math.max(0, Math.min(len - 32, Math.round(a))), Math.max(0, Math.min(len, Math.round(b)))])
+    .filter(([a, b]) => b - a >= 32).sort((x, y) => x[0] - y[0]).slice(0, NSLICE);
+}
+/* a sample: pcm (Float32 at RATE, already trimmed), its chops ([start, end] sample indexes into pcm; plain starts, as
+ * before end marks, run each to the next), root (MIDI note) -> {data, meta} for web_spk_* */
+export function buildSlot(pcm, chops, root) {
+  const c = chopsClean(chops.length && typeof chops[0] === "number" ? chopsOfStarts(chops, pcm.length) : chops, pcm.length);
+  const blocks = [imaEncode(toInt16(pcm, 64))], meta = [pcm.length, Math.round(root * 16), c.length, 0];
   let off = blocks[0].length + (blocks[0].length & 1);
-  for (let i = 0; i < s.length; i++) {
-    const end = i + 1 < s.length ? s[i + 1] : pcm.length, b = imaEncode(toInt16(pcm.subarray(s[i], end)));
-    meta.push(off, end - s[i]);
+  for (let i = 0; i < c.length; i++) {
+    const [a, end] = c[i], b = imaEncode(toInt16(pcm.subarray(a, end)));
+    meta.push(off, end - a);
     blocks.push(b);
     off += b.length + (b.length & 1);
   }
@@ -76,6 +89,24 @@ export function putSlot(ex, k, built, name) {
 
 /* slice starts: n equal parts of len samples */
 export function sliceEqual(len, n) { return Array.from({ length: n }, (_, i) => Math.round(i * len / n)); }
+/* chops: n equal parts of len samples, end to end */
+export function chopEqual(len, n) { return chopsOfStarts(sliceEqual(len, n), len); }
+/* chops at the hits (sliceTransients), each ending where its sound dies away (its level under a tenth of its own peak
+ * for 30 ms: the tail it rings with kept), or at the next hit */
+export function chopHits(pcm, max = NSLICE) {
+  const st = sliceTransients(pcm, max), hop = 128, quiet = Math.round(0.03 * RATE / hop);
+  return st.map((a, i) => {
+    const lim = i + 1 < st.length ? st[i + 1] : pcm.length;
+    let pk = 0, end = lim, run = 0;
+    for (let h = a; h + hop <= lim; h += hop) {
+      let e = 0;
+      for (let j = h; j < h + hop; j++) e = Math.max(e, Math.abs(pcm[j]));
+      pk = Math.max(pk, e);
+      if (h - a > 0.05 * RATE && e < pk * 0.1) { if (++run >= quiet) { end = Math.min(lim, h + hop); break; } } else run = 0;
+    }
+    return [a, end];
+  });
+}
 
 /* slice starts at the hits: where the short-term energy jumps over the slower one (an onset), at least minGap
  * seconds apart, the strongest up to max; always one at 0 */
@@ -117,14 +148,16 @@ export function rootFromName(name) {
   return Math.max(0, Math.min(127, 12 * (+m[3] + 1) + NOTE[m[1].toUpperCase()] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0)));
 }
 
-/* the stored form (IndexedDB, the project file): {name, root, starts, pcm (Int16 at RATE, base64 in JSON)} */
+/* the stored form (IndexedDB, the project file): {name, root, chops, starts (the chops' starts, for a page before end
+ * marks), pcm (Int16 at RATE, base64 in JSON)}; read back: chops null in one stored before end marks (the page makes them) */
 export function toStored(s) {
-  return { name: s.name, root: s.root, starts: s.starts.slice(), pcm16: toInt16(s.pcm, 0) };
+  return { name: s.name, root: s.root, chops: s.chops.map((c) => c.slice()), starts: s.chops.map((c) => c[0]), pcm16: toInt16(s.pcm, 0) };
 }
 export function fromStored(o) {
   const p16 = o.pcm16 instanceof Int16Array ? o.pcm16 : new Int16Array(o.pcm16), pcm = new Float32Array(p16.length);
   for (let i = 0; i < p16.length; i++) pcm[i] = p16[i] / 32768;
-  return { name: String(o.name || ""), root: o.root ?? 60, starts: Array.isArray(o.starts) ? o.starts.slice() : [0], pcm };
+  return { name: String(o.name || ""), root: o.root ?? 60, starts: Array.isArray(o.starts) ? o.starts.slice() : [0],
+           chops: Array.isArray(o.chops) ? o.chops.filter((c) => Array.isArray(c) && c.length === 2).map((c) => [+c[0], +c[1]]) : null, pcm };
 }
 export function b64of(u8) { let s = ""; for (let i = 0; i < u8.length; i += 4096) s += String.fromCharCode.apply(null, u8.subarray(i, i + 4096)); return btoa(s); }
 export function u8of(b64) { return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)); }

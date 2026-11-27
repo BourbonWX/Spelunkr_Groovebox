@@ -868,15 +868,60 @@ EXPORT void web_spk_use(uint32_t k, uint32_t mode)
         apply_preset_to(t, 40);                      /* (CRATE: no fade, the hits as they are) */
         for (l = 0; l < 4u; l++)
             t->p[P_LN4 + l] = (int16_t)(CKM_N + FK_NSET + k);
+    } else if (mode == 3u && t->eng_req % NENGINES == ENGI_SAMPLE && smp_is_chop(t)) {
+        t->p[P_LN3] = (int16_t)k;                    /* BANK B (Nov 27): this sample's chops on C4..B4, BANK A's stay */
     } else {
-        set_engine_of(t, ENGI_SAMPLE);
-        apply_preset_to(t, 9);                       /* (UPRIGHT: clean) */
-        t->p[P_E0] = (int16_t)(SMP_NSETS + (mode ? SPK_NU : 0u) + k);
-        t->p[P_E3] = 0;                              /* (no loop) */
-        if (mode)
-            t->p[P_REL] = 20;                        /* (a chop lets go quickly) */
+        uint32_t chop = mode != 0u, keep = chop && t->eng_req % NENGINES == ENGI_SAMPLE && smp_is_chop(t);
+        int16_t b = keep ? t->p[P_LN3] : 127;        /* (BANK A over a chop track: its BANK B stays) */
+        if (!keep) {
+            set_engine_of(t, ENGI_SAMPLE);
+            apply_preset_to(t, 9);                   /* (UPRIGHT: clean) */
+            t->p[P_E3] = 0;                          /* (no loop) */
+        }
+        t->p[P_E0] = (int16_t)(SMP_NSETS + (chop ? SPK_NU : 0u) + k);
+        t->p[P_LN3] = b;                             /* (mode 3 on a track that plays no chops: BANK A, none in B) */
+        if (chop)
+            t->p[P_REL] = 20;
     }
     ui.force = 1;
+}
+/* PADS (Ed, Nov 27 2026: the chops "in a grid ... adjacent to an MPC ... something kinda like" the Koala app): a pad
+ * the page's PADS view taps, as a MIDI keyboard's note on the picked track (midi_control.c: played, recorded under
+ * REC, its own one-shot to the chop's end mark), on channel 16 of its own so a keyboard's notes and the pads' never
+ * share an owner; the song's ROUT as it was after. note: C3.. BANK A, C4.. BANK B; vel 0 lets go */
+EXPORT void web_chop_pad(uint32_t note, uint32_t vel)
+{
+    int16_t r = song.g[G_ROUTE];
+    song.g[G_ROUTE] = ROUTE_SEL;
+    midi_note_event(15u, note & 127u, vel & 127u);
+    song.g[G_ROUTE] = r;
+}
+/* the selected track's chops sounding now: bit i BANK A's chop i, bit 12 + i BANK B's (the PADS view lights them) */
+static uint32_t web_chops_on(void)
+{
+    const track_t *t = TSEL;
+    uint32_t i, m = spk_struck[song.sel % NTRK];
+    spk_struck[song.sel % NTRK] = 0;
+    if (t->engine != ENGI_SAMPLE || !smp_is_chop(t))
+        return 0;
+    for (i = 0; i < NVOICE; i++) {
+        const voice_t *v = &t->v[i];
+        uint32_t z = (uint32_t)v->s[4];
+        if (v->active && (z & 0x8000u) && ((z >> 5) & 31u) >= SPK_NU && !v->s[6])
+            m |= 1u << ((z & 31u) + (z & SMP_ZI_BANKB ? SPK_BANK : 0u));
+    }
+    return m;
+}
+/* the selected track's chop banks: A's slot + 1 (0: not a chop track), B's slot + 1 << 8 (0: none) (the page's) */
+EXPORT uint32_t web_spk_banks(void)
+{
+    const track_t *t = TSEL;
+    uint32_t a, b;
+    if (t->eng_req % NENGINES != ENGI_SAMPLE || !smp_is_chop(t))
+        return 0;
+    a = ((uint32_t)t->p[P_E0] % SMP_NALL - SMP_NSETS - SPK_NU) % SPK_NU + 1u;
+    b = smp_bank_b(t) < SPK_NU ? smp_bank_b(t) + 1u : 0u;
+    return a | b << 8;
 }
 
 /* the user samples the song plays (the page's SHARE takes only these): bit k for slot k, from every track's sound and
@@ -887,6 +932,9 @@ static uint32_t spk_of_sound(uint32_t eng, const int16_t *p)
     uint32_t m = 0, l;
     if (eng == ENGI_SAMPLE && p[P_E0] >= (int16_t)SMP_NSETS && p[P_E0] < (int16_t)(SMP_NSETS + 2u * SPK_NU))
         m |= 1u << ((uint32_t)(p[P_E0] - (int16_t)SMP_NSETS) % SPK_NU);
+    if (eng == ENGI_SAMPLE && p[P_E0] >= (int16_t)(SMP_NSETS + SPK_NU) && p[P_E0] < (int16_t)(SMP_NSETS + 2u * SPK_NU) &&
+        p[P_LN3] >= 0 && p[P_LN3] < (int16_t)SPK_NU)
+        m |= 1u << (uint32_t)p[P_LN3];               /* (a chop track's BANK B) */
     if (eng == ENGI_CKIT)
         for (l = 0; l < 4u; l++)
             if (p[P_LN4 + l] >= (int16_t)(CKM_N + FK_NSET) && p[P_LN4 + l] < (int16_t)(CKM_N + FK_NSET + SPK_NU))
@@ -1605,6 +1653,10 @@ EXPORT const char *web_guide(void)
     wj("],\"xy\":[%u,%u,%u,%u,%u,%u],\"xyk\":%d", xy_live[0].x, xy_live[0].y, xy_live[0].on, xy_live[1].x, xy_live[1].y, xy_live[1].on,
        web_pad ? (int)web_pad_k : -1);
     wj(",\"vapor\":[%u,%u,%u,%u]", vap_get(0), vap_get(1), vap_get(2), vap_get(3));
+    {                                                  /* the selected track's chop banks: slot + 1, 0 none (the PADS page, SAMPLES) */
+        uint32_t bk = web_spk_banks();
+        wj(",\"banks\":{\"a\":%u,\"b\":%u,\"on\":%u}", bk & 255u, bk >> 8, web_chops_on());
+    }
     wj(",\"pal\":%u", (unsigned)palette_cur());
     wj(",\"polgr\":%d", (int)(pc_grmin * -10.0f));   /* POLISH: the compressor's deepest since the last (dB x 10) */
     wj(",\"polsc\":%d", (int)(-200.0f * log10f(sc_min > 1e-4f ? sc_min : 1e-4f)));   /* (the sidechain's, dB x 10) */

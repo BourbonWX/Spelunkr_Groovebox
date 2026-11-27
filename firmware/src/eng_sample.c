@@ -183,6 +183,17 @@ static inline int32_t sample_next(const smp_zone_t *z, voice_t *v, int loop)
     return v->s[0];
 }
 
+/* Spelunkr (Nov 27 2026): a CHOP track's BANK B, a second sample's chops on the octave above (C4..B4): its slot in
+ * P_LN3 (a DRUM lane's level, unused by SAMPLE; 127, the default, or anything past the slots: none; felucca_web.c
+ * web_spk_use sets it). A voice playing it has SMP_ZI_BANKB in its zone (bit 10: smp_zone reads bits 5..9 and 0..4) */
+#define SPK_BANK 12u                                /* the chops a bank holds: one octave */
+#define SMP_ZI_BANKB 0x400u
+#if SPK_NU
+static uint32_t smp_bank_b(const track_t *t) { return t->p[P_LN3] >= 0 && t->p[P_LN3] < (int16_t)SPK_NU ? (uint32_t)t->p[P_LN3] : 0xFFu; }
+static int smp_is_chop(const track_t *t) { return (uint32_t)t->p[P_E0] % SMP_NALL >= SMP_NSETS + SPK_NU; }
+static volatile uint32_t spk_struck[NTRK];          /* the chops each track started since the page last looked (felucca_web.c
+                                                     * web_chops_on: the PADS view lights a short hit too) */
+#endif
 static void sample_note_on(track_t *t, voice_t *v)
 {
     uint32_t si = (uint32_t)t->p[P_E0] % SMP_NALL, i, zi = 0xFFFFu, width = 128u;
@@ -195,15 +206,27 @@ static void sample_note_on(track_t *t, voice_t *v)
             }
         v->s[4] = (int32_t)(zi == 0xFFFFu ? set->z0 : zi);
     } else {                                        /* user slot: silent if empty; the narrowest zone plays */
-        uint32_t k = si - SMP_NSETS;
+        uint32_t k = si - SMP_NSETS, note = v->note, bank = 0;
+#if SPK_NU
+        if (k >= SPK_NU && note >= SPK_CHOP_KEY + SPK_BANK && smp_bank_b(t) < SPK_NU) {   /* BANK B: C4..B4, the second
+                                                     * sample's chops (an octave down onto its zones, played at pitch) */
+            k = SPK_NU + smp_bank_b(t);
+            note -= SPK_BANK;
+            bank = SMP_ZI_BANKB;
+        }
+#endif
         for (i = 0; i < usr_nz[k]; i++) {
             const smp_zone_t *z = &usr_zone[k][i];
-            if (v->note >= z->lo && v->note <= z->hi && z->hi - z->lo <= width) {
-                zi = 0x8000u | k << 5 | i;
+            if (note >= z->lo && note <= z->hi && z->hi - z->lo <= width) {
+                zi = 0x8000u | bank | k << 5 | i;
                 width = z->hi - z->lo;
             }
         }
         v->s[4] = (int32_t)(zi == 0xFFFFu ? 0 : zi);
+#if SPK_NU
+        if (zi != 0xFFFFu && k >= SPK_NU && t >= trk && t < trk + NTRK)
+            spk_struck[t - trk] |= 1u << ((zi & 31u) + (bank ? SPK_BANK : 0u));
+#endif
     }
     v->ph[0] = 0;
     v->ph[1] = 0;
@@ -235,7 +258,8 @@ static void sample_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
         wd = (sine_i(ph) * wow * 10 + sine_i(ph * 11u + 0x40000000u) * wow * 3) >> 22;   /* 1/16 st: up to ~+-13 */
         v->ph[2] = ph + 53568u * n;                                 /* 0.55 Hz (the flutter 11 times that) */
     }
-    int32_t d16 = clamp(m->pitch16 + p[P_E1] * 16 - z->root16 + wd, -1536, 576);   /* <= 3 octaves up: bounded decode load */
+    int32_t d16 = clamp(m->pitch16 + p[P_E1] * 16 - z->root16 + wd - ((uint32_t)v->s[4] & SMP_ZI_BANKB ? 16 * SPK_BANK : 0),
+                        -1536, 576);   /* <= 3 octaves up: bounded decode load */
     uint32_t r = pow2_q16(d16), stepq = (r >> 8) * (z->rate >> 8);   /* Q16 samples per output */
     int32_t bits = p[P_E2], lp = 4000 + ((clamp((p[P_E4] << 8) + m->cutoff - age * 48, 0, 127 << 8) * 28767) >> 15);
     int32_t drv = p[P_E6], sh = bits / 10;
@@ -289,6 +313,36 @@ static void sample_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
     v->s[5] = (int32_t)((uint32_t)(held & 0xFFFF) << 16 | (hc & 255u));
 }
 
+#if SPK_NU
+/* Spelunkr: a user sample's CHOP plays slice i on key C3 + i exactly (felucca_web.c web_spk_commit: one zone a key).
+ * Its keys are its own map, as a kit's (Ed, Nov 27 2026: a chop that wouldn't play from the keys): the octave buttons
+ * move a whole keyboard of chops (C3..B3 BANK A, C4..B4 BANK B: sample_note_on), but no scale snap (KEY's "keys stay in key"), no
+ * TRANSPOSE and no WHITE walk move a key onto another slice or off them all. The whole sample (a synth) and the
+ * built-in sets keep the keys as ever */
+static int32_t smp_keys(const track_t *t, uint32_t k)
+{
+    int32_t n;
+    if (!smp_is_chop(t))
+        return -1;
+    n = (int32_t)SPK_CHOP_KEY + (int32_t)k + 12 * (int32_t)song.octave;   /* (BANK B: OCT+ from C3, or the keys past B3) */
+    return n < 0 ? 0 : n > 127 ? 127 : n;
+}
+#endif
+/* ONE-SHOT (Ed, Nov 27: "I like the one shot style"): a chop plays to its end mark whatever the key does, as an MPC's
+ * pad: the ADSR is not its envelope (the slice's own fades are, spk_samples.js toInt16), the voice ends where the slice
+ * does (sample_render). The whole sample and the built-in sets keep their ADSR */
+#if SPK_NU
+static int32_t smp_amp(track_t *t, voice_t *v, int32_t adsr)
+{
+    (void)t;
+    if (!v->active)
+        return 0;
+    if (!((uint32_t)v->s[4] & 0x8000u) || (((uint32_t)v->s[4] >> 5) & 31u) < SPK_NU)
+        return adsr;
+    v->env = 1 << 24;                                 /* (the release never fades it) */
+    return 32767;
+}
+#endif
 static const engine_t ENG_SAMPLE = {
     .name = "SAMPLE",
     .page_title = {"SET", "TAPE"},
@@ -307,6 +361,10 @@ static const engine_t ENG_SAMPLE = {
     .npresets = SMP_NPRESETS,
     .note_on = sample_note_on,
     .render = sample_render,
+#if SPK_NU
+    .keys = smp_keys,
+    .amp = smp_amp,
+#endif
     .knob = {P_E0, P_E4, P_E5, P_E7},             /* Spelunkr: SET, CUT, WOW, AGE */
     .sampled = 1,
 };
