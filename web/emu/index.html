@@ -1226,37 +1226,40 @@ body.phone.land .fader { height: 120px; }
  * koala app"): over the screen, a chop track's 12 chops as pads, 4 x 3, MPC-numbered (1 bottom left, 12 top right);
  * BANK A | B; tap a pad to play it (one-shot, to its end mark), lit when it plays from anywhere (the steps, the keys) */
 .padsv { position: absolute; inset: 12px; z-index: 2; display: flex; flex-direction: column; container-type: size;
-  background: #0B0530; border-radius: 2px; touch-action: none; user-select: none; -webkit-user-select: none; }
+  background: var(--pbg, #0B0530); border-radius: 2px; touch-action: none; user-select: none; -webkit-user-select: none; }
+/* (Nov 27, Ed: "matching colors for all the colors available": the PADS take the screen's palette, the SCREEN picker's
+ * or the THEME's match, in the firmware's roles (gfx.c palette_set): BG, SURF, TEXT, THEME, ACCENT and their mixes;
+ * padColors sets --p* on #padsv and #padsgo) */
 .padsv[hidden] { display: none; }
-.padhd { display: flex; align-items: center; gap: 2cqw; padding: 1.6cqw 2cqw; background: #1C0A57; border-bottom: 2px solid #2F49C8; }
-.padhd b { font: 6.4cqw/1 var(--head); color: #FFE13A; }
-.padhd span { flex: 1; min-width: 0; font: 4.6cqw/1 var(--mono); color: #B9C2FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.padbk, .padx { min-width: 9cqw; height: 8.4cqw; padding: 0 2cqw; border: 2px solid #2F49C8; border-radius: 1.4cqw; background: #0E1E78;
-  color: #F4F4FF; font: 5.4cqw/1 var(--head); cursor: pointer; }
-.padbk[aria-pressed="true"] { background: #FFE13A; color: #1C0A57; border-color: #FFE13A; }
+.padhd { display: flex; align-items: center; gap: 2cqw; padding: 1.6cqw 2cqw; background: var(--psurf, #1C0A57); border-bottom: 2px solid var(--pline, #2F49C8); }
+.padhd b { font: 6.4cqw/1 var(--head); color: var(--ptheme, #FFE13A); }
+.padhd span { flex: 1; min-width: 0; font: 4.6cqw/1 var(--mono); color: var(--pdim, #B9C2FF); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.padbk, .padx { min-width: 9cqw; height: 8.4cqw; padding: 0 2cqw; border: 2px solid var(--pline, #2F49C8); border-radius: 1.4cqw; background: var(--praise, #0E1E78);
+  color: var(--ptext, #F4F4FF); font: 5.4cqw/1 var(--head); cursor: pointer; }
+.padbk[aria-pressed="true"] { background: var(--ptheme, #FFE13A); color: var(--pink, #1C0A57); border-color: var(--ptheme, #FFE13A); }
 .padbk:disabled { opacity: .35; cursor: default; }
-.padbk.hit { box-shadow: 0 0 0 2px #E2741F; }
+.padbk.hit { box-shadow: 0 0 0 2px var(--pacc, #E2741F); }
 .padgrid { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 1.8cqw; padding: 2cqw; }
-.pad1 { position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 1.4cqw 1.8cqw; border: 2px solid #2F49C8;
-  border-radius: 2cqw; background: linear-gradient(180deg, #16268C, #0E1E78); color: #F4F4FF; cursor: pointer; overflow: hidden;
+.pad1 { position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 1.4cqw 1.8cqw; border: 2px solid var(--pline, #2F49C8);
+  border-radius: 2cqw; background: linear-gradient(180deg, var(--praise, #16268C), var(--psurf, #0E1E78)); color: var(--ptext, #F4F4FF); cursor: pointer; overflow: hidden;
   transition: background .12s, border-color .12s; }
-.pad1 .pn { font: 7cqw/1 var(--head); color: #FFE13A; position: relative; z-index: 1; }
-.pad1 .pk { font: 3.8cqw/1 var(--mono); color: #B9C2FF; position: relative; z-index: 1; text-align: right; }
-.pad1 canvas { position: absolute; left: 0; right: 0; top: 30%; width: 100%; height: 45%; opacity: .55; }
+.pad1 .pn { font: 7cqw/1 var(--head); color: var(--ptheme, #FFE13A); position: relative; z-index: 1; }
+.pad1 .pk { font: 3.8cqw/1 var(--mono); color: var(--pdim, #B9C2FF); position: relative; z-index: 1; text-align: right; }
+.pad1 canvas { position: absolute; left: 0; right: 0; top: 30%; width: 100%; height: 45%; opacity: .6; }
 .pad1.empty { opacity: .3; cursor: default; }
-.pad1.lit { background: linear-gradient(180deg, #FFE13A, #E2741F); border-color: #FFFFFF; transition: none; }
-.pad1.lit .pn, .pad1.lit .pk { color: #1C0A57; }
+.pad1.lit { background: linear-gradient(180deg, var(--ptheme, #FFE13A), var(--pacc, #E2741F)); border-color: var(--ptext, #FFFFFF); transition: none; }
+.pad1.lit .pn, .pad1.lit .pk { color: var(--pink, #1C0A57); }
 .padfx { display: flex; align-items: stretch; gap: 1.6cqw; padding: 0 2cqw 2cqw; }
 .pfx { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: 7.6cqw 1fr 7.6cqw; grid-template-rows: auto 7.6cqw; align-items: center;
-  background: #0E1E78; border: 2px solid #2F49C8; border-radius: 1.6cqw; padding: 0.8cqw; }
-.pfx b { grid-column: 1 / -1; font: 3.6cqw/1 var(--head); color: #FFE13A; text-align: center; padding-bottom: 0.6cqw; }
-.pfx button { height: 100%; border: 0; border-radius: 1cqw; background: #2E3FD8; color: #F4F4FF; font: 5cqw/1 var(--head); cursor: pointer; padding: 0; }
-.pfx i { font: 4.6cqw/1 var(--mono); font-style: normal; text-align: center; color: #F4F4FF; }
-.pfxrev { flex: 0 0 13cqw; border: 2px solid #2F49C8; border-radius: 1.6cqw; background: #0E1E78; color: #F4F4FF; font: 4.6cqw/1 var(--head); cursor: pointer; }
-.pfxrev[aria-pressed="true"] { background: #FF5FA2; border-color: #FFFFFF; color: #1C0A57; }
+  background: var(--psurf, #0E1E78); border: 2px solid var(--pline, #2F49C8); border-radius: 1.6cqw; padding: 0.8cqw; }
+.pfx b { grid-column: 1 / -1; font: 3.6cqw/1 var(--head); color: var(--ptheme, #FFE13A); text-align: center; padding-bottom: 0.6cqw; }
+.pfx button { height: 100%; border: 0; border-radius: 1cqw; background: var(--praise, #2E3FD8); color: var(--ptext, #F4F4FF); font: 5cqw/1 var(--head); cursor: pointer; padding: 0; }
+.pfx i { font: 4.6cqw/1 var(--mono); font-style: normal; text-align: center; color: var(--ptext, #F4F4FF); }
+.pfxrev { flex: 0 0 13cqw; border: 2px solid var(--pline, #2F49C8); border-radius: 1.6cqw; background: var(--psurf, #0E1E78); color: var(--ptext, #F4F4FF); font: 4.6cqw/1 var(--head); cursor: pointer; }
+.pfxrev[aria-pressed="true"] { background: var(--pacc, #FF5FA2); border-color: var(--ptext, #FFFFFF); color: var(--pink, #1C0A57); }
 .pfxrev:disabled { opacity: .35; cursor: default; }
-.padsgo { position: absolute; right: 18px; bottom: 18px; z-index: 2; padding: 4px 10px; border: 2px solid #FFE13A; border-radius: 6px;
-  background: #1C0A57; color: #FFE13A; font: 18px/1 var(--head); cursor: pointer; opacity: .92; }
+.padsgo { position: absolute; right: 18px; bottom: 18px; z-index: 2; padding: 4px 10px; border: 2px solid var(--ptheme, #FFE13A); border-radius: 6px;
+  background: var(--pbg, #1C0A57); color: var(--ptheme, #FFE13A); font: 18px/1 var(--head); cursor: pointer; opacity: .92; }
 .padsgo[hidden] { display: none; }
 body.phone #phtop .padsv { inset: 6px; }
 body.phone #phtop .padsgo { right: 10px; bottom: 10px; font-size: 16px; }
@@ -3737,6 +3740,7 @@ function screenPalLabel() {
 }
 function screenPalSend() {
   screenPalLabel();
+  try { padColors(); } catch {}                           // (the PADS: the screen's colours; not yet at the first call)
   if (node) node.port.postMessage({ type: "palette", i: screenPalIndex() });
 }
 $("screenpal").append(new Option("MATCH THEME", ""));
@@ -5710,7 +5714,7 @@ function padDraw() {                                      // the bank's chops: t
     el.title = seg ? `Pad ${c + 1}: chop ${c + 1} of ${s.name} (${noteName(SPK.CHOP_KEY + 12 * padBank + c)})` : `Pad ${c + 1}: no chop`;
     g.clearRect(0, 0, cv.width, cv.height);
     if (!seg) continue;
-    g.fillStyle = "#9FB4FF";
+    g.fillStyle = padWave;
     const [a, b] = seg, w = cv.width, h = cv.height, rev = typeof padFx !== "undefined" && padFx[padBank * 4 + 1];
     for (let x = 0; x < w; x++) {
       const xx = rev ? w - 1 - x : x;                     // (REV: the wave drawn turned too)
@@ -5734,6 +5738,7 @@ function padShow(open) {
 }
 function padSync(g) {                                     // (showGuide) the track's banks, what sounds
   const b = g.banks || { a: 0, b: 0, on: 0 };
+  if (g.pal != null && g.pal !== padPal && g.pal < UI_PAL565.length) padColors(g.pal);   // (the device's MENU > COLOR too)
   const sig = `${g.sel}:${b.a}:${b.b}:${smpSigOf(b.a)}:${smpSigOf(b.b)}`;
   padBanks = b;
   if (b.fx && performance.now() - padFxT > 600) {         // (the device's, unless a tap here is on its way)
@@ -5790,6 +5795,35 @@ for (const el of document.querySelectorAll("#padfx .pfx")) {
   el.addEventListener("wheel", (e) => { e.preventDefault(); pfxSet(id, padFx[padBank * 4 + id] + PFX_STEP[id] * (e.deltaY < 0 ? 1 : -1)); }, { passive: false });
 }
 $("padrev").addEventListener("click", () => pfxSet(1, padFx[padBank * 4 + 1] ? 0 : 1));
+
+// the PADS' colours: the screen's palette (screenPalIndex: the SCREEN picker, or the THEME's match), in the firmware's
+// roles and mixes (tools/gen_ui_palettes.py's UI_PALETTES, src/gfx.c palette_set: MID 70 %, DIM 42, LINE 18, RAISE 12)
+const UI_PAL565 = [[0x0841, 0x2104, 0xce59, 0xef5d, 0xffdf], [0x0081, 0x1143, 0xe7bc, 0x56af, 0xfeab], [0x1061, 0x2902, 0xf77b, 0xfd45, 0x66bc],
+  [0x0883, 0x1126, 0xe79f, 0x55dd, 0xfc6c], [0x1063, 0x20e7, 0xf75f, 0xb45e, 0x6f35], [0x1842, 0x30a5, 0xff5e, 0xf396, 0xfead],
+  [0xf77c, 0xe6d9, 0x20e3, 0x0aa8, 0xa9c1], [0x0000, 0x2945, 0xffdf, 0xff40, 0x073f], [0x0000, 0x00c1, 0x9735, 0x3eec, 0xffdf],
+  [0x0000, 0x0000, 0xffff, 0xffff, 0xffff], [0x18c3, 0x1944, 0xa7f4, 0x07e0, 0xfbe0], [0x0889, 0x1131, 0xf7bf, 0xff07, 0xfc65]];
+const rgb565 = (v) => [((v >> 11) & 31) * 255 / 31, ((v >> 5) & 63) * 255 / 63, (v & 31) * 255 / 31];
+const mixc = (a, b, pct) => a.map((x, i) => Math.round(x + (b[i] - x) * pct / 100));
+const hexc = (c) => "#" + c.map((x) => Math.round(x).toString(16).padStart(2, "0")).join("");
+let padWave = "#9FB4FF";
+let padPal = -1;
+function padColors(want) {                                // (want: the device's palette, its guide's pal; else the picker's)
+  const i = want != null && want >= 0 && want < UI_PAL565.length ? want : screenPalIndex(), [bg, surf, text, theme, acc] = UI_PAL565[i % UI_PAL565.length].map(rgb565);
+  const mono = i === 9, grey = rgb565(0x528a);
+  const v = { bg, surf, text, theme, acc, ink: bg, dim: mono ? grey : mixc(bg, text, 42), line: mono ? grey : mixc(bg, text, 18),
+    raise: mono ? grey : mixc(surf, text, 12), mid: mono ? text : mixc(bg, text, 70) };
+  if (i === 9) { v.surf = mixc(bg, text, 8); v.raise = grey; }   // (MONO: black and white, its one grey)
+  for (const el of [$("padsv"), $("padsgo")]) {
+    if (!el) continue;
+    el.style.setProperty("--pbg", hexc(v.bg)); el.style.setProperty("--psurf", hexc(v.surf)); el.style.setProperty("--ptext", hexc(v.text));
+    el.style.setProperty("--ptheme", hexc(v.theme)); el.style.setProperty("--pacc", hexc(v.acc)); el.style.setProperty("--pink", hexc(v.ink));
+    el.style.setProperty("--pdim", hexc(v.dim)); el.style.setProperty("--pline", hexc(v.line)); el.style.setProperty("--praise", hexc(v.raise));
+  }
+  padWave = hexc(v.mid);
+  padPal = i;
+  if (padOpen) padDraw();
+}
+padColors();
 </script>
 </body>
 </html>
