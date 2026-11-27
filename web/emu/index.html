@@ -12,7 +12,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%22.52%22 stop-color=%22%23FFE13A%22/%3E%3Cstop offset=%22.52%22 stop-color=%22%23E2741F%22/%3E%3C/linearGradient%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%231C0A57%22 stroke=%22%23FFE13A%22 stroke-width=%222%22/%3E%3Ctext x=%2216%22 y=%2215%22 font-size=%2213%22 font-weight=%22bold%22 text-anchor=%22middle%22 letter-spacing=%223%22 font-family=%22monospace%22 fill=%22%23FFE13A%22%3ESP%3C/text%3E%3Ctext x=%2216%22 y=%2227%22 font-size=%2213%22 font-weight=%22bold%22 text-anchor=%22middle%22 letter-spacing=%223%22 font-family=%22monospace%22 fill=%22%23E2741F%22%3EGB%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=VT323&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=VT323&family=Nunito:wght@600;800&family=Russo+One&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   --indigo: #1C0A57; --night: #0B0530; --panel: #0E1E78; --row: #13288F; --rowhot: #1D3BB8; --rest: #0A1660;
@@ -1252,6 +1252,12 @@ body.phone.land .fader { height: 120px; }
 #vapkind { min-height: 36px; font: 19px/1 var(--head); background: var(--panel); color: var(--text); border: 2px solid var(--rule); border-radius: 6px; padding: 0 6px; }
 .vfos { display: flex; flex-direction: column; gap: 10px; flex: 1 1 100%; }
 .vfos[hidden] { display: none; }
+.vfosopt { display: flex; gap: 10px; padding: 0 14px 12px; }
+.vfosopt .btn { flex: 1 1 0; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.vfosopt .btn[aria-pressed="false"] { opacity: .6; }
+.vfosopt .btn[aria-pressed="true"] { box-shadow: inset 0 0 0 3px var(--yellow); }
+.bb { display: inline-flex; gap: 1px; padding: 1px 3px; border: 2px solid currentColor; border-radius: 3px; font: 18px/1 var(--head); }
+.bb i { font-style: normal; } .bb i:first-child { transform: scaleX(-1); }
 .vdesc { flex: 1 1 100%; margin: 0; padding: 4px 14px 10px; font: 17px/1.35 var(--mono); color: var(--text); opacity: .85; }
 .vfos .vdesc { padding: 4px 14px 0; }
 .vdesc a { color: var(--yellow); text-decoration: underline; text-underline-offset: 3px; }
@@ -1275,6 +1281,148 @@ body.phone #phtop .padsv { inset: 6px; }
 body.phone #phtop .padsgo { right: 10px; bottom: 10px; font-size: 16px; }
 :root[data-skin^="aero"] .padsv { inset: 14px; border-radius: 14px; }
 body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
+
+/* ================================================================ SKIN: MULTITRACKER (Ed, Nov 27 2026: "a Fostex
+ * flavored skin" from a photo of his X-28; the badge his: "Multitracker" small, "SP-GB" in a heavy red face). A
+ * cassette 4-track's desk: matte charcoal, off-white silkscreen, knob rings coloured by job (AUX yellow, PAN orange,
+ * TRIM red, sends green), black rubber keys, ribbed faders with an orange line, an orange-red glowing display, the
+ * meters as its segment ladders, a cassette window in ANALOG VAPOR. Its own colours (the look is the deck's): over any
+ * THEME; the device's screen goes AMBER under MATCH. Inspired by, not a copy: no maker's name or logo */
+:root[data-skin="mt"] {
+  --indigo: #1d1d1e; --night: #0c0c0d; --panel: #2a2a2b; --row: #333335; --rowhot: #48484c; --rest: #212123; --rule: #474749;
+  --rule2: #8d8a83; --strip: #232325; --yellow: #ECE7DA; --gold: #E9B53A; --orange: #FF6B2C; --rust: #B4391B; --btn: #161617;
+  --ink: #ECE7DA; --soft: #BDB9AE; --dim: #96928A; --faint: #64615B; --play: #47B96B; --rec: #FF4B3A; --btndim: #121213;
+  --breath: #3d3d40; --litedge: #FFD47E; --hotedge: #FFA071; --colnow: #3B2A22; --queued: #4A382E; --keyw: #E8E4D9;
+  --keyink: #57534C; --keydim: #B9B4A7; --keydim2: #3A3A3C; --slotsub: #FFD3BC; --g1: #1d1d1e; --g2: #1d1d1e; --g3: #1d1d1e;
+  --g4: #1d1d1e; --rail: #19191a;
+  --head: 'Barlow Condensed', 'Arial Narrow', sans-serif; --mono: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --vfd: #FF5A2A; --vfdlo: #3A1209; --vfdglow: 0 0 6px rgba(255, 90, 42, .75); --mtred: #E8412C; --knY: #E9B53A; --knO: #F07A2E;
+  --knR: #D8362A; --knG: #2FA05A;
+  --dust: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+:root[data-skin="mt"] body { background: var(--dust), #1d1d1e; letter-spacing: .01em; }
+:root[data-skin="mt"] body, :root[data-skin="mt"] .btn, :root[data-skin="mt"] .tab, :root[data-skin="mt"] .phdot { font-weight: 600; text-transform: uppercase; }
+:root[data-skin="mt"] .hint, :root[data-skin="mt"] .vdesc, :root[data-skin="mt"] footer .credits, :root[data-skin="mt"] .phint,
+:root[data-skin="mt"] dialog p, :root[data-skin="mt"] .ghd .nm span, :root[data-skin="mt"] .trackbar .what { text-transform: none; font-weight: 500; }
+/* the badge */
+.logo .mtb { display: none; }
+:root[data-skin="mt"] .logo b, :root[data-skin="mt"] .logo span { display: none; }
+:root[data-skin="mt"] .logo .mtb { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; font-style: normal; line-height: 1; }
+:root[data-skin="mt"] .logo .mtb small { font: 600 15px/1 'Barlow Condensed', sans-serif; letter-spacing: .14em; color: var(--soft); }
+:root[data-skin="mt"] .logo .mtb strong { font: 40px/1 'Russo One', sans-serif; color: var(--mtred); transform: skewX(-8deg); letter-spacing: .02em; }
+:root[data-skin="mt"] header { background: var(--panel); border-bottom: 2px solid var(--night); box-shadow: inset 0 -1px 0 var(--rule); }
+/* panels: the deck's top plate, a thin silkscreen rule under each section name */
+:root[data-skin="mt"] .panel { background: var(--dust), var(--panel); border: 1px solid #3a3a3c; border-radius: 6px; box-shadow: 0 2px 0 #000, 0 0 0 1px #000; }
+:root[data-skin="mt"] .strip { background: transparent; border-bottom: 2px solid var(--rule2); }
+:root[data-skin="mt"] .panel .title b::before, :root[data-skin="mt"] .trackbar .num::before { content: none; }
+:root[data-skin="mt"] .panel .title b, :root[data-skin="mt"] .mixer .title b { color: var(--yellow); letter-spacing: .12em; font-weight: 600; }
+:root[data-skin="mt"] .panel .title span { color: var(--dim); letter-spacing: .06em; }
+/* the keys: black rubber, white legends; lit ones the display's orange */
+:root[data-skin="mt"] .btn, :root[data-skin="mt"] .stepper .arr { background: linear-gradient(180deg, #1f1f20, #0f0f10); color: var(--yellow);
+  border: 1px solid #050505; border-radius: 4px; box-shadow: inset 0 1px 0 #3a3a3c, 0 2px 0 #000; letter-spacing: .06em; }
+:root[data-skin="mt"] .btn:active, :root[data-skin="mt"] .stepper .arr:active { box-shadow: inset 0 2px 3px #000; transform: translateY(1px); color: var(--vfd); background: #0d0d0e; }
+:root[data-skin="mt"] .btn.lit, :root[data-skin="mt"] .btn.orange, :root[data-skin="mt"] .btn.chip.on, :root[data-skin="mt"] .ms.on {
+  background: linear-gradient(180deg, #2a1209, #170905); color: var(--vfd); text-shadow: var(--vfdglow); border-color: #5a1f10; box-shadow: inset 0 0 0 1px #6b2412, 0 2px 0 #000; }
+:root[data-skin="mt"] .btn.play { color: #7CE39A; } :root[data-skin="mt"] .btn.play.lit { background: #10331c; color: #9BF5B5; text-shadow: 0 0 6px rgba(120, 240, 150, .7); }
+:root[data-skin="mt"] .btn.rec { color: var(--rec); border-color: #050505; } :root[data-skin="mt"] .btn.rec.lit { background: #3a0d08; color: #ff7b6b; text-shadow: 0 0 6px rgba(255, 80, 60, .8); }
+:root[data-skin="mt"] .face .btn .d { color: var(--dim); opacity: 1; }
+:root[data-skin="mt"] .face .btn.ctx .a { color: var(--vfd); }
+:root[data-skin="mt"] select, :root[data-skin="mt"] .songbar select, :root[data-skin="mt"] .theme select { background: #111112; color: var(--yellow); border: 1px solid #000; border-radius: 4px; box-shadow: inset 0 1px 0 #2c2c2e; font-weight: 600; }
+:root[data-skin="mt"] .btn[aria-pressed="true"] { background: linear-gradient(180deg, #2a1209, #170905); color: var(--vfd); text-shadow: var(--vfdglow);
+  border-color: #5a1f10; box-shadow: inset 0 0 0 1px #6b2412, 0 2px 0 #000; }
+:root[data-skin="mt"] .vfosbtns .btn[aria-pressed="true"] small { color: #ffb08a; text-shadow: none; }
+/* the display: an orange-red glow behind smoked glass */
+:root[data-skin="mt"] .stepper .val, :root[data-skin="mt"] .songbar .sbv, :root[data-skin="mt"] .railstat, :root[data-skin="mt"] .trackbar .state,
+:root[data-skin="mt"] .grm em, :root[data-skin="mt"] .mstrip .lvv { font-family: 'VT323', monospace; color: var(--vfd); text-shadow: var(--vfdglow); text-transform: uppercase; font-weight: 400; }
+:root[data-skin="mt"] .stepper .val { background: #0b0605; border: 1px solid #000; border-radius: 3px; box-shadow: inset 0 0 0 1px #2b120b, inset 0 6px 10px rgba(0, 0, 0, .6); font-size: 24px; }
+:root[data-skin="mt"] .songbar { background: #151516; border-bottom: 2px solid #000; }
+:root[data-skin="mt"] .songbar b, :root[data-skin="mt"] .stepper .lab, :root[data-skin="mt"] .theme, :root[data-skin="mt"] .ghead .c0, :root[data-skin="mt"] .ghead .col { color: var(--yellow); letter-spacing: .1em; font-weight: 600; }
+:root[data-skin="mt"] .songbar .sbv { background: #0b0605; padding: 2px 8px; border-radius: 3px; box-shadow: inset 0 0 0 1px #2b120b; font-size: 32px; }
+:root[data-skin="mt"] .railstat { background: #0b0605; border: 1px solid #000; border-radius: 4px; box-shadow: inset 0 0 0 1px #2b120b; font-size: 20px; }
+:root[data-skin="mt"] .railstat b { color: #ffb08a; }
+:root[data-skin="mt"] .bezel { background: #050505; border: 2px solid #000; border-radius: 6px; box-shadow: inset 0 0 0 2px #2a2a2b, 0 0 0 1px #444; }
+:root[data-skin="mt"] .trackbar .num { color: var(--yellow); letter-spacing: .08em; }
+:root[data-skin="mt"] .trackbar .who { color: var(--vfd); text-shadow: var(--vfdglow); font-family: 'VT323', monospace; font-weight: 400; font-size: 34px; }
+:root[data-skin="mt"] .trackbar .pg { border: 1px solid var(--rule2); border-radius: 3px; color: var(--yellow); }
+/* the knobs' rings: their bars coloured by job, as on the deck (yellow, orange, red, green) */
+:root[data-skin="mt"] .stepper .bar { background: #0e0e0f; height: 4px; border-radius: 2px; }
+:root[data-skin="mt"] .stepper .bar i { background: var(--knY); }
+:root[data-skin="mt"] .knobs > .stepper:nth-child(4n + 2) .bar i, :root[data-skin="mt"] .vknobs > .stepper:nth-child(4n + 2) .bar i, :root[data-skin="mt"] .pknobs > .stepper:nth-child(4n + 2) .bar i { background: var(--knO); }
+:root[data-skin="mt"] .knobs > .stepper:nth-child(4n + 3) .bar i, :root[data-skin="mt"] .vknobs > .stepper:nth-child(4n + 3) .bar i, :root[data-skin="mt"] .pknobs > .stepper:nth-child(4n + 3) .bar i { background: var(--knR); }
+:root[data-skin="mt"] .knobs > .stepper:nth-child(4n + 4) .bar i, :root[data-skin="mt"] .vknobs > .stepper:nth-child(4n + 4) .bar i, :root[data-skin="mt"] .pknobs > .stepper:nth-child(4n + 4) .bar i { background: var(--knG); }
+/* the side menu */
+:root[data-skin="mt"] .rail { background: var(--dust), #19191a; border-right: 2px solid #000; box-shadow: inset -1px 0 0 #333; }
+:root[data-skin="mt"] .tab { color: var(--soft); letter-spacing: .1em; border-radius: 4px; }
+:root[data-skin="mt"] .tab i { width: 8px; height: 8px; border-radius: 50%; background: #3a1209; box-shadow: inset 0 0 0 1px #000; }
+:root[data-skin="mt"] .tab[aria-selected="true"] { background: #111112; color: var(--yellow); box-shadow: inset 0 0 0 1px #000, inset 0 1px 0 #333; }
+:root[data-skin="mt"] .tab[aria-selected="true"] i, :root[data-skin="mt"] .tab.pl i { background: var(--vfd); box-shadow: 0 0 6px var(--vfd); }
+:root[data-skin="mt"] .rail hr { border-top: 1px solid #333; }
+/* the mixer: channel strips, PAN rings orange, ribbed fader caps with the orange line */
+:root[data-skin="mt"] .mstrip { background: transparent; border-radius: 0; border-right: 1px solid #333; }
+:root[data-skin="mt"] .mstrip.sel { background: rgba(255, 107, 44, .08); box-shadow: inset 0 -3px 0 var(--vfd); }
+:root[data-skin="mt"] .mstrip .mn { font-weight: 600; letter-spacing: .06em; color: var(--yellow); }
+:root[data-skin="mt"] .pank .trk { stroke: #0e0e0f; } :root[data-skin="mt"] .pank .lit { stroke: var(--knO); } :root[data-skin="mt"] .pank .ptr { stroke: var(--yellow); }
+:root[data-skin="mt"] .fader { -webkit-appearance: none; appearance: none; background: transparent;
+  background-image: repeating-linear-gradient(0deg, transparent 0 13px, #8d8a83 13px 14px); background-size: 100% 100%; background-clip: content-box; }
+:root[data-skin="mt"] .fader::-webkit-slider-runnable-track { width: 6px; background: #050505; border-radius: 3px; box-shadow: inset 0 0 0 1px #333; }
+:root[data-skin="mt"] .fader::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 30px; height: 40px; border-radius: 3px; border: 1px solid #000;
+  background: linear-gradient(0deg, transparent 0 18px, var(--orange) 18px 22px, transparent 22px), repeating-linear-gradient(0deg, #2a2a2b 0 3px, #111 3px 5px); box-shadow: 0 2px 2px #000; }
+:root[data-skin="mt"] .fader::-moz-range-track { width: 6px; background: #050505; border-radius: 3px; }
+:root[data-skin="mt"] .fader::-moz-range-thumb { width: 30px; height: 40px; border-radius: 3px; border: 1px solid #000;
+  background: linear-gradient(0deg, transparent 0 18px, var(--orange) 18px 22px, transparent 22px), repeating-linear-gradient(0deg, #2a2a2b 0 3px, #111 3px 5px); }
+/* the meters: the display's segment ladders */
+:root[data-skin="mt"] .mbar { width: 10px; border-radius: 0; background: repeating-linear-gradient(0deg, transparent 0 1px, #000 1px 3px), linear-gradient(0deg, var(--vfd) 0 75%, #ff8a3a 90%, #ff3a2a 97%); }
+:root[data-skin="mt"] .mbar i { background: repeating-linear-gradient(0deg, transparent 0 1px, #000 1px 3px), var(--vfdlo); }
+:root[data-skin="mt"] .mclip { background: #3a1209; color: var(--vfd); }
+:root[data-skin="mt"] .grm i { background: var(--vfdlo); } :root[data-skin="mt"] .grm b { background: var(--vfd); box-shadow: var(--vfdglow); }
+:root[data-skin="mt"] .mstrip .mn { font-size: 16px; letter-spacing: .02em; }
+:root[data-skin="mt"] .ghead .c0, :root[data-skin="mt"] .ghead .col { letter-spacing: .03em; }
+/* the tracks: the four channels' strip */
+:root[data-skin="mt"] .grow { border-bottom: 1px solid #000; box-shadow: 0 1px 0 #333; }
+:root[data-skin="mt"] .grow.sel { outline: 2px solid var(--vfd); }
+:root[data-skin="mt"] .ghd { background: transparent; }
+:root[data-skin="mt"] .grow.sel .ghd { background: rgba(255, 107, 44, .12); }
+:root[data-skin="mt"] .ghd .n { color: var(--yellow); font-weight: 600; }
+:root[data-skin="mt"] .ghd .ic { background: #111; border: 1px solid var(--rule2); color: var(--yellow); border-radius: 50%; }
+:root[data-skin="mt"] .blk { background: #222224; border-left: 1px solid #000; }
+:root[data-skin="mt"] .blk.now { background: #3a2016; } :root[data-skin="mt"] .blk.rest { background: #19191a; }
+:root[data-skin="mt"] .blk .bar { background: #0e0e0f; } :root[data-skin="mt"] .blk .bar i { background: var(--dim); }
+:root[data-skin="mt"] .blk .head { background: var(--vfd); box-shadow: 0 0 8px var(--vfd); }
+:root[data-skin="mt"] .ghead .col.now { background: #3a2016; }
+/* the keyboard */
+:root[data-skin="mt"] .keybar { background: #141415; border-top: 2px solid #000; box-shadow: 0 -1px 0 #333; }
+:root[data-skin="mt"] .key { border: 1px solid #000; border-radius: 0 0 4px 4px; }
+:root[data-skin="mt"] .key.blk2 { background: linear-gradient(180deg, #2a2a2b, #0c0c0d); color: var(--dim); }
+:root[data-skin="mt"] .key.on, :root[data-skin="mt"] .key:active { background: var(--vfd) !important; color: #200; }
+:root[data-skin="mt"] footer { background: #141415; border-top: 1px solid #333; }
+/* ANALOG VAPOR: a cassette in the window, its reels turning (slower on SLOWER) */
+.cass { display: none; }
+:root[data-skin="mt"] .vfos .cass { display: flex; align-items: center; justify-content: space-between; width: min(380px, calc(100% - 28px)); height: 96px;
+  margin: 6px auto 0; padding: 0 64px; border-radius: 10px; position: relative; background: #121213;
+  box-shadow: inset 0 0 0 1px #000, inset 0 0 0 5px #1e1e1f, inset 0 10px 22px rgba(0, 0, 0, .75), 0 0 0 1px #3a3a3c; }
+:root[data-skin="mt"] .vfos .cass .tapewin { position: absolute; left: 22%; right: 22%; top: 50%; height: 40px; transform: translateY(-50%); border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, 0) 60%), rgba(70, 48, 34, .35); box-shadow: inset 0 0 0 1px #000; }
+:root[data-skin="mt"] .vfos .cass .reel { position: relative; z-index: 1; width: 30px; height: 30px; border-radius: 50%;
+  background: radial-gradient(circle, #121213 0 5px, transparent 5.5px),
+    conic-gradient(#e8e4d9 0 14deg, transparent 14deg 60deg, #e8e4d9 60deg 74deg, transparent 74deg 120deg, #e8e4d9 120deg 134deg, transparent 134deg 180deg,
+      #e8e4d9 180deg 194deg, transparent 194deg 240deg, #e8e4d9 240deg 254deg, transparent 254deg 300deg, #e8e4d9 300deg 314deg, transparent 314deg),
+    radial-gradient(circle, transparent 0 9px, #e8e4d9 9.5px 15px); background-color: #121213;
+  box-shadow: 0 0 0 1px #000, 0 0 0 16px #3d2a1e, 0 0 0 17px #24180f; animation: reel 2.4s linear infinite paused; }
+:root[data-skin="mt"] body.playing .vfos .cass .reel { animation-play-state: running; }
+:root[data-skin="mt"] .vfos .cass .reel + .tapewin + .reel { box-shadow: 0 0 0 1px #000, 0 0 0 7px #3d2a1e, 0 0 0 8px #24180f; animation-duration: 1.6s; }
+:root[data-skin="mt"] .vfos.slower .cass .reel { animation-duration: 3.4s; }
+:root[data-skin="mt"] .vfos.slower .cass .reel + .tapewin + .reel { animation-duration: 2.3s; }
+@keyframes reel { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { :root[data-skin="mt"] .vfos .cass .reel { animation: none; } }
+/* the phone */
+:root[data-skin="mt"] body.phone #phtop { background: #141415; border-bottom: 2px solid #000; }
+:root[data-skin="mt"] .phbar { background: var(--dust), var(--panel); }
+:root[data-skin="mt"] .phbar .logo .mtb strong { font-size: 30px; } :root[data-skin="mt"] .phbar .logo .mtb small { font-size: 11px; }
+:root[data-skin="mt"] body.phone #phdots { background: #141415; }
+:root[data-skin="mt"] .phdot { border-radius: 4px; border: 1px solid #000; background: linear-gradient(180deg, #1f1f20, #0f0f10); color: var(--yellow); letter-spacing: .08em; box-shadow: inset 0 1px 0 #3a3a3c; }
+:root[data-skin="mt"] .phdot[aria-selected="true"] { background: #170905; color: var(--vfd); text-shadow: var(--vfdglow); border-color: #5a1f10; }
+:root[data-skin="mt"] body.phone #phfab { background: #141415; border: 1px solid #000; border-radius: 8px; box-shadow: 0 0 0 1px #333, 0 6px 16px rgba(0, 0, 0, .6); }
+:root[data-skin="mt"] #phfab .btn { border-radius: 6px; }
 </style>
 </head>
 <body>
@@ -1283,7 +1431,7 @@ body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
      device and the mixer (TRACKS, VAPOR, SAMPLES, JAM); PLAYLIST and SHARE open their pop-ups; the THEME picker recolours
      the page (the screen keeps its own colours until the firmware gets the same palettes) -->
 <aside class="rail" aria-label="Sections">
-  <a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr" title="spelunkr.tv: the channel this groovebox is made for (leaves this page; your song stays saved here)."><b aria-hidden="true"><i>SP</i><i>GB</i></b><span>Spelunkr<br>Groovebox</span></a>
+  <a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr" title="spelunkr.tv: the channel this groovebox is made for (leaves this page; your song stays saved here)."><b aria-hidden="true"><i>SP</i><i>GB</i></b><span>Spelunkr<br>Groovebox</span><em class="mtb" aria-hidden="true"><small>MULTITRACKER</small><strong>SP-GB</strong></em></a>
   <nav class="tabs" role="tablist" aria-label="Panels">
     <button class="tab" type="button" role="tab" data-pane="tracks" aria-selected="true"><i aria-hidden="true"></i>TRACKS</button>
     <button class="tab" type="button" role="tab" data-pane="vapor" aria-selected="false"><i aria-hidden="true"></i>VAPOR</button>
@@ -1441,10 +1589,15 @@ body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
         <p class="vdesc" id="vaphint">Focuses on emulating analog audio equipment: a slowed record, warped tape, dust and crunch. Saved with the song, heard in exports and shared links.</p>
         <div class="vknobs" id="vknobs"></div>
         <div class="vfos" id="vfos" hidden>
+          <div class="cass" aria-hidden="true"><i class="reel"></i><span class="tapewin"></span><i class="reel"></i></div>
           <p class="vdesc">Two settings modeled after Bourby's <a href="https://www.muzines.co.uk/articles/fostex-x28/7544" target="_blank" rel="noopener">Fostex X-28</a>.</p>
           <div class="vfosbtns" role="group" aria-label="The Fostex's speed">
             <button class="btn" type="button" id="vfslow" aria-pressed="true">SLOW<small>the knob at 12 o'clock · −3 semitones</small></button>
             <button class="btn" type="button" id="vfslower" aria-pressed="false">SLOWER<small>all the way down · −6.6 semitones</small></button>
+          </div>
+          <div class="vfosopt" role="group" aria-label="ANALOG VAPOR's switches">
+            <button class="btn" type="button" id="vfnr" aria-pressed="true"><span class="bb" aria-hidden="true"><i>B</i><i>B</i></span>BOULBY NR</button>
+            <button class="btn" type="button" id="vfboost" aria-pressed="true">BOOST</button>
           </div>
         </div>
       </div>
@@ -1553,7 +1706,7 @@ body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
   <span class="tag">Like cable TV, but weirder. SPELUNKR.TV</span>
   <span class="credits">Spelunkr Groovebox @VERSION@ beta@PREVIEW@ · <a href="manual.html" target="_blank" rel="noopener" title="The manual: the device under the hood, every page and setting (for POWER USERs).">the manual</a> · Space plays and stops · Z–M and Q–O play the keys (S D G H J, 2 3 5 6 7 9 the black ones) · [ ] octave · arrows scroll and pick the track ·
     a Felucca fork: built on Phantom Tracker, Dungeon Tracker by Bourbon Weather and Felucca by Leo Kuroshita (Hügelton Instruments) ·
-    free software, <a href="https://www.gnu.org/licenses/gpl-3.0.html" title="The licence: free to use, change and share, as long as the source stays open.">GPL-3.0</a>: <a href="@SOURCE@" title="The source code of this groovebox.">the source</a> · VT323 and Jersey 10 fonts, SIL OFL ·
+    free software, <a href="https://www.gnu.org/licenses/gpl-3.0.html" title="The licence: free to use, change and share, as long as the source stays open.">GPL-3.0</a>: <a href="@SOURCE@" title="The source code of this groovebox.">the source</a> · VT323, Jersey 10, Barlow Condensed and Russo One fonts, SIL OFL ·
     sampled instruments and kits from the <a href="https://github.com/sgossner/VCSL" title="Where the sampled instruments and drum kits come from (free, public domain).">Versilian Community Sample Library</a> (CC0) ·
     M-VAVE and FM-1 are their owners' trademarks; this is not affiliated with them.</span>
 </footer>
@@ -1904,7 +2057,14 @@ function vaporize() {
 // VAPOR's kind (Ed, Nov 27 2026: "a VAPOR drop down ... CLEAN and Bourby's Fostex and the fostex just has 2 settings
 // SLOW and SLOWER"): CLEAN, the knobs above; BOURBY'S FOSTEX, his cassette deck modelled from his test tape
 // (felucca_web.c), at SLOW or SLOWER. The CLEAN amounts stay as they were under it. OFF: all of VAPOR off
-let vapKind = 0, vapFosSlower = false;
+let vapKind = 0, vapFosSlower = false, vapNr = true, vapBoost = true;
+function vapOptShow() {
+  $("vfnr").setAttribute("aria-pressed", String(vapNr));
+  $("vfboost").setAttribute("aria-pressed", String(vapBoost));
+}
+function vapOptSet() { vapTouched = performance.now(); vapOptShow(); send({ type: "vaporopt", nr: vapNr, boost: vapBoost }); }
+$("vfnr").addEventListener("click", () => { vapNr = !vapNr; vapOptSet(); });
+$("vfboost").addEventListener("click", () => { vapBoost = !vapBoost; vapOptSet(); });
 function vapKindShow(k) {
   vapKind = k ? 1 : 0;
   if (k) vapFosSlower = k === 2;
@@ -1915,6 +2075,7 @@ function vapKindShow(k) {
   $("vaphint").style.display = vapKind ? "none" : "";
   $("vfslow").setAttribute("aria-pressed", String(!vapFosSlower));
   $("vfslower").setAttribute("aria-pressed", String(vapFosSlower));
+  $("vfos").classList.toggle("slower", vapFosSlower);
   $("vapclean").disabled = !vapKind && !vapEls.some((e) => e.v);
 }
 function vapKindSet(k) {                                  // 0 CLEAN, 1 FOSTEX SLOW, 2 FOSTEX SLOWER
@@ -2471,6 +2632,7 @@ function showGuide(g) {
     $("twhat").textContent = sel.sound ? `${sel.sound} · ${sel.engine}` : sel.engine;
   }
   $("tstate").textContent = g.play ? "PLAYING" : "STOPPED";
+  document.body.classList.toggle("playing", !!g.play);    // (MULTITRACKER's reels turn while it plays)
   $("tpage").textContent = g.page;
   if (g.b && JSON.stringify(g.b) !== JSON.stringify(btnCtx)) { btnCtx = g.b; names(); }
   deckLights(); boxKnobDraw();
@@ -2517,6 +2679,7 @@ function showGuide(g) {
     g.vapor.forEach((v, k) => { if (vapEls[k].v !== v) vapShow(vapEls[k], v); });
     const vk = g.vkind || 0;
     if ((vk ? 1 : 0) !== vapKind || (vk === 2) !== vapFosSlower) vapKindShow(vk);
+    if (g.vnr !== undefined && (!!g.vnr !== vapNr || !!g.vboost !== vapBoost)) { vapNr = !!g.vnr; vapBoost = !!g.vboost; vapOptShow(); }
     $("vapclean").disabled = !vk && !g.vapor.some((v) => v);
   }
   $("foot").textContent = `${g.tracks.length} TRACKS · PATTERN ${letter(g.cur)} OF A–F · ${g.song.rows.length ? g.song.rows.length + " SECTIONS IN THE SONG" : "NO SONG YET"} · SAVED IN THIS BROWSER`;
@@ -3783,13 +3946,16 @@ const SCREENKEY = "spelunkr-groovebox-screen";
 const PAL_NAMES = ["GREY", "GREEN", "AMBER", "ICE", "VIOLET", "ROSE", "PAPER", "HI-CON", "NIGHT", "MONO", "PHANTOM", "SPELUNKR"];
 const THEME_PAL = { "": "SPELUNKR", mallneon: "VIOLET", gamecart: "GREEN", publicaccess: "AMBER", snowday: "ICE", latelate: "GREY" };
 let screenPal = "", palNode = null;
+function matchPal() {                                   // (MULTITRACKER: the display's AMBER, whatever the theme)
+  return document.documentElement.dataset.skin === "mt" ? "AMBER" : THEME_PAL[document.documentElement.dataset.theme || ""] || "SPELUNKR";
+}
 function screenPalIndex() {
-  const nm = screenPal || THEME_PAL[document.documentElement.dataset.theme || ""] || "SPELUNKR";
+  const nm = screenPal || matchPal();
   return Math.max(0, PAL_NAMES.indexOf(nm));
 }
 function screenPalLabel() {
   const o = $("screenpal").options[0];
-  if (o) o.text = "MATCH: " + (THEME_PAL[document.documentElement.dataset.theme || ""] || "SPELUNKR");
+  if (o) o.text = "MATCH: " + matchPal();
 }
 function screenPalSend() {
   screenPalLabel();
@@ -3808,12 +3974,16 @@ if (!PAL_NAMES.includes(screenPal)) screenPal = "";
 $("screenpal").value = screenPal;
 screenPalLabel();
 // the SKIN picker (Ed, Nov 25): the look over the same layout (:root[data-skin] rules in the style); any skin, any theme
-const SKINKEY = "spelunkr-groovebox-skin", SKINS = [["", "CONTROL ROOM"], ["primetime", "PRIME TIME"], ["amp", "SPGB AMP"], ["aero", "AERO GLASS"]];
+const SKINKEY = "spelunkr-groovebox-skin", SKINS = [["", "CONTROL ROOM"], ["primetime", "PRIME TIME"], ["amp", "SPGB AMP"], ["aero", "AERO GLASS"], ["mt", "MULTITRACKER"]];
 function setSkin(k) {
   if (!SKINS.some(([id]) => id === k)) k = "";
   if (k) document.documentElement.dataset.skin = k; else delete document.documentElement.dataset.skin;
   $("skin").value = k;
   try { localStorage.setItem(SKINKEY, k); } catch {}
+  try { screenPalSend(); } catch {}                       // (MULTITRACKER's screen: AMBER under MATCH)
+  try { eqDraw(); } catch {}
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.content = getComputedStyle(document.documentElement).getPropertyValue("--indigo").trim() || "#1C0A57";
 }
 for (const [id, nm] of SKINS) $("skin").append(new Option(nm, id));
 $("skin").addEventListener("change", () => setSkin($("skin").value));
@@ -4979,6 +5149,8 @@ const TIPS = {
   "#smphits": "AUTO: a chop at each hit (12 at most), each ending where its sound dies away.",
   "[data-eq='4']": "4 equal chops, end to end.", "[data-eq='6']": "6 equal chops.", "[data-eq='8']": "8 equal chops.", "[data-eq='12']": "12 equal chops: every key of a bank.",
   "#smpnone": "NONE: no chops: the whole trimmed sample is one.",
+  "#vfnr": "BOULBY NR: the deck's noise reduction. On, the tape's hiss is about half what it is off (on is how Bourby records).",
+  "#vfboost": "BOOST: the song recorded 12 dB hotter onto the tape: it squeezes, the vibes and drums grow harmonics, the hiss sits lower. Off: recorded at the test tape's level, cleaner.",
   "#vapkind": "The kind of VAPOR: DIGITAL VAPOR, the four knobs; ANALOG VAPOR, Bourby's Fostex X-28 cassette 4-track, measured from his test tape, at SLOW or SLOWER.",
   "#vfslow": "SLOW: the Fostex's pitch knob at 12 o'clock: about 3 semitones down, the tape's tone and flutter.",
   "#vfslower": "SLOWER: the pitch knob all the way down: about 6.6 semitones down, darker, the flutter slower.",
@@ -5199,7 +5371,7 @@ const TOUR = [                                           // (Ed: "cover every pa
   { t: "17 · MAKE IT VAPOR", el: ".vapor", x: () => "<kbd>VAPOR</kbd> (" + (phOn ? "its card" : "in the side menu") + ") makes the whole song sound like old gear. The drop-down picks the kind. "
       + "<b>DIGITAL VAPOR</b> emulates analog equipment with four controls: slow the record down, warp the tape, add crackle and crunch; "
       + "tap <kbd>VAPORIZE</kbd> for new amounts every tap. <b>ANALOG VAPOR</b> has two settings modeled after Bourby's own Fostex X-28 cassette 4-track, "
-      + "measured from his test tape: <kbd>SLOW</kbd> and <kbd>SLOWER</kbd>. <kbd>OFF</kbd> takes either off. It's saved with the song." },
+      + "measured from his test tape: <kbd>SLOW</kbd> and <kbd>SLOWER</kbd>, with <kbd>BOULBY NR</kbd> (less hiss) and <kbd>BOOST</kbd> (recorded hot, more tape squeeze). <kbd>OFF</kbd> takes either off. It's saved with the song." },
   { t: "18 · POLISH IT", el: "#polish .pmods", x: () => "<kbd>POLISH</kbd> finishes the mix. The <b>COMPRESSOR</b> squeezes one track, "
       + "or just the kick or snare (it starts on PUNCH on the kick, a classic); the <b>SIDECHAIN</b> makes the tracks you pick dip at each kick "
       + "(the classic pump); the <b>EQ</b> shapes the whole song's tone (try the presets); the <b>EXCITER</b> adds "
@@ -5586,7 +5758,7 @@ const phHome = new Map();                                 // (where each moved p
 const phTop = document.createElement("div"), phDots = document.createElement("nav"), phFab = document.createElement("div"),
   phSheet = document.createElement("div");
 phTop.id = "phtop";
-phTop.innerHTML = `<div class="phbar"><a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr"><b aria-hidden="true"><i>SP</i><i>GB</i></b><span></span></a>
+phTop.innerHTML = `<div class="phbar"><a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr"><b aria-hidden="true"><i>SP</i><i>GB</i></b><span></span><em class="mtb" aria-hidden="true"><small>MULTITRACKER</small><strong>SP-GB</strong></em></a>
   <div class="phwho"><b id="phwho">SPELUNKR GROOVEBOX</b><span id="phwhat">SWITCH ON TO START</span></div>
   <button class="btn phmenu" type="button" id="phmenu" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu: song, audio, share, file, help, tempo, key, MIDI, looks">&#9776;</button></div>`;
 phDots.id = "phdots"; phDots.setAttribute("role", "tablist"); phDots.setAttribute("aria-label", "Cards");

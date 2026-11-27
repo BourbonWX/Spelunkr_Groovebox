@@ -508,6 +508,20 @@ static const double FOS_JIT[2][5] = {{5.84648026e-06, 1.16929605e-05, 5.84648026
 static const double FOS_LO[5] = {0.0105731108, 0.0105731108, 0.0, -0.978853778, 0.0};   /* the hiss's dark part: 150 Hz */
 #define FOS_SP_SLOW 0.839583
 #define FOS_SP_SLOWER 0.681709
+/* ANALOG VAPOR's two switches (Ed, Nov 27 2026: "a couple of on / off button toggles ... Boulby NR ... to control the
+ * hiss by like 50% ... a button to Boost the input to get it up to that +12db"), both on unless a bit says off: bit 15
+ * of G_DRLVL, BOULBY NR off (the hiss twice as loud: the deck's NR measured on, about half the hiss of it off); bit 15
+ * of G_DRREV, BOOST off (recorded at the test tape's level, not +12 dB) */
+static uint32_t vap_nr(void) { return !((uint32_t)(uint16_t)song.g[G_DRLVL] & 0x8000u); }
+static uint32_t vap_boost(void) { return !((uint32_t)(uint16_t)song.g[G_DRREV] & 0x8000u); }
+EXPORT void web_vapor_opt(uint32_t nr, uint32_t boost)
+{
+    uint16_t a = (uint16_t)song.g[G_DRLVL], b = (uint16_t)song.g[G_DRREV];
+    a = (uint16_t)(nr ? a & ~0x8000u : a | 0x8000u);
+    b = (uint16_t)(boost ? b & ~0x8000u : b | 0x8000u);
+    song.g[G_DRLVL] = (int16_t)a;
+    song.g[G_DRREV] = (int16_t)b;
+}
 static uint32_t vap_fostex(void) { return ((uint32_t)(uint16_t)song.g[G_DRLVL] & 0x80u) ? 1u + (((uint32_t)(uint16_t)song.g[G_DRREV] >> 7) & 1u) : 0u; }
 static double vap_speed(void)
 {
@@ -536,14 +550,21 @@ static float fos_squeeze(float x)                       /* (fitted: held past fu
     y = a * (1.0f + a2 * (-0.4124f + a2 * (-0.2172f + a2 * 0.1949f)));
     return x < 0 ? -y : y;
 }
+static void pol_master_on(float *out_l, float *out_r, uint32_t n);
+/* the record level: +12 dB over the test tape's (Ed, Nov 27 2026, his Mare Seis on tape against the model at +0, +9 and
+ * +12: "plus 12 is easily the closest"; his song sat ~9 dB further over the hiss than the test tones did). Played back
+ * as loud as it went in: the song as loud as before, the tape's squeeze and hiss where his were */
+#define FOS_DRIVE 3.981072
 static void fos_record(uint32_t set, uint32_t frame, float *out)   /* one device frame onto the tape */
 {
     uint32_t c, i, j = (frame % RING) * 2u;
+    float in[2] = {ring[j], ring[j + 1u]};
+    pol_master_on(&in[0], &in[1], 1u);                  /* POLISH first: the finished mix goes onto the tape, as Ed's did */
     for (c = 0; c < 2u; c++) {
-        double v = fos_squeeze(ring[j + c]);
+        double dr = vap_boost() ? FOS_DRIVE : 1.0, v = fos_squeeze((float)(in[c] * dr));
         for (i = 0; i < 5u; i++)
             v = fos_bq(FOS_EQ[set][i], fos_eq[i][c], v);
-        out[c] = (float)v;
+        out[c] = (float)(v / dr);
     }
 }
 EXPORT uint32_t web_vapor_get(uint32_t k) { return k == 4u ? vap_fostex() : vap_get(k & 3u); }
@@ -718,7 +739,7 @@ static float lim_g = 1.0f;
 static uint32_t pol_was_on;
 static float xenv[2];                      /* EXCITE: the band's level, per side (the curve sees it at ~1) */
 static inline float xcurve(float v, float lean) { float t = tanhf(v); return t + lean * (t * t - 0.5f); }
-static void pol_master(uint32_t n)
+static void pol_master_on(float *out_l, float *out_r, uint32_t n)   /* (the output; ANALOG VAPOR: the tape's input) */
 {
     uint32_t i, j, eq = pol[PO_EON] && (pol[PO_ELO] | pol[PO_EMID] | pol[PO_EHI]), xc = pol[PO_XON] && pol[PO_XAMT];
     if (!eq && !xc) {
@@ -789,6 +810,7 @@ static void pol_master(uint32_t n)
         }
     }
 }
+static void pol_master(uint32_t n) { pol_master_on(out_l, out_r, n); }
 /* SIDECHAIN (Ed, Nov 25: "the side chain option inside the Polish menu"): the tracks in SMASK (bit k, NTRK order; bit
  * NTRK LEAD; DRUMS, whose kick it follows, never) dip at every kick of DRUMS (core.h duck_kick: the kit's KICK lane, any
  * note of another engine there; heard or not) and come back over a part of the beat, so it follows the tempo. FEEL:
@@ -1211,7 +1233,7 @@ EXPORT void web_render(uint32_t n)
     if (fos) {                                         /* BOURBY'S FOSTEX: recorded, then played back slower */
         uint32_t set = fos - 1u;
         double sp = set ? FOS_SP_SLOWER : FOS_SP_SLOW, f1 = 4.65 * sp, a1 = set ? 0.00095 : 0.0019, a2 = set ? 0.0012 : 0.0008,
-               js = (set ? 0.00139 : 0.00125) * FOS_JIT_NORM, wn = 3.77e-4, ln = 5.03e-3;   /* (the hiss: -111.9 dB/Hz white, -89.4 dB/Hz under
+               js = (set ? 0.00139 : 0.00125) * FOS_JIT_NORM, nr = vap_nr() ? 1.0 : 2.0, wn = 3.77e-4 * nr, ln = 5.03e-3 * nr;   /* (the hiss: -111.9 dB/Hz white, -89.4 dB/Hz under
                                                      * 150 Hz: x sqrt(FS / 2)) */
         if (fos_was != fos) {                          /* (a fresh tape: its state cleared, four frames recorded) */
             memset(fos_eq, 0, sizeof fos_eq);
@@ -1251,8 +1273,7 @@ EXPORT void web_render(uint32_t n)
                 fos_record(set, ring_r + 2u, fos_h[3]);
             }
         }
-        pol_master(n);
-        return;
+        return;                                        /* (POLISH: before the tape, fos_record) */
     }
     fos_was = 0;
     if (!slow && !wow) {
@@ -1806,7 +1827,7 @@ EXPORT const char *web_guide(void)
     wj("],\"xy\":[%u,%u,%u,%u,%u,%u],\"xyk\":%d", xy_live[0].x, xy_live[0].y, xy_live[0].on, xy_live[1].x, xy_live[1].y, xy_live[1].on,
        web_pad ? (int)web_pad_k : -1);
     wj(",\"vapor\":[%u,%u,%u,%u]", vap_get(0), vap_get(1), vap_get(2), vap_get(3));
-    wj(",\"vkind\":%u", vap_fostex());                  /* (0 CLEAN, 1 BOURBY'S FOSTEX: SLOW, 2: SLOWER) */
+    wj(",\"vkind\":%u,\"vnr\":%u,\"vboost\":%u", vap_fostex(), vap_nr(), vap_boost());                  /* (0 CLEAN, 1 BOURBY'S FOSTEX: SLOW, 2: SLOWER) */
     {                                                  /* the selected track's chop banks: slot + 1, 0 none (the PADS page, SAMPLES) */
         uint32_t bk = web_spk_banks();
         smp_fx_t fa, fb;

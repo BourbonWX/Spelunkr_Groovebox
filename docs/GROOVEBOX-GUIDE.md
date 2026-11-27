@@ -194,7 +194,10 @@ audio equipment; **ANALOG VAPOR** has two settings modeled after Bourby's
 [Fostex X-28](https://www.muzines.co.uk/articles/fostex-x28/7544) cassette 4-track, measured from his test tape: the song recorded at the deck's fastest speed with Dolby on, then
 played back slower, with the tape's dark top end, its little bump in the lows, the way it squeezes when it's pushed,
 the capstan's flutter and its quiet hiss. It has two settings: **SLOW** (the pitch knob at 12 o'clock, about 3
-semitones down) and **SLOWER** (all the way down, about 6.6). Loud songs saturate more, as on tape.
+semitones down) and **SLOWER** (all the way down, about 6.6). It records the finished mix, after POLISH, as Bourby
+does. Two switches, both on to start: **BOULBY NR** (the deck's noise reduction: about half the hiss; off, the tape hisses
+louder) and **BOOST** (the song recorded 12 dB hotter, as Bourby records music: the tape squeezes the peaks and the
+vibes and drums grow harmonics; off, it goes on at the test tape's level, cleaner). Loud songs saturate more, as on tape.
 
 **FX KEYS** (on **JAM PADS**, the button left of the screen): the keys glitch the whole mix while you hold them
 (stutter, tunnel, jumps, crush: the screen shows which key does what); tap **FX KEYS OFF** and the keys play notes.
