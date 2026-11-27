@@ -1139,10 +1139,13 @@ body.phone main .panel.phon { display: flex !important; flex-direction: column; 
 body.phone main .guide.panel.phon { display: block !important; }
 body.phone main > .panel.phon { margin-top: 0; }
 body.phone #studiomsg { margin: 8px 0; font-size: 19px; }
-body.phone .device .body { display: flex; flex-direction: column; padding: 10px 6px; gap: 12px; }
-body.phone .face { order: 3; width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+/* (Ed, Nov 27: the buttons first, at the top of the card; the track bar and the fiddly controls scroll under them) */
+body.phone .device .body { display: contents; }
+body.phone .face { order: 1; width: auto; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 10px 6px; box-sizing: border-box; }
+body.phone .device .trackbar { order: 2; }
+body.phone .device .side { order: 3; padding: 10px 6px 12px; box-sizing: border-box; }
 body.phone .face .btn { min-height: 46px; font-size: 19px; padding: 2px; }
-body.phone .side { order: 2; width: 100%; gap: 12px; }
+body.phone .side { width: auto; gap: 12px; }
 body.phone .knobs, body.phone .wheels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 body.phone .wheels { border: 0; padding: 0; }
 body.phone .stepper { width: auto; } body.phone .stepper .arr { width: 44px; height: 44px; }
@@ -1212,7 +1215,6 @@ body.phone.land:not(.keyshid) #phfab { left: auto; right: 10px; }
 body.phone.land footer { margin-bottom: 20px; }
 body.phone.land #phfab .phl { display: none; }   /* (PAT A: the narrow bar) */
 body.phone.land .keybar { z-index: 7; }
-body.phone.land .device .body { flex-direction: row; flex-wrap: wrap; }
 body.phone.land .fader { height: 120px; }
 </style>
 </head>
