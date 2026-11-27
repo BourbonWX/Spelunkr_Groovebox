@@ -3001,7 +3001,10 @@ async function switchOn(withSong) {
       wasmEarly.catch(() => (wasmEarly = getWasm())),
       ac.audioWorklet.addModule("worklet.js")]);
     if (withSong) sharedSamplesIn(); else sharedSamples = null;
-    node = await boot(loadFlash(), withSong ? sharedSong : null);
+    let first = null;                                     // (a browser's first start: THE FIRST SONG)
+    if (!withSong && !hadSaves()) try { first = await unpackSong(FIRST_SONG); } catch { first = null; }
+    node = await boot(loadFlash(), withSong ? sharedSong : first);
+    if (first) polApply(FIRST_POLISH);
     {                                                     // (the locked FX pads: the code's, else this browser's)
       let st = null;
       if (withSong) st = sharedPads; else try { st = JSON.parse(localStorage.getItem(PADKEY) || "null"); } catch {}
@@ -4627,6 +4630,16 @@ $("openproj").addEventListener("change", async (e) => {
 // SHARE: the song as a link (#song=…)
 let sharedSong = null;
 function hadSaves() { try { return !!localStorage.getItem(STORE); } catch { return false; } }
+// THE FIRST SONG (Ed, Nov 27 2026: "make this the default song that loads when the synth is booted for the very first
+// time"): a browser's first SWITCH ON (nothing saved here, no shared song) opens MARÉ SEIS, an original 6/8 bossa
+// written for the groovebox (BEDROOM kit, TRIBAL conga and GLITCH HOP shaker, MALL EP, GEN BASS, VIBES, SMOOTH SAX on
+// LEAD; patterns A..F and its SONG), with VAPOR on (SLOWED 69 %, WOW 80 %: in the song) and its POLISH: GENTLE on
+// the bass, a little smile on the EQ, AIR on top to bring back what the slowing takes. Packed as a song link
+// (worklet.js packSong, written with the device's own code). From then on the browser's
+// own saves open as ever; NEW / RANDOM replace it
+const FIRST_SONG = "7ZpNbBvHFcf_b5ZkKLGxmdZoTkIjQ1BkqHIdw7IikxTeiiJFUpQoOW7aKLZbObIjtAjq-Gwjw5UpJW4suAUCtAYM2IgCFC1aoJfeBML3NkCBoj25QG695NBzY6jd5dCc2V1KMsz6I-Z-cHbe_Hfm7Q53fnzLmT9FwP7Jue_nsR_4VwTA8lXsI6SRxyIWkcYQ0msAfYx9AhcqgEU_i_6KN-ubVcblGkcmbcn1Ve69OMk3uMQnmfNVjqywbdc_YpJ1aX44XK1X85JjNrO8fbvucEzyTZ7ad2gbX8FJQtstJJGUEN5n86iK68ktIO4Y-8tFxBHnHhQQpx7EOY4Eel9J9H8G8C8B63NENrleX9O9lvyizew5vvLmOebvNh3_OX-rznVm46PEtbrkHuU3sy255zcrfDJCx4BjEgk3AcbcbUwiOoZRYFQi4SZqG5XA6AYsVySR8LRIuVtKIprCODAukXATtY1LYHwDliuSSHhaZNwtIxHNIA2kJRJu0qoJqQ1YE8CERMJNANvdbImoDQZYIuEmamMJ8AasSDwZkckDbtLYkpF449O17_fbN5JWGW6liRIwDZTcNuYlomnMNNooAnmg6LZRkcDUNv6MiHs3T5ndkFDdUGIuTK6qTrjGB9Yur9zmGyuXNvnypZWb_PHmcp29Xmh-eyRjqmof5PI3MQAMAsMYxIi3HsTQQdc0CLdoREIMY9gBjkpg0HUEVI1TkmRcUHznQ6L49STOOcBbEmIO7zjAooSoYNkB3pYQ8zjvAKclsOBd42-5Xr9hXmNMXaNka4V5bsevGvu-apOS4T4-kUQVyDlAQQIlB2IWZQcobeOf2Epu4z-I_KHdo8mnTjEfbz2afZdurFy6eO3NTb5cqtS5Pj_vNfynm3XXB-Mex6f40tlP-Oy-XvcZ_XYSoesn3oP5skD4uibIstaFsCxxHRBOyC4hqHkE-hx4sQaIVXLEVXIEyLEaqYyJSEw0c04U5KC1b6OxfojoGvAVfroBYnzJ0kjQXbpLd-ku3aW7dJfu0l2ey-U7p__xLuViJyfnZmBlYjUgfhUQ6779WsfsVORVTeCm6wCvAz0qX9DspNmbuuZ5CZX2rgOvrIMS1hrQH9bqw-wOXjg2lpqIAOVao33NZNdClaWgclozjaUytk-lTF59rey8UvhUaaUaHU9zBJjR6lEm9vmlzMWgMm-YUkFV6kF9rWzF55cyT9Ue8V43qsOAhEXAuWYrDjBYNVrEcEPyVs1X7HihrVs0VzOy7zSzmvJgtVXhUEO2KFvmB203iio1I7useTfg8061-XbNrEg5PV8zsud1lVbJ0Ubx6VqoNwvNTurk7gC5avuygr_MjbV30M9WW8flHXRt63hS-zWQEGpUEleNtLMFa6EOmAXWOsiitZCSPZzy6KOfOOK-fojMY8eU5uE8eNPQWP8O8ZnHEbJuxWodHOfb6J8BkISOuZ4pFT5gTwWVdnB0ngqaUuaAXQofsI_XDEblgtg6EQ64bFDJQZplg6YTJuCK4YCb6BBIBncHyUh7kAybIBneG0iOtgfJgAmSgd1BMhwOkhETJCM7g2To8YHEBUij2h8o3wraFbgYCHHVJUDD_EOlmtX6TfHBuLDWGReUZNrsxrLWOdNav-kVaBLl5Ls1o-5F0-ezpnNnfPWVzQsthl9oTrvQjlDq_06Qx3PKE-WU9WuPU8L6RZdTzxWn2qtOmC36OaXMXU7tzKkBk1MDO3Nq-OvIqbLJqVJ7ThXCOaXwtaTOyDayP_Y36auMfX0WIimGeNs2-uuy6QmxKfI7j02W9WmXTd7QO57mbAQoaGO2MmVqocp8UKkP-K-nJ_wqZcrUjGzZxwBlfv1BRDMxGXjP55nSPr-UORdUTgYDplzQlDZjqBmfX8rMHWLTod3ZdKQ9mw6bbDq8NzYdas-mIZNNQ7uz6XvPSAzlAAtaaKFG42ZLlb3xSTujZIYtIfHOaRNKF3ZhinLhR74250ynS75Yqk1lsxrHgrhsOl303RDzJuT0nu7S6imgVfSGR6uI9eFTSSt6KbnagVHxIWilAgWdLsrkj6SUeSqo1COpsRMTtk-lTM1ISmX9kZQyHzf_OtLpokz-SEqZs0ElNx7Dpptz7hzPVMbWn2fN4PhLdWOHbvcj_nP0qgmrV_cGq8OP4Z-j8EBqOQRWHhRDftkPduqXfWuQDsVUEEBLuzPqfBijtON8e5SFRFDn_IDSJLm9oa4QjrrQ8Ml3B56LEIro8Y6jj4Ck2EcekqJW9alE0hN7uVcODuj-2QzKXAoqpw1TKqhKsTabQWX9sxmUOW2-apsJAtA_m8H3Us7PWQdRNxv2P5M_Pmpl_VMalLlTUxq-rm_4nsYoqqxNO8hpxxXtODDlQLftcFzQjvNtNOUwvdbOXBv_HqYOvbzYpr7ngkTPVHj0QpnKOXuK-mLeXDvCRXzDO4p98MER4MDQT4C_hc_L68UJVInpFjHuUJa2KIu7lKN7lMMXVKCMKMAWWbonsngJE9SHCfTDphHYeA05yiAHGwU6gwKWUKL3UML7KNAVFFBFjm4hhzuwaQs27iJLXyKLf2Oa7mMaRCXqoxL6aZZGaBavUZkyVIZNJTpDJSzRNF2haVT_58cWFXCXyvQXKuOvVKF7VMEX9AbdpzdAYoH6xAL6RYUyogJbzNKsmMWCKNMZUcaSKNJ7ooj3RZ6uiDyqIke3RA53RJZ-L7L4o7BpS9i4K5juC8Z_AQ";
+const FIRST_POLISH = { c: { on: 1, k: 2, s: 0, a: 44, m: 127, p: 0 }, s: { on: 0, m: 14, f: 1, a: 80 },
+  e: { on: 1, lo: 3, mid: -2, hi: 2, f: 1 }, x: { on: 1, m: 0, a: 44 } };
 // share codes (share-worker/: a Cloudflare Worker): SHARE uploads the song and the samples it plays, a code comes
 // back (SPGB_7K2QX9A); the page's address + #code opens it. No service set (SHARE_API empty): the long #song= link.
 const SHARE_API = "@SHARE_API@".startsWith("@") ? "" : "@SHARE_API@".replace(/\/+$/, "");
@@ -4904,6 +4917,8 @@ function newSong(random) {
     node.port.postMessage({ type: "newsong", random, genre: random ? +$("genre").value : -1 });
     padsApply(null);                                    // (a new song: the locked FX pads off)
     polApply(null);                                     // (and POLISH)
+    if (!random) setTimeout(vapClean, 120);             // (Nov 27: NEW: VAPOR off too, as RANDOM sets its own; after the
+                                                        //  device has made the new song)
     const gn = random ? $("genre").selectedOptions[0].textContent : "";
     studioSay(random ? `A random ${+$("genre").value < 0 ? "" : gn.toLowerCase() + " "}song: PLAY (Space) plays its A section (pattern B); PLAY on the SONG screen (MIX twice) plays it intro to outro. RANDOM again rolls another.` : "A new song: pick a track and its sound, then make a beat.");
   };
