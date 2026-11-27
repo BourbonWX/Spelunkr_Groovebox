@@ -1104,6 +1104,10 @@ body.phone:not(.keyshid) footer { margin-bottom: calc(var(--kbh, 160px) + 104px)
 body.phone .tour, body.phone.keyshid .tour { bottom: 100px; }
 body.phone:not(.keyshid) .tour { bottom: calc(var(--kbh, 160px) + 96px); }
 body.phone .tour.high { bottom: auto; }
+body.phone .tour { display: flex; flex-direction: column; max-height: calc(100dvh - 120px); }   /* (a long step on a small phone:
+                                                     the text scrolls inside the card, NEXT stays in reach) */
+body.phone:not(.keyshid) .tour { max-height: calc(100dvh - var(--kbh, 160px) - 110px); }
+body.phone .tour > p { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
 
 /* the top: the badge, what's playing, ☰; the screen under it */
 body.phone #phtop { display: block; position: sticky; top: 0; z-index: 4; background: var(--night); border-bottom: 3px solid var(--rule); }
@@ -3044,9 +3048,10 @@ async function switchOn(withSong) {
       ac.audioWorklet.addModule("worklet.js")]);
     if (withSong) sharedSamplesIn(); else sharedSamples = null;
     let first = null;                                     // (a browser's first start: THE FIRST SONG)
+    firstSongOn = false;
     if (!withSong && !hadSaves()) try { first = await unpackSong(FIRST_SONG); } catch { first = null; }
     node = await boot(loadFlash(), withSong ? sharedSong : first);
-    if (first) polApply(FIRST_POLISH);
+    if (first) { polApply(FIRST_POLISH); firstSongOn = true; }
     {                                                     // (the locked FX pads: the code's, else this browser's)
       let st = null;
       if (withSong) st = sharedPads; else try { st = JSON.parse(localStorage.getItem(PADKEY) || "null"); } catch {}
@@ -4741,6 +4746,7 @@ function hadSaves() { try { return !!localStorage.getItem(STORE); } catch { retu
 // the bass, a little smile on the EQ, AIR on top to bring back what the slowing takes. Packed as a song link
 // (worklet.js packSong, written with the device's own code). From then on the browser's
 // own saves open as ever; NEW / RANDOM replace it
+let firstSongOn = false;                                  // (MARÉ SEIS open: the tour's WELCOME says so; NEW / RANDOM / a code: no)
 const FIRST_SONG = "7ZpNbBvHFcf_b5ZkKLGxmdZoTkIjQ1BkqHIdw7IikxTeiiJFUpQoOW7aKLZbObIjtAjq-Gwjw5UpJW4suAUCtAYM2IgCFC1aoJfeBML3NkCBoj25QG695NBzY6jd5dCc2V1KMsz6I-Z-cHbe_Hfm7Q53fnzLmT9FwP7Jue_nsR_4VwTA8lXsI6SRxyIWkcYQ0msAfYx9AhcqgEU_i_6KN-ubVcblGkcmbcn1Ve69OMk3uMQnmfNVjqywbdc_YpJ1aX44XK1X85JjNrO8fbvucEzyTZ7ad2gbX8FJQtstJJGUEN5n86iK68ktIO4Y-8tFxBHnHhQQpx7EOY4Eel9J9H8G8C8B63NENrleX9O9lvyizew5vvLmOebvNh3_OX-rznVm46PEtbrkHuU3sy255zcrfDJCx4BjEgk3AcbcbUwiOoZRYFQi4SZqG5XA6AYsVySR8LRIuVtKIprCODAukXATtY1LYHwDliuSSHhaZNwtIxHNIA2kJRJu0qoJqQ1YE8CERMJNANvdbImoDQZYIuEmamMJ8AasSDwZkckDbtLYkpF449O17_fbN5JWGW6liRIwDZTcNuYlomnMNNooAnmg6LZRkcDUNv6MiHs3T5ndkFDdUGIuTK6qTrjGB9Yur9zmGyuXNvnypZWb_PHmcp29Xmh-eyRjqmof5PI3MQAMAsMYxIi3HsTQQdc0CLdoREIMY9gBjkpg0HUEVI1TkmRcUHznQ6L49STOOcBbEmIO7zjAooSoYNkB3pYQ8zjvAKclsOBd42-5Xr9hXmNMXaNka4V5bsevGvu-apOS4T4-kUQVyDlAQQIlB2IWZQcobeOf2Epu4z-I_KHdo8mnTjEfbz2afZdurFy6eO3NTb5cqtS5Pj_vNfynm3XXB-Mex6f40tlP-Oy-XvcZ_XYSoesn3oP5skD4uibIstaFsCxxHRBOyC4hqHkE-hx4sQaIVXLEVXIEyLEaqYyJSEw0c04U5KC1b6OxfojoGvAVfroBYnzJ0kjQXbpLd-ku3aW7dJfu0l2ey-U7p__xLuViJyfnZmBlYjUgfhUQ6779WsfsVORVTeCm6wCvAz0qX9DspNmbuuZ5CZX2rgOvrIMS1hrQH9bqw-wOXjg2lpqIAOVao33NZNdClaWgclozjaUytk-lTF59rey8UvhUaaUaHU9zBJjR6lEm9vmlzMWgMm-YUkFV6kF9rWzF55cyT9Ue8V43qsOAhEXAuWYrDjBYNVrEcEPyVs1X7HihrVs0VzOy7zSzmvJgtVXhUEO2KFvmB203iio1I7useTfg8061-XbNrEg5PV8zsud1lVbJ0Ubx6VqoNwvNTurk7gC5avuygr_MjbV30M9WW8flHXRt63hS-zWQEGpUEleNtLMFa6EOmAXWOsiitZCSPZzy6KOfOOK-fojMY8eU5uE8eNPQWP8O8ZnHEbJuxWodHOfb6J8BkISOuZ4pFT5gTwWVdnB0ngqaUuaAXQofsI_XDEblgtg6EQ64bFDJQZplg6YTJuCK4YCb6BBIBncHyUh7kAybIBneG0iOtgfJgAmSgd1BMhwOkhETJCM7g2To8YHEBUij2h8o3wraFbgYCHHVJUDD_EOlmtX6TfHBuLDWGReUZNrsxrLWOdNav-kVaBLl5Ls1o-5F0-ezpnNnfPWVzQsthl9oTrvQjlDq_06Qx3PKE-WU9WuPU8L6RZdTzxWn2qtOmC36OaXMXU7tzKkBk1MDO3Nq-OvIqbLJqVJ7ThXCOaXwtaTOyDayP_Y36auMfX0WIimGeNs2-uuy6QmxKfI7j02W9WmXTd7QO57mbAQoaGO2MmVqocp8UKkP-K-nJ_wqZcrUjGzZxwBlfv1BRDMxGXjP55nSPr-UORdUTgYDplzQlDZjqBmfX8rMHWLTod3ZdKQ9mw6bbDq8NzYdas-mIZNNQ7uz6XvPSAzlAAtaaKFG42ZLlb3xSTujZIYtIfHOaRNKF3ZhinLhR74250ynS75Yqk1lsxrHgrhsOl303RDzJuT0nu7S6imgVfSGR6uI9eFTSSt6KbnagVHxIWilAgWdLsrkj6SUeSqo1COpsRMTtk-lTM1ISmX9kZQyHzf_OtLpokz-SEqZs0ElNx7Dpptz7hzPVMbWn2fN4PhLdWOHbvcj_nP0qgmrV_cGq8OP4Z-j8EBqOQRWHhRDftkPduqXfWuQDsVUEEBLuzPqfBijtON8e5SFRFDn_IDSJLm9oa4QjrrQ8Ml3B56LEIro8Y6jj4Ck2EcekqJW9alE0hN7uVcODuj-2QzKXAoqpw1TKqhKsTabQWX9sxmUOW2-apsJAtA_m8H3Us7PWQdRNxv2P5M_Pmpl_VMalLlTUxq-rm_4nsYoqqxNO8hpxxXtODDlQLftcFzQjvNtNOUwvdbOXBv_HqYOvbzYpr7ngkTPVHj0QpnKOXuK-mLeXDvCRXzDO4p98MER4MDQT4C_hc_L68UJVInpFjHuUJa2KIu7lKN7lMMXVKCMKMAWWbonsngJE9SHCfTDphHYeA05yiAHGwU6gwKWUKL3UML7KNAVFFBFjm4hhzuwaQs27iJLXyKLf2Oa7mMaRCXqoxL6aZZGaBavUZkyVIZNJTpDJSzRNF2haVT_58cWFXCXyvQXKuOvVKF7VMEX9AbdpzdAYoH6xAL6RYUyogJbzNKsmMWCKNMZUcaSKNJ7ooj3RZ6uiDyqIke3RA53RJZ-L7L4o7BpS9i4K5juC8Z_AQ";
 const FIRST_POLISH = { c: { on: 1, k: 2, s: 0, a: 44, m: 127, p: 0 }, s: { on: 0, m: 14, f: 1, a: 80 },
   e: { on: 1, lo: 3, mid: -2, hi: 2, f: 1 }, x: { on: 1, m: 0, a: 44 } };
@@ -5023,6 +5029,7 @@ function newSong(random) {
   d.onclose = () => {
     if (d.returnValue !== "go") return;
     node.port.postMessage({ type: "newsong", random, genre: random ? +$("genre").value : -1 });
+    firstSongOn = false;
     padsApply(null);                                    // (a new song: the locked FX pads off)
     polApply(null);                                     // (and POLISH)
     if (!random) setTimeout(vapClean, 120);             // (Nov 27: NEW: VAPOR off too, as RANDOM sets its own; after the
@@ -5042,21 +5049,25 @@ const TOUR = [                                           // (Ed: "cover every pa
   // song all the way to export"; Nov 22: "include everything as it currently stands"; Nov 25: "scrub walkthrough with all
   // our features to date"; each step points at what it talks about, `el` a selector or a function (a phone: what it shows))
   { t: "WELCOME", el: null, x: () => "This tour walks you through a whole song, from a blank page to a WAV you can use. "
-      + "The side menu " + (phoneMQ.matches ? "at the top" : "on the left") + " picks the panel under the groovebox: TRACKS, VAPOR, SAMPLES, POLISH, JAM PADS. "
+      + (firstSongOn ? "The song loaded now is <b>MARÉ SEIS</b>, a bossa in 6/8 made on this groovebox (slowed down with VAPOR): "
+        + "press <kbd>PLAY</kbd> to hear it, and pull it apart as you go. " : "")
+      + (phOn ? "On a phone the screen stays at the top and the panels are cards under it: tap DEVICE, MIX, TRACKS, VAPOR, JAM, POLISH or SAMPLES, "
+        + "or swipe a card sideways. <kbd>▶</kbd>, <kbd>●</kbd> and <kbd>KEYS</kbd> float at the bottom; <kbd>☰</kbd> holds the menus, the tempo and key, and the looks. "
+        : "The side menu on the left picks the panel under the groovebox: TRACKS, VAPOR, SAMPLES, POLISH, JAM PADS. ")
       + "The groovebox's screen is a touch screen too: drag its boxes, click its key hints and steps. "
       + "Each step lights up what to use: try it, then press <kbd>NEXT</kbd>. "
       + (phoneMQ.matches ? "" : "Hover over anything on the page to see what it does. ")
-      + "<kbd>HELP</kbd> at the top brings this tour back and opens the written guide." },
-  { t: "1 · START A SONG", el: "#newsong", x: () => "The <kbd>SONG</kbd> menu at the top: <kbd>NEW SONG</kbd> starts from nothing: no steps, the starting sounds. "
+      + "<kbd>HELP</kbd>" + (phOn ? " (in <kbd>☰</kbd>)" : " at the top") + " brings this tour back and opens the written guide." },
+  { t: "1 · START A SONG", el: "#newsong", x: () => "The <kbd>SONG</kbd> menu" + (phOn ? " (in <kbd>☰</kbd>)" : " at the top") + ": <kbd>NEW SONG</kbd> starts from nothing: no steps, the starting sounds, VAPOR off. "
       + "<kbd>🎲 RANDOM SONG</kbd> writes a whole song for you to play with in the genre you pick (vaporwave, chillwave, lo-fi, city pop, future "
       + "funk, chiptune, electro), with its own beat, chords, bass, tune and parts: A intro, B and C the song's two sections, D a bridge, "
       + "E the outro, F a build. Both ask first, and <kbd>UNDO</kbd> next to them takes back the last thing you did, a pattern copied by mistake too "
       + "(click it again to put it back)." },
-  { t: "2 · PLAY AND STOP", el: btnSel("PLAY"), x: () => `<kbd>PLAY</kbd>${phoneMQ.matches ? "" : " (or the space bar)"} starts and stops the music. `
+  { t: "2 · PLAY AND STOP", el: () => (phOn ? $("phplay") : document.querySelector(btnSel("PLAY"))), x: () => `<kbd>PLAY</kbd>${phOn ? " (the ▶ at the bottom)" : phoneMQ.matches ? "" : " (or the space bar)"} starts and stops the music. `
       + "Leave it playing while you work: every change is heard on the next loop." },
-  { t: "3 · TEMPO, SWING, KEY", el: "#songbar", x: () => "The bar under the top buttons is the whole song's: <kbd>TEMPO</kbd> (◀ ▶, or tap "
+  { t: "3 · TEMPO, SWING, KEY", el: "#songbar", x: () => (phOn ? "In <kbd>☰</kbd>, the whole song's settings" : "The bar under the top buttons is the whole song's") + ": <kbd>TEMPO</kbd> (◀ ▶, or tap "
       + "<kbd>TAP</kbd> along with the beat you want), <kbd>SWING</kbd> (0% straight, 30–50% a lazy lo-fi bounce) and <kbd>KEY</kbd>: the home note "
-      + "and the scale. Tick <i>keys stay in key</i> and every note you play lands in the scale, so nothing sounds wrong." },
+      + "and the scale. Tick <i>keys stay in key</i> and every note you play lands in the scale, so nothing sounds wrong (a track of chops keeps its own keys)." },
   { t: "4 · PICK A TRACK", el: "#grows", x: () => "Each row is a track: DRUMS, PERC, three synths, and LEAD at the bottom. Click a row to work on it: "
       + "the keys, the screen and the controls follow. <kbd>M</kbd> mutes a track, <kbd>S</kbd> plays it alone. Start with <kbd>DRUMS</kbd>." },
   { t: "5 · PICK ITS SOUND", el: "#wheels", x: () => "<kbd>SOUNDS</kbd> ◀ ▶ steps through the sounds for that track: dusty lo-fi kits (CRATE, BEDROOM), "
@@ -5076,7 +5087,7 @@ const TOUR = [                                           // (Ed: "cover every pa
       : "Plug in a MIDI keyboard: <kbd>MIDI</kbd> shows its name and it plays the track you've picked. Got knobs, faders or pads on it? "
       + "Click <kbd>LEARN</kbd>, click anything on the page (a fader, a control, a button, an FX pad), then move a knob: linked. "
       + "Right-click a link while learning to forget it. The links stay in this browser." },
-  { t: "9 · RECORD A PART", el: btnSel("REC"), x: () => "Click a synth row (SYNTH 1) and pick its sound. With the music stopped, tap <kbd>RECORD</kbd>: "
+  { t: "9 · RECORD A PART", el: () => (phOn ? $("phrec") : document.querySelector(btnSel("REC"))), x: () => "Click a synth row (SYNTH 1) and pick its sound. With the music stopped, tap <kbd>RECORD</kbd>" + (phOn ? " (the ● at the bottom)" : "") + ": "
       + "it asks whether you want a metronome (a bar of clicks counts you in, then they keep time). Then the music starts and what you play on "
       + "the keys goes into the loop. Tap <kbd>RECORD</kbd> again to stop recording (the music keeps going), <kbd>PLAY</kbd> to stop. "
       + "Tap RECORD while it's already playing and it just records, no metronome. Do the same for a bass on SYNTH 2." },
@@ -5084,7 +5095,7 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "<kbd>TRACK</kbd> past SYNTH 3), pick its sound with <kbd>SOUNDS</kbd> (a theremin, FM, sampled and GENESIS sounds), play it on the keys, "
       + "and record it with <kbd>RECORD</kbd> like any track: each pattern keeps its own LEAD part. <kbd>CLEAR</kbd> on its row empties it." },
   { t: "11 · SHAPE THE SOUND", el: "#knobs", x: () => "These four controls change the selected track's sound: its tone, its decay, WOW and AGE on the sampled ones. "
-      + "<kbd>SOUND</kbd> shows more of its settings; <kbd>POWER USER</kbd> " + (phoneMQ.matches ? "at the top" : "in the side menu")
+      + "<kbd>SOUND</kbd> shows more of its settings; <kbd>POWER USER</kbd> " + (phOn ? "in <kbd>☰</kbd>" : phoneMQ.matches ? "at the top" : "in the side menu")
       + " shows everything (envelope, wobble, arpeggio, scale) and the device's own names." },
   { t: "12 · MORE PATTERNS", el: btnSel("GLO"), x: () => "A pattern is a loop of every track. Tap <kbd>MIX</kbd>: patterns A to F on the white keys "
       + (phoneMQ.matches ? "C to A" : "C to A (computer keys Z to N)") + ". Tap D (X) for a new, empty pattern B, or hold C (Z) and tap D (X) to copy A into B. "
@@ -5095,7 +5106,7 @@ const TOUR = [                                           // (Ed: "cover every pa
   { t: "14 · MIX IT", el: "#mixer", x: () => "The <kbd>MIXER</kbd>: a fader a track (and LEAD), the small slider above it pans left or right, "
       + "<kbd>M</kbd> mutes, <kbd>S</kbd> solos, a name picks the track. <kbd>OUT</kbd> shows the whole song's level: if its light turns red, "
       + "bring things down a little. For reverb too, tap <kbd>HOME</kbd> on the home screen (its button says MIXER). <kbd>VOLUME</kbd>, with the controls, is everything." },
-  { t: "15 · FX PADS", el: ".pads", x: () => "This is <kbd>JAM PADS</kbd> (in the side menu): for playing over your song. "
+  { t: "15 · FX PADS", el: ".pads", x: () => "This is <kbd>JAM PADS</kbd> (" + (phOn ? "the JAM card" : "in the side menu") + "): for playing over your song. "
       + "The screen goes to the FX keys, and the tracks below stay live: mute, solo, click a pattern to play it next. <kbd>TRACKS</kbd> takes you back. Hold a pad and drag to bend the selected track: FILTER · GATE darkens, thins and chops it; "
       + "ECHO · FLANGE throws echoes and jets. Let go and it snaps back, unless <kbd>LOCK</kbd> is on: then it stays where you leave it, "
       + "on that track, and it's saved with the song." },
@@ -5103,25 +5114,33 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "jumps, crush (the screen shows which key does what); tap <kbd>FX KEYS OFF</kbd> and they play notes again. Everywhere else this button is "
       + "<kbd>EFFECTS</kbd>: the picked track's reverb, delay and chorus sends, distortion, an INSERT effect (phaser, flanger, filter, crush, ducking, "
       + "beat repeat) and the SLICER; tap it again for the next page, through to the reverb's, delay's and chorus's own settings." },
-  { t: "17 · MAKE IT VAPOR", el: ".vapor", x: () => "<kbd>VAPOR</kbd> in the side menu: slow the whole song down, warp the tape, add crackle and crunch. "
+  { t: "17 · MAKE IT VAPOR", el: ".vapor", x: () => "<kbd>VAPOR</kbd> (" + (phOn ? "its card" : "in the side menu") + "): slow the whole song down, warp the tape, add crackle and crunch. "
       + "Tap <kbd>VAPORIZE</kbd> (new amounts every tap; <kbd>CLEAN</kbd> takes it off) or use the four controls. It's saved with the song." },
   { t: "18 · POLISH IT", el: "#polish .pmods", x: () => "<kbd>POLISH</kbd> finishes the mix. The <b>COMPRESSOR</b> squeezes one track, "
       + "or just the kick or snare (it starts on PUNCH on the kick, a classic); the <b>SIDECHAIN</b> makes the tracks you pick dip at each kick "
       + "(the classic pump); the <b>EQ</b> shapes the whole song's tone (try the presets); the <b>EXCITER</b> adds "
       + "sparkle or bass you can hear on small speakers. Picking a preset turns it on; it's saved with the song." },
   { t: "19 · YOUR OWN SAMPLES", el: () => (phOn ? document.querySelector('.phdot[data-c="samples"]') : $("smpgo")), x: () => "<kbd>SAMPLES</kbd> takes you to your own sounds: load a file (a long one keeps its first 30 seconds), "
-      + "trim it, slice it, hear it (<kbd>■ STOP</kbd> stops it), and put it on a track as a synth, as chops on the keys, or as a drum kit." },
-  { t: "20 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>FILE</kbd> ▸ SAVE PROJECT downloads a project file (your samples too) "
+      + "trim it (the orange edges), hear it (<kbd>■ STOP</kbd> stops it), and put it on a track as a synth, as chops, or as a drum kit." },
+  { t: "20 · CHOP IT", el: "#smpwave", x: () => "A sample comes in chopped at its hits, up to 12 chops. Each has a <b>start</b> (the yellow line and its number) "
+      + "and an <b>end</b> (the pink line and its <b>]</b>): grab one anywhere in the band beside its line and drag it; click the wave to add a chop, "
+      + "double-click a line to remove one. <kbd>AUTO</kbd>, <kbd>4</kbd> <kbd>6</kbd> <kbd>8</kbd> <kbd>12</kbd> chop it again. "
+      + "<kbd>AS CHOPS · BANK A</kbd> puts them on the track's keys C3 to B3; <kbd>BANK B</kbd> puts another sample's on C4 to B4 of the same track. "
+      + "A chop plays to its end however short the tap." },
+  { t: "21 · THE PADS", el: () => ($("padsgo").hidden ? $("screen") : $("padsgo")), x: () => "On a track that plays chops, <kbd>▦ PADS</kbd> on the screen "
+      + "opens them as 12 pads, numbered like an MPC (1 bottom left), with <kbd>A</kbd> and <kbd>B</kbd> for the banks. Tap a pad to play it; with "
+      + "<kbd>RECORD</kbd> on, your taps go into the pattern, and the pads light whenever their chop plays. <kbd>✕</kbd> brings the screen back." },
+  { t: "22 · SAVE AND SHARE", el: "#share", x: () => "Your song saves in this browser by itself. <kbd>FILE</kbd> ▸ SAVE PROJECT downloads a project file (your samples too) "
       + "and OPEN PROJECT brings it back. <kbd>SHARE</kbd> ▸ SHARE THIS SONG gives a short code (SPGB_…) and a link, carrying the samples, VAPOR, "
       + "POLISH and locked FX pads your song uses: whoever opens the link, or types the code into SHARE ▸ OPEN A CODE, hears your song and can "
       + "carry on from it. A code lasts a month from when it was made; each SHARE makes a new one. <kbd>PLAYLIST</kbd> plays up to 10 codes back to "
       + "back, like an album." },
-  { t: "21 · EXPORT", el: "#bounce", x: () => "<kbd>AUDIO</kbd> ▸ EXPORT WAV makes the WAV: the song once through (or the pattern looped), with a WAV for each "
+  { t: "23 · EXPORT", el: "#bounce", x: () => "<kbd>AUDIO</kbd> ▸ EXPORT WAV makes the WAV: the song once through (or the pattern looped), with a WAV for each "
       + "track if you like. RECORD LIVE, in the same menu, records you playing live instead." },
-  { t: "22 · MAKE IT YOURS", el: ".railfoot", x: () => "<kbd>THEME</kbd> recolours the page (MALL NEON, GAME CART, PUBLIC ACCESS, SNOW DAY, LATE LATE SHOW), "
+  { t: "24 · MAKE IT YOURS", el: ".railfoot", x: () => (phOn ? "In <kbd>☰</kbd>: " : "") + "<kbd>THEME</kbd> recolours the page (MALL NEON, GAME CART, PUBLIC ACCESS, SNOW DAY, LATE LATE SHOW), "
       + "<kbd>SCREEN</kbd> the groovebox's screen (it matches the theme unless you pick one), and <kbd>SKIN</kbd> restyles it all: PRIME TIME, "
       + "SPGB AMP, AERO GLASS." },
-  { t: "23 · HOVER TIPS", el: "#tipsbtn", x: () => (phoneMQ.matches ? "On a computer, pointing at anything shows what it does. "
+  { t: "25 · HOVER TIPS", el: "#tipsbtn", x: () => (phOn || phoneMQ.matches ? "On a computer, pointing at anything shows what it does. "
       : "Point at anything on the page and a little box says what it does. Know your way around? ")
       + "<kbd>HELP</kbd> ▸ <kbd>HOVER TIPS</kbd> turns them off (and back on); this tour and the guide are in the same menu. That's a whole song: have fun!" },
 ];
@@ -5469,7 +5488,7 @@ const PHCARDS = [
   { id: "mix", n: "MIX", sel: [".mixer"] },
   { id: "tracks", n: "TRACKS", sel: [".guide"], pane: "tracks" },
   { id: "vapor", n: "VAPOR", sel: [".vappanel"], pane: "vapor" },
-  { id: "pads", n: "PADS", sel: [".fxpad", ".mixer"], pane: "jam" },
+  { id: "pads", n: "JAM", sel: [".fxpad", ".mixer"], pane: "jam" },   // (JAM PADS: "PADS" is the chops' view, Nov 27)
   { id: "polish", n: "POLISH", sel: [".polish"], pane: "polish" },
   { id: "samples", n: "SAMPLES", sel: [".samples"], pane: "samples" },
 ];
