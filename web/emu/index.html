@@ -5091,9 +5091,13 @@ const TOUR = [                                           // (Ed: "cover every pa
       + "it asks whether you want a metronome (a bar of clicks counts you in, then they keep time). Then the music starts and what you play on "
       + "the keys goes into the loop. Tap <kbd>RECORD</kbd> again to stop recording (the music keeps going), <kbd>PLAY</kbd> to stop. "
       + "Tap RECORD while it's already playing and it just records, no metronome. Do the same for a bass on SYNTH 2." },
-  { t: "10 · THE LEAD", el: "#grows .grow.lead", x: () => "<kbd>LEAD</kbd> is a voice over everything, for the tune on top. Click its row (or step "
-      + "<kbd>TRACK</kbd> past SYNTH 3), pick its sound with <kbd>SOUNDS</kbd> (a theremin, FM, sampled and GENESIS sounds), play it on the keys, "
-      + "and record it with <kbd>RECORD</kbd> like any track: each pattern keeps its own LEAD part. <kbd>CLEAR</kbd> on its row empties it." },
+  { t: "10 · THE LEAD", el: "#grows .grow.lead", x: () => "<kbd>LEAD</kbd> is a voice over everything, for the tune on top, and it works "
+      + "differently from the other tracks. They hold <b>steps</b> on a grid (the tracker shows them, you edit them one by one); LEAD holds a "
+      + "<b>take</b>: what you play, exactly as you play it, with your timing and feel, like tape. Click its row (or step <kbd>TRACK</kbd> past "
+      + "SYNTH 3), pick its sound with <kbd>SOUNDS</kbd> (a theremin, FM, sampled and GENESIS sounds) and record it with <kbd>RECORD</kbd>. "
+      + "Each pattern keeps its own take and loops it with the pattern (during the SONG, a take goes into the pattern playing then); takes "
+      + "add up, <kbd>UNDO</kbd> takes the last one back, <kbd>CLEAR</kbd> on its row empties it. About 75 notes a pattern. "
+      + "It's saved, exported and shared with the song like everything else." },
   { t: "11 · SHAPE THE SOUND", el: "#knobs", x: () => "These four controls change the selected track's sound: its tone, its decay, WOW and AGE on the sampled ones. "
       + "<kbd>SOUND</kbd> shows more of its settings; <kbd>POWER USER</kbd> " + (phOn ? "in <kbd>☰</kbd>" : phoneMQ.matches ? "at the top" : "in the side menu")
       + " shows everything (envelope, wobble, arpeggio, scale) and the device's own names." },
