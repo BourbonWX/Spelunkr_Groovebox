@@ -1429,6 +1429,115 @@ body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
 :root[data-skin="mt"] .phdot[aria-selected="true"] { background: #170905; color: var(--vfd); text-shadow: var(--vfdglow); border-color: #5a1f10; }
 :root[data-skin="mt"] body.phone #phfab { background: #141415; border: 1px solid #000; border-radius: 8px; box-shadow: 0 0 0 1px #333, 0 6px 16px rgba(0, 0, 0, .6); }
 :root[data-skin="mt"] #phfab .btn { border-radius: 6px; }
+
+/* ================================================================ SKIN: MUSIC SEQUENCER (Ed, Nov 28 2026: "a QY-70 skin",
+ * from photos of his own pocket sequencer). Champagne-silver plastic, dark grey rounded labels, grey rubber keys, the
+ * SONG / PATT purple for what's lit, a teal cursor pad, a salmon record key, red and green LEDs, a smoked bezel with gold
+ * lettering round the screen, an unlit LCD's grey-green for the readouts (the device's screen: LCD under MATCH), the
+ * keyboard as its little pads: black ones black, white ones pale grey. Its own colours over any THEME; inspired by, not
+ * a copy: no maker's name or logo */
+:root[data-skin="qy"] {
+  --indigo: #c6c1b5; --night: #8d8a80; --panel: #cdc8bc; --row: #d7d3c8; --rowhot: #e2ded4; --rest: #bfbaae; --rule: #a19d92;
+  --rule2: #6f6c64; --strip: #c3beb2; --yellow: #2e2e2c; --gold: #b38a2e; --orange: #5a4ea6; --rust: #3f357f; --btn: #8e8d89;
+  --ink: #2b2b29; --soft: #4a4945; --dim: #66645e; --faint: #8d8a82; --play: #2f9a55; --rec: #ee6f5e; --btndim: #a6a49e;
+  --breath: #b2ada1; --litedge: #8e84d6; --hotedge: #7a70c8; --colnow: #b9b3d8; --queued: #cfc9e6; --keyw: #dcdcd6;
+  --keyink: #3a3a38; --keydim: #9a9892; --keydim2: #555; --slotsub: #eae6ff; --g1: #c6c1b5; --g2: #c6c1b5; --g3: #c6c1b5;
+  --g4: #c6c1b5; --rail: #bdb8ac;
+  --head: 'Barlow Condensed', 'Arial Narrow', sans-serif; --mono: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --lcd: #dde3e1; --lcdink: #23284a; --lcdedge: #9aa5a3; --bezel: #4b4d50; --qgold: #d4a83c; --qpurp: #4f45a0; --qteal: #1f6f6b;
+  --speck: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='1.2' numOctaves='1' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+:root[data-skin="qy"] body { background: var(--speck), linear-gradient(180deg, #ccc7bb, #bdb8ac); color: var(--ink); }
+:root[data-skin="qy"] body, :root[data-skin="qy"] .btn, :root[data-skin="qy"] .tab, :root[data-skin="qy"] .phdot { font-weight: 600; text-transform: uppercase; }
+:root[data-skin="qy"] .hint, :root[data-skin="qy"] .vdesc, :root[data-skin="qy"] footer .credits, :root[data-skin="qy"] .phint,
+:root[data-skin="qy"] dialog p, :root[data-skin="qy"] .ghd .nm span, :root[data-skin="qy"] .trackbar .what { text-transform: none; font-weight: 500; }
+/* the badge */
+.logo .qyb { display: none; }
+:root[data-skin="qy"] .logo b, :root[data-skin="qy"] .logo span { display: none; }
+:root[data-skin="qy"] .logo .qyb { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; font-style: normal; line-height: 1;
+  background: var(--bezel); padding: 6px 10px 5px; border-radius: 6px; box-shadow: inset 0 0 0 1px #2c2d2f; }
+:root[data-skin="qy"] .logo .qyb small { font: 800 12px/1 'Nunito', sans-serif; letter-spacing: .08em; color: var(--qgold); }
+:root[data-skin="qy"] .logo .qyb strong { font: 34px/1 'Russo One', sans-serif; color: transparent; -webkit-text-stroke: 1.6px var(--qgold); letter-spacing: .04em; transform: skewX(-6deg); }
+:root[data-skin="qy"] header { background: var(--speck), #c9c4b8; border-bottom: 1px solid #a39f94; box-shadow: 0 1px 0 #e4e0d6; }
+/* the plastic: raised panels, a lighter top edge, a darker bottom */
+:root[data-skin="qy"] .panel { background: var(--speck), var(--panel); border: 1px solid #a8a498; border-radius: 14px; box-shadow: inset 0 1px 0 #ebe8df, 0 2px 0 #9d998e; }
+:root[data-skin="qy"] .strip { background: transparent; border-bottom: 1px solid #a8a498; }
+:root[data-skin="qy"] .panel .title b::before, :root[data-skin="qy"] .trackbar .num::before { content: none; }
+:root[data-skin="qy"] .panel .title b, :root[data-skin="qy"] .mixer .title b { color: #2e2e2c; letter-spacing: .04em; }
+:root[data-skin="qy"] .panel .title span { color: var(--dim); }
+/* the keys: grey rubber, white legends; lit ones the SONG / PATT purple */
+:root[data-skin="qy"] .btn, :root[data-skin="qy"] .stepper .arr { background: linear-gradient(180deg, #9b9a96, #82817d); color: #f4f4f2; border: 1px solid #6c6b67;
+  border-radius: 8px; box-shadow: inset 0 1px 0 #b3b2ae, 0 2px 0 #6a6965; text-shadow: none; }
+:root[data-skin="qy"] .btn:active, :root[data-skin="qy"] .stepper .arr:active { transform: translateY(1px); box-shadow: inset 0 1px 2px #5e5d59; }
+:root[data-skin="qy"] .btn.lit, :root[data-skin="qy"] .btn.orange, :root[data-skin="qy"] .btn.chip.on, :root[data-skin="qy"] .ms.on, :root[data-skin="qy"] .btn[aria-pressed="true"] {
+  background: linear-gradient(180deg, #6a5fc0, var(--qpurp)); color: #fff; border-color: #3a3184; box-shadow: inset 0 1px 0 #8b82d6, 0 2px 0 #34297a; }
+:root[data-skin="qy"] .btn.play { color: #fff; } :root[data-skin="qy"] .btn.play.lit { background: linear-gradient(180deg, #45b06c, var(--play)); border-color: #22703f; }
+:root[data-skin="qy"] .btn.rec { background: linear-gradient(180deg, #f6887a, var(--rec)); color: #fff; border-color: #c4503f; box-shadow: inset 0 1px 0 #ffb0a5, 0 2px 0 #b54535; }
+:root[data-skin="qy"] .btn.rec.lit { box-shadow: 0 0 0 3px rgba(238, 70, 50, .35), 0 2px 0 #b54535; }
+:root[data-skin="qy"] .face .btn .d { color: #e8e8e4; opacity: .85; }
+:root[data-skin="qy"] select, :root[data-skin="qy"] .songbar select, :root[data-skin="qy"] .theme select { background: #e9e6de; color: #2b2b29; border: 1px solid #8d8a80; border-radius: 6px; font-weight: 800; }
+/* the readouts: the unlit LCD, its blue-grey ink */
+:root[data-skin="qy"] .stepper .val, :root[data-skin="qy"] .songbar .sbv, :root[data-skin="qy"] .railstat, :root[data-skin="qy"] .trackbar .state,
+:root[data-skin="qy"] .mstrip .lvv, :root[data-skin="qy"] .grm em { font-family: 'VT323', monospace; color: var(--lcdink); font-weight: 400; }
+:root[data-skin="qy"] .stepper .val { background: var(--lcd); border: 2px solid var(--bezel); border-radius: 4px; box-shadow: inset 0 2px 4px rgba(0, 0, 0, .18); font-size: 24px; }
+:root[data-skin="qy"] .songbar { background: var(--speck), #c4bfb3; border-bottom: 1px solid #a39f94; }
+:root[data-skin="qy"] .songbar b, :root[data-skin="qy"] .stepper .lab, :root[data-skin="qy"] .theme, :root[data-skin="qy"] .ghead .c0, :root[data-skin="qy"] .ghead .col { color: #2e2e2c; }
+:root[data-skin="qy"] .songbar .sbv { background: var(--lcd); padding: 2px 8px; border: 2px solid var(--bezel); border-radius: 4px; font-size: 32px; }
+:root[data-skin="qy"] .railstat { background: var(--lcd); border: 3px solid var(--bezel); border-radius: 6px; font-size: 20px; }
+:root[data-skin="qy"] .railstat b { color: var(--qpurp); }
+:root[data-skin="qy"] .bezel { background: var(--bezel); border: 0; border-radius: 10px; box-shadow: inset 0 0 0 2px #36383a, 0 0 0 1px #9d998e, 0 2px 0 #8c887e; }
+:root[data-skin="qy"] .trackbar .num { color: #2e2e2c; }
+:root[data-skin="qy"] .trackbar .who { color: var(--qpurp); }
+:root[data-skin="qy"] .stepper .bar { background: #a9a59a; height: 4px; border-radius: 2px; }
+:root[data-skin="qy"] .stepper .bar i { background: var(--qteal); }
+/* the side menu: the cursor pad's teal for where you are */
+:root[data-skin="qy"] .rail { background: var(--speck), #c2bdb1; border-right: 1px solid #a39f94; }
+:root[data-skin="qy"] .tab { color: #3a3a37; border-radius: 8px; }
+:root[data-skin="qy"] .tab i { width: 9px; height: 9px; border-radius: 50%; background: #6f2b25; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .3); }
+:root[data-skin="qy"] .tab[aria-selected="true"] { background: linear-gradient(180deg, #2a817c, var(--qteal)); color: #fff; box-shadow: 0 2px 0 #134845; }
+:root[data-skin="qy"] .tab[aria-selected="true"] i { background: #6fe39a; box-shadow: 0 0 6px #4fd17e; }
+:root[data-skin="qy"] .tab.pl i { background: #ff5a48; box-shadow: 0 0 6px #ff5a48; }
+/* the mixer */
+:root[data-skin="qy"] .mstrip { background: transparent; border-right: 1px solid #b0aca0; border-radius: 0; }
+:root[data-skin="qy"] .mstrip.sel { background: rgba(79, 69, 160, .12); box-shadow: inset 0 -3px 0 var(--qpurp); }
+:root[data-skin="qy"] .mstrip .mn { color: #2e2e2c; }
+:root[data-skin="qy"] .pank .trk { stroke: #a9a59a; } :root[data-skin="qy"] .pank .lit { stroke: var(--qteal); } :root[data-skin="qy"] .pank .ptr { stroke: #2e2e2c; }
+:root[data-skin="qy"] .fader { accent-color: var(--qpurp); }
+:root[data-skin="qy"] .mbar { background: linear-gradient(0deg, #2f9a55 0 70%, #d9b12e 85%, #e5523f 97%); border-radius: 2px; }
+:root[data-skin="qy"] .mbar i { background: #3b3d40; }
+/* the tracks */
+:root[data-skin="qy"] .grow { border-bottom: 1px solid #aaa69b; }
+:root[data-skin="qy"] .grow.sel { outline: 2px solid var(--qpurp); }
+:root[data-skin="qy"] .grow.sel .ghd { background: rgba(79, 69, 160, .12); }
+:root[data-skin="qy"] .ghd .n { color: #2e2e2c; }
+:root[data-skin="qy"] .ghd .ic { background: #e9e6de; border: 1px solid #8d8a80; color: #2e2e2c; border-radius: 50%; }
+:root[data-skin="qy"] .blk { background: #d4d0c5; border-left: 1px solid #aaa69b; }
+:root[data-skin="qy"] .blk.now { background: #c4bde6; } :root[data-skin="qy"] .blk.rest { background: #c2bdb1; }
+:root[data-skin="qy"] .blk .bar { background: #b3afa4; } :root[data-skin="qy"] .blk .bar i { background: #5f5d57; }
+:root[data-skin="qy"] .blk .head { background: var(--qpurp); }
+:root[data-skin="qy"] .ghead .col.now { background: #c4bde6; }
+/* the keyboard: the little pads, apart, black ones black */
+:root[data-skin="qy"] .keybar { background: var(--speck), #c2bdb1; border-top: 1px solid #a39f94; }
+:root[data-skin="qy"] .key { align-self: flex-end; height: 62px; background: linear-gradient(180deg, #e6e6e0, #d0d0c9); color: #3a3a38; border: 1px solid #98968f;
+  border-radius: 6px; box-shadow: 0 3px 0 #8f8d86; }
+:root[data-skin="qy"] .key small { color: #3a3a38; }
+:root[data-skin="qy"] .key.blk2 { height: 50px; background: linear-gradient(180deg, #2b2b2b, #111); color: #f2f2f2; border-color: #000; border-radius: 6px; box-shadow: 0 3px 0 #000; }
+:root[data-skin="qy"] .key.blk2 small { color: #f2f2f2; }
+:root[data-skin="qy"] .ghd .nm b { color: #2e2e2c; }
+:root[data-skin="qy"] .grow.sel .ghd .nm b { color: var(--qpurp); }
+:root[data-skin="qy"] .key.on, :root[data-skin="qy"] .key:active { background: var(--qpurp) !important; color: #fff; }
+:root[data-skin="qy"] footer { background: #bdb8ac; border-top: 1px solid #a39f94; color: #3a3a37; }
+:root[data-skin="qy"] a { color: var(--qpurp); }
+/* the phone */
+:root[data-skin="qy"] body.phone #phtop { background: var(--speck), #c9c4b8; border-bottom: 1px solid #a39f94; }
+:root[data-skin="qy"] .phbar { background: var(--speck), var(--panel); }
+:root[data-skin="qy"] .phbar .logo .qyb strong { font-size: 26px; } :root[data-skin="qy"] .phbar .logo .qyb small { font-size: 10px; }
+:root[data-skin="qy"] body.phone #phdots { background: #c2bdb1; }
+:root[data-skin="qy"] .phdot { border-radius: 8px; border: 1px solid #6c6b67; background: linear-gradient(180deg, #9b9a96, #82817d); color: #fff; }
+:root[data-skin="qy"] .phdot[aria-selected="true"] { background: linear-gradient(180deg, #2a817c, var(--qteal)); border-color: #134845; }
+:root[data-skin="qy"] body.phone #phfab { background: #bdb8ac; border: 1px solid #8d8a80; border-radius: 14px; box-shadow: 0 6px 16px rgba(0, 0, 0, .35); }
+:root[data-skin="qy"] dialog { background: var(--speck), #d2cdc2; color: #2b2b29; border: 1px solid #8d8a80; }
+:root[data-skin="qy"] dialog h2 { color: #2b2b29; }
 </style>
 </head>
 <body>
@@ -1437,7 +1546,7 @@ body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
      device and the mixer (TRACKS, VAPOR, SAMPLES, JAM); PLAYLIST and SHARE open their pop-ups; the THEME picker recolours
      the page (the screen keeps its own colours until the firmware gets the same palettes) -->
 <aside class="rail" aria-label="Sections">
-  <a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr" title="spelunkr.tv: the channel this groovebox is made for (leaves this page; your song stays saved here)."><b aria-hidden="true"><i>SP</i><i>GB</i></b><span>Spelunkr<br>Groovebox</span><em class="mtb" aria-hidden="true"><small>MULTITRACKER</small><strong>SP-GB</strong></em></a>
+  <a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr" title="spelunkr.tv: the channel this groovebox is made for (leaves this page; your song stays saved here)."><b aria-hidden="true"><i>SP</i><i>GB</i></b><span>Spelunkr<br>Groovebox</span><em class="mtb" aria-hidden="true"><small>MULTITRACKER</small><strong>SP-GB</strong></em><em class="qyb" aria-hidden="true"><small>MUSIC SEQUENCER</small><strong>SP-GB</strong></em></a>
   <nav class="tabs" role="tablist" aria-label="Panels">
     <button class="tab" type="button" role="tab" data-pane="tracks" aria-selected="true"><i aria-hidden="true"></i>TRACKS</button>
     <button class="tab" type="button" role="tab" data-pane="vapor" aria-selected="false"><i aria-hidden="true"></i>VAPOR</button>
@@ -3969,11 +4078,12 @@ $("theme").addEventListener("change", () => setTheme($("theme").value));
 // screen's own palette (the firmware's MENU > COLOR, gen_ui_palettes.py's order), by default the one that goes with
 // the THEME; sent at each start and on every change (felucca_web.c web_palette)
 const SCREENKEY = "spelunkr-groovebox-screen";
-const PAL_NAMES = ["GREY", "GREEN", "AMBER", "ICE", "VIOLET", "ROSE", "PAPER", "HI-CON", "NIGHT", "MONO", "PHANTOM", "SPELUNKR"];
+const PAL_NAMES = ["GREY", "GREEN", "AMBER", "ICE", "VIOLET", "ROSE", "PAPER", "HI-CON", "NIGHT", "MONO", "PHANTOM", "SPELUNKR", "LCD"];
 const THEME_PAL = { "": "SPELUNKR", mallneon: "VIOLET", gamecart: "GREEN", publicaccess: "AMBER", snowday: "ICE", latelate: "GREY" };
 let screenPal = "", palNode = null;
 function matchPal() {                                   // (MULTITRACKER: the display's AMBER, whatever the theme)
-  return document.documentElement.dataset.skin === "mt" ? "AMBER" : THEME_PAL[document.documentElement.dataset.theme || ""] || "SPELUNKR";
+  const sk = document.documentElement.dataset.skin;       // (MUSIC SEQUENCER's: its LCD's greys)
+  return sk === "mt" ? "AMBER" : sk === "qy" ? "LCD" : THEME_PAL[document.documentElement.dataset.theme || ""] || "SPELUNKR";
 }
 function screenPalIndex() {
   const nm = screenPal || matchPal();
@@ -4000,7 +4110,7 @@ if (!PAL_NAMES.includes(screenPal)) screenPal = "";
 $("screenpal").value = screenPal;
 screenPalLabel();
 // the SKIN picker (Ed, Nov 25): the look over the same layout (:root[data-skin] rules in the style); any skin, any theme
-const SKINKEY = "spelunkr-groovebox-skin", SKINS = [["", "CONTROL ROOM"], ["primetime", "PRIME TIME"], ["amp", "SPGB AMP"], ["aero", "AERO GLASS"], ["mt", "MULTITRACKER"]];
+const SKINKEY = "spelunkr-groovebox-skin", SKINS = [["", "CONTROL ROOM"], ["primetime", "PRIME TIME"], ["amp", "SPGB AMP"], ["aero", "AERO GLASS"], ["mt", "MULTITRACKER"], ["qy", "MUSIC SEQUENCER"]];
 function setSkin(k) {
   if (!SKINS.some(([id]) => id === k)) k = "";
   if (k) document.documentElement.dataset.skin = k; else delete document.documentElement.dataset.skin;
@@ -5837,7 +5947,7 @@ const phHome = new Map();                                 // (where each moved p
 const phTop = document.createElement("div"), phDots = document.createElement("nav"), phFab = document.createElement("div"),
   phSheet = document.createElement("div");
 phTop.id = "phtop";
-phTop.innerHTML = `<div class="phbar"><a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr"><b aria-hidden="true"><i>SP</i><i>GB</i></b><span></span><em class="mtb" aria-hidden="true"><small>MULTITRACKER</small><strong>SP-GB</strong></em></a>
+phTop.innerHTML = `<div class="phbar"><a class="logo" href="https://spelunkr.tv" aria-label="Spelunkr"><b aria-hidden="true"><i>SP</i><i>GB</i></b><span></span><em class="mtb" aria-hidden="true"><small>MULTITRACKER</small><strong>SP-GB</strong></em><em class="qyb" aria-hidden="true"><small>MUSIC SEQUENCER</small><strong>SP-GB</strong></em></a>
   <div class="phwho"><b id="phwho">SPELUNKR GROOVEBOX</b><span id="phwhat">SWITCH ON TO START</span></div>
   <button class="btn phmenu" type="button" id="phmenu" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu: song, audio, share, file, help, tempo, key, MIDI, looks">&#9776;</button></div>`;
 phDots.id = "phdots"; phDots.setAttribute("role", "tablist"); phDots.setAttribute("aria-label", "Cards");

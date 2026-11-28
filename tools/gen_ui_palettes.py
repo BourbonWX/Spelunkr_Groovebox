@@ -55,6 +55,9 @@ PALETTES = [
     # the Spelunkr groovebox (spelunkr.tv's TV-guide look): guide-panel navy, its blue rows, white text, the guide's
     # yellow for values, its orange for the one active thing; the default there (src/panel.c settings_init)
     ("SPELUNKR", (10, 16, 78),  (22, 38, 140),   (244, 244, 255), (255, 225, 58),  (255, 140, 40)),
+    # Spelunkr's MUSIC SEQUENCER skin (Ed, Nov 28 2026, from his own pocket sequencer's screen: "various shades of gray and
+    # slight blue tint to the darkest gray"): an unlit LCD's pale grey, its greys, the darkest a blue-grey
+    ("LCD",    (226, 230, 229), (208, 214, 213), (12, 14, 30),    (40, 46, 84),    (16, 20, 46)),
 ]
 BW = "MONO"
 BW_GREY = (82, 82, 82)             # MONO's one mid grey (RGB565 10/20/10): DIM LINE RAISE LANE
