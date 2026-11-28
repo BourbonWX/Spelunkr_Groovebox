@@ -490,9 +490,14 @@ dialog { border: 4px solid var(--rule); box-shadow: 0 0 0 3px var(--night); padd
 dialog::backdrop { background: rgba(11, 5, 48, .7); }
 dialog h2 { margin: 0 0 10px; font: 30px var(--head); color: var(--yellow); font-weight: normal; }
 dialog fieldset { border: 0; padding: 0; margin: 0 0 10px; display: grid; gap: 6px; }
-dialog .genre { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font: 24px var(--head); color: var(--yellow); }
-dialog .genre[hidden] { display: none; }
-dialog .genre select { flex: 1; font: 22px var(--mono); background: var(--night); color: #fff; border: 2px solid var(--rule2); padding: 4px 6px; }
+#presetdlg { max-width: 760px; }
+.plist { display: grid; grid-template-columns: max-content repeat(4, minmax(0, 1fr)); gap: 6px 8px; align-items: center; margin: 4px 0 12px;
+  max-height: 52vh; overflow-y: auto; }
+.plist .pg { font: 22px/1 var(--head); color: var(--yellow); padding-right: 6px; }
+.plist .btn { min-height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; font: 20px/1 var(--head); }
+.plist .btn small { font: 15px/1 var(--mono); opacity: .85; text-transform: none; }
+.plist .btn[aria-checked="true"] { background: var(--orange); box-shadow: inset 0 0 0 3px var(--yellow); }
+@media (max-width: 560px) { #presetdlg p { font-size: 17px; line-height: 1.35; } #presetdlg .pmore { display: none; } .plist { max-height: 46vh; } .plist { grid-template-columns: repeat(4, minmax(0, 1fr)); } .plist .pg { grid-column: 1 / -1; padding-top: 6px; } }
 dialog input[type=number] { width: 4em; font: inherit; background: var(--night); color: #fff; border: 2px solid var(--rule2); }
 dialog small { color: var(--soft); }
 dialog progress { width: 100%; }
@@ -1464,7 +1469,8 @@ body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
       <button class="btn orange ddbtn" id="ddsong" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="ddsongm">SONG <i aria-hidden="true">&#9662;</i></button>
       <div class="ddm" id="ddsongm" role="menu" aria-label="Song" hidden>
         <button class="btn ddi" id="newsong" type="button" role="menuitem">NEW SONG<small>start from nothing</small></button>
-        <button class="btn ddi" id="randsong" type="button" role="menuitem">&#127922; RANDOM SONG<small>roll a whole song</small></button>
+        <button class="btn ddi" id="presets" type="button" role="menuitem">PRESETS<small>backing tracks to play over</small></button>
+        <button class="btn ddi" id="randsong" type="button" role="menuitem">&#127922; RANDOM SONG<small>roll a whole song, any genre</small></button>
       </div>
     </div>
     <button class="btn" id="undobtn" type="button">&#8630; UNDO</button>
@@ -1753,9 +1759,19 @@ body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
   <form method="dialog">
     <h2 id="newtitle">START A NEW SONG?</h2>
     <p style="margin:0 0 8px" id="newtext"></p>
-    <label class="genre" id="genrerow" hidden>GENRE <select id="genre" aria-label="The random song's genre"></select></label>
     <small>Changed your mind afterwards? Hold SAVE on the groovebox to undo it.</small>
     <div class="buttons"><button class="btn" value="cancel">CANCEL</button><button class="btn orange" value="go" id="newgo">START</button></div>
+  </form>
+</dialog>
+<dialog id="presetdlg">
+  <form method="dialog">
+    <h2>PRESETS</h2>
+    <p style="margin:0 0 8px">A backing track to play over, as on a QY-70: drums, percussion, bass and chords<span class="pmore"> in six sections:
+      <b>A</b> intro, <b>B</b> main A, <b>C</b> main B, <b>D</b> break, <b>E</b> ending, <b>F</b> fill into main B, arranged into a
+      song</span>. <b>SYNTH 3</b> and <b>LEAD</b> are left empty for your own tune, and <i>keys stay in key</i> is on. It replaces the song you have now.</p>
+    <div class="plist" id="plist" role="radiogroup" aria-label="Presets"></div>
+    <small>Changed your mind afterwards? UNDO brings your song back.</small>
+    <div class="buttons"><button class="btn" value="cancel">CANCEL</button><button class="btn orange" value="go" id="presetgo">LOAD IT</button></div>
   </form>
 </dialog>
 <dialog id="sharedlg">
@@ -5073,8 +5089,8 @@ async function shareUpload(packed, samples) {
 // the titles move to data-tip as they appear (a MutationObserver), so the browser's own slow tooltip never doubles it
 const TIPS = {
   "#newsong": "NEW SONG: start from nothing. Clears every track's steps and patterns A–F, and puts the starting sounds back. It asks first.",
-  "#randsong": "RANDOM: roll a whole song for you in a genre you pick (vaporwave, chillwave, lo-fi, city pop, future funk, chiptune, electro): sounds, beat, chords, bass, tune, and six parts (intro, A, B, bridge, outro, build). It asks first.",
-  "#genre": "The random song's genre. VAPORWAVE: another genre's song (mostly city pop) through VAPOR, slowed and warbly. ANY lets the dice pick.",
+  "#randsong": "RANDOM: roll a whole song in any genre, the dice pick (vaporwave, chillwave, lo-fi, city pop, future funk, chiptune, electro): sounds, beat, chords, bass, tune, and six parts (intro, A, B, bridge, outro, build). It asks first.",
+  "#presets": "PRESETS: a backing track to play over, as on a QY-70: four for each genre (vaporwave, chillwave, lo-fi, city pop, future funk, chiptune, electro). Drums, percussion, bass and chords in six sections; SYNTH 3 and LEAD left empty for your tune, the keys kept in key.",
   "#recbtn": "RECORD LIVE: record what you hear, live, to a WAV file (everything you play and turn). STOP RECORDING (same place) downloads it.",
   "#bounce": "EXPORT: make a WAV of the song or the pattern, faster than real time, with a WAV for each track if you like.",
   "#share": "SHARE: a short code and a link that play this song in anyone's groovebox, with the samples it uses.",
@@ -5084,7 +5100,7 @@ const TIPS = {
   "#mlclear": "Forget every link to your controller.",
   "#mldone": "Done learning (Esc too). The links stay in this browser.",
   "#midiroute": "What a MIDI keyboard plays: the track you picked (whatever its channel), or each track on its own channel (1 DRUMS, 2 SYNTH 1, 3 SYNTH 2, 4 SYNTH 3).",
-  "#undobtn": "UNDO: take back the last thing you did to the music: a NEW SONG or RANDOM, a sound you picked, BEAT / RANDOM / VARY / CLEAR on a track, a pattern copied, cleared or made by accident, LEAD's last take. Click again to put it back.",
+  "#undobtn": "UNDO: take back the last thing you did to the music: a NEW SONG, a PRESET or RANDOM, a sound you picked, BEAT / RANDOM / VARY / CLEAR on a track, a pattern copied, cleared or made by accident, LEAD's last take. Click again to put it back.",
   "#bpmdn": "Slower (hold to keep going; the mouse wheel over the number too).",
   "#bpmup": "Faster (hold to keep going; the mouse wheel over the number too).",
   "#bpm": "The tempo, in beats a minute.",
@@ -5259,33 +5275,85 @@ tipsInit();
 
 // ------------------------------------------------------------------ NEW SONG, RANDOM (felucca_web.c web_new_song): the song
 // replaced, so asked first; the device's undo (SAVE held) still brings the old one back
-// RANDOM SONG's GENRE (Ed, Nov 26 2026): value = boot_song.c ST_* (-1 any), in Ed's order; the last pick remembered
-const GENRES = [["4", "VAPORWAVE"], ["1", "CHILLWAVE"], ["3", "LO-FI"], ["5", "CITY POP"], ["6", "FUTURE FUNK"],
-                ["0", "CHIPTUNE"], ["2", "ELECTRO"], ["-1", "ANY: SURPRISE ME"]];
-const GENREKEY = "spelunkr-groovebox-genre";
-for (const [v, n] of GENRES) $("genre").add(new Option(n, v));
-try { const g = localStorage.getItem(GENREKEY); if (g && GENRES.some(([v]) => v === g)) $("genre").value = g; } catch {}
-$("genre").addEventListener("change", () => { try { localStorage.setItem(GENREKEY, $("genre").value); } catch {} });
+// RANDOM SONG: any genre, the dice pick (Ed, Nov 27 2026: "keep random but pull the genre option out of it"; the genres
+// live in PRESETS now)
+// PRESETS (Ed, Nov 27 2026, the QY-70's styles: "drum, bass, chord accompaniments and that is where our genre options
+// live"; four a genre): [boot_song.c ST_*, name, [[the roll (felucca_web.c web_preset), BPM, root, scale]]], picked from 60
+// rolls each for variety (tempo, key, sounds); SYNTH 3 and LEAD empty, keys stay in key on; the last pick remembered
+const PRESETS = [
+  [4, "VAPORWAVE", [[1161831139, 74, 3, 2], [3633419166, 78, 1, 3], [3724843033, 100, 9, 1], [2654436149, 128, 2, 3]]],
+  [1, "CHILLWAVE", [[774553931, 70, 7, 9], [3576916217, 70, 10, 1], [1788458157, 80, 1, 1], [683130064, 84, 9, 2]]],
+  [3, "LO-FI", [[3872769461, 74, 7, 2], [3668340278, 80, 2, 1], [147926816, 84, 5, 2], [3576916411, 92, 8, 1]]],
+  [5, "CITY POP", [[4203543914, 96, 11, 1], [2802362771, 102, 4, 1], [2710938904, 112, 6, 1], [1992887728, 120, 0, 1]]],
+  [6, "FUTURE FUNK", [[978983599, 112, 4, 3], [2415085951, 116, 10, 1], [3485492835, 128, 3, 3], [831057074, 128, 7, 1]]],
+  [0, "CHIPTUNE", [[3189639203, 116, 10, 2], [56502658, 124, 3, 1], [352355708, 134, 6, 4], [3964193037, 150, 0, 1]]],
+  [2, "ELECTRO", [[2323661696, 96, 10, 3], [204429377, 108, 6, 1], [3633418972, 110, 1, 2], [4055617098, 124, 8, 2]]],
+];
+const PRESETKEY = "spelunkr-groovebox-preset";
+let presetPick = "5:0";
+try { const v = localStorage.getItem(PRESETKEY); if (v && /^\d:\d$/.test(v)) presetPick = v; } catch {}
+const SCNAME = { 1: "major", 2: "minor", 3: "dorian", 4: "mixolydian", 9: "lydian" };
+const presetName = (gi, i) => { const [, n] = PRESETS.find(([g]) => g === gi); return `${n} ${i + 1}`; };
+function presetList() {
+  const l = $("plist");
+  if (l.childElementCount) return;
+  for (const [g, n, ps] of PRESETS) {
+    const h = document.createElement("span"); h.className = "pg"; h.textContent = n; l.append(h);
+    ps.forEach(([, bpm, root, sc], i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "btn"; b.setAttribute("role", "radio"); b.dataset.p = `${g}:${i}`;
+      b.innerHTML = `${i + 1}<small>${bpm} · ${NOTES[root]} ${SCNAME[sc] || ""}</small>`;
+      b.setAttribute("aria-label", `${n} ${i + 1}, ${bpm} BPM, ${NOTES[root]} ${SCNAME[sc] || ""}`);
+      b.addEventListener("click", () => { presetPick = b.dataset.p; presetMark(); });
+      b.addEventListener("dblclick", () => { presetPick = b.dataset.p; presetMark(); $("presetgo").click(); });
+      l.append(b);
+    });
+  }
+}
+function presetMark() {
+  for (const b of $("plist").querySelectorAll(".btn")) b.setAttribute("aria-checked", String(b.dataset.p === presetPick));
+}
+function presetOpen() {
+  if (!node) { studioSay("Switch the groovebox on first."); return; }
+  presetList(); presetMark();
+  const d = $("presetdlg");
+  d.returnValue = "";
+  d.onclose = () => {
+    if (d.returnValue !== "go") return;
+    const [g, i] = presetPick.split(":").map(Number), pr = PRESETS.find(([x]) => x === g);
+    if (!pr) return;
+    try { localStorage.setItem(PRESETKEY, presetPick); } catch {}
+    node.port.postMessage({ type: "preset", g, seed: pr[2][i][0] });
+    firstSongOn = false;
+    padsApply(null);
+    polApply(null);
+    setTimeout(() => send({ type: "track", k: 3 }), 150);   // (SYNTH 3: the tune's track, its sound ready on the keys)
+    studioSay(`${presetName(g, i)}: a backing track. PLAY (Space) loops main A (pattern B); PLAY on the SONG screen (MIX twice) plays it intro to ending. `
+      + "SYNTH 3 is picked and the keys stay in key: play or record your tune over it, or record a take on LEAD.");
+  };
+  d.showModal();
+  const on = $("plist").querySelector('[aria-checked="true"]');
+  if (on) on.scrollIntoView({ block: "nearest" });
+}
+$("presets").addEventListener("click", presetOpen);
 function newSong(random) {
   if (!node) { studioSay("Switch the groovebox on first."); return; }
   $("newtitle").textContent = random ? "ROLL A RANDOM SONG?" : "START A NEW SONG?";
   $("newtext").textContent = random
-    ? "A whole song made up for you in the genre you pick: sounds, a beat, chords, a bass and a tune, in six patterns: A intro, B the A section, C the B section, D a bridge, E the outro, F a build into the B section, arranged into a song. It replaces the song you have now."
+    ? "A whole song made up for you in a genre the dice pick: sounds, a beat, chords, a bass and a tune, in six patterns: A intro, B the A section, C the B section, D a bridge, E the outro, F a build into the B section, arranged into a song. It replaces the song you have now."
     : "Every track's steps cleared, patterns A–F emptied, the starting sounds back. It replaces the song you have now.";
-  $("genrerow").hidden = !random;
   $("newgo").textContent = random ? "ROLL IT" : "START";
   const d = $("newdlg");
   d.returnValue = "";
   d.onclose = () => {
     if (d.returnValue !== "go") return;
-    node.port.postMessage({ type: "newsong", random, genre: random ? +$("genre").value : -1 });
+    node.port.postMessage({ type: "newsong", random, genre: -1 });
     firstSongOn = false;
     padsApply(null);                                    // (a new song: the locked FX pads off)
     polApply(null);                                     // (and POLISH)
     if (!random) setTimeout(vapClean, 120);             // (Nov 27: NEW: VAPOR off too (the Fostex too), as RANDOM sets its own; after the
                                                         //  device has made the new song)
-    const gn = random ? $("genre").selectedOptions[0].textContent : "";
-    studioSay(random ? `A random ${+$("genre").value < 0 ? "" : gn.toLowerCase() + " "}song: PLAY (Space) plays its A section (pattern B); PLAY on the SONG screen (MIX twice) plays it intro to outro. RANDOM again rolls another.` : "A new song: pick a track and its sound, then make a beat.");
+    studioSay(random ? `A random song: PLAY (Space) plays its A section (pattern B); PLAY on the SONG screen (MIX twice) plays it intro to outro. RANDOM again rolls another.` : "A new song: pick a track and its sound, then make a beat.");
   };
   d.showModal();
 }
@@ -5309,9 +5377,10 @@ const TOUR = [                                           // (Ed: "cover every pa
       + (phoneMQ.matches ? "" : "Hover over anything on the page to see what it does. ")
       + "<kbd>HELP</kbd>" + (phOn ? " (in <kbd>☰</kbd>)" : " at the top") + " brings this tour back and opens the written guide." },
   { t: "1 · START A SONG", el: "#newsong", x: () => "The <kbd>SONG</kbd> menu" + (phOn ? " (in <kbd>☰</kbd>)" : " at the top") + ": <kbd>NEW SONG</kbd> starts from nothing: no steps, the starting sounds, VAPOR off. "
-      + "<kbd>🎲 RANDOM SONG</kbd> writes a whole song for you to play with in the genre you pick (vaporwave, chillwave, lo-fi, city pop, future "
-      + "funk, chiptune, electro), with its own beat, chords, bass, tune and parts: A intro, B and C the song's two sections, D a bridge, "
-      + "E the outro, F a build. Both ask first, and <kbd>UNDO</kbd> next to them takes back the last thing you did, a pattern copied by mistake too "
+      + "<kbd>PRESETS</kbd> are backing tracks to play over, as on a QY-70: four for each genre (vaporwave, chillwave, lo-fi, city pop, future funk, "
+      + "chiptune, electro), drums, percussion, bass and chords in six sections (intro, main A, main B, break, ending, a fill), with SYNTH 3 and LEAD "
+      + "left empty for your own tune and the keys kept in key. <kbd>🎲 RANDOM SONG</kbd> writes a whole song, tune and all, in a genre the dice "
+      + "pick. All three ask first, and <kbd>UNDO</kbd> next to them takes back the last thing you did, a pattern copied by mistake too "
       + "(click it again to put it back)." },
   { t: "2 · PLAY AND STOP", el: () => (phOn ? $("phplay") : document.querySelector(btnSel("PLAY"))), x: () => `<kbd>PLAY</kbd>${phOn ? " (the ▶ at the bottom)" : phoneMQ.matches ? "" : " (or the space bar)"} starts and stops the music. `
       + "Leave it playing while you work: every change is heard on the next loop." },

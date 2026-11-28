@@ -315,6 +315,7 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "spkuse") { ex.web_spk_use(m.k, m.mode);
       } else if (m.type === "chopfx") { if (ex.web_chop_fx) ex.web_chop_fx(m.bank, m.id, m.v | 0);   // (a chop bank's effects)
       } else if (m.type === "choppad") { if (ex.web_chop_pad) ex.web_chop_pad(m.note, m.vel);   // (PADS: a chop on the picked track)
+      } else if (m.type === "preset") { if (ex.web_preset) ex.web_preset(m.g >>> 0, m.seed >>> 0);   // (PRESETS: a backing track)
       } else if (m.type === "newsong") { if (m.random && ex.web_rs_salt) ex.web_rs_salt((Math.random() * 4294967296) >>> 0); ex.web_new_song(m.random ? (m.genre >= 0 ? 2 + m.genre : 1) : 0);
       } else if (m.type === "fxkeys") { if (ex.web_fx_mode) ex.web_fx_mode(m.on ? 1 : 0, m.open ? 1 : 0);   // (FX: the keys, or the effects)
       } else if (m.type === "plain") { if (ex.web_plain) ex.web_plain(m.on ? 1 : 0);

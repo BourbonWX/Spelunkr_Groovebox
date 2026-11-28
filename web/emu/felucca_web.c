@@ -1193,13 +1193,38 @@ EXPORT void web_new_song(uint32_t random)          /* 0 NEW, 1 RANDOM (any genre
     if (song.playing)
         seq_stop();
     if (random) {
-        rs_arm_t = fm1_ms | 1u;                    /* (boot_song.c: confirmed) */
+        rs_arm_t = (fm1_ms > 1u ? fm1_ms - 1u : 0u) | 1u;   /* (boot_song.c: confirmed. Not fm1_ms | 1: on an even ms that is
+                                                    * a ms ahead, the roll not taken: every other RANDOM did nothing) */
         rs_genre = (uint8_t)(random >= 2u && random - 2u < ST_N ? random - 2u : RS_ANY);
         random_song();
         rs_genre = RS_ANY;
     } else
         new_song(1);
     lead_clear_all();                              /* (LEAD's lanes: the old song's) */
+    ui.force = 1;
+}
+
+/* PRESETS (Ed, Nov 27 2026: "drum, bass, chord accompaniments ... where our genre options live", the QY-70's styles): a
+ * RANDOM SONG of genre g from a fixed roll (the page's list), the lead's track (SYNTH 3) left empty for the player */
+EXPORT void web_preset(uint32_t g, uint32_t seed)
+{
+    if (chain.running || chain.armed)
+        chain_stop();
+    if (song.playing)
+        seq_stop();
+    rs_arm_t = (fm1_ms > 1u ? fm1_ms - 1u : 0u) | 1u;   /* (confirmed: web_new_song) */
+    rs_genre = (uint8_t)(g < ST_N ? g : RS_ANY);
+    rs_seed = seed ? seed : 1u;
+    rs_backing = 1;
+    random_song();
+    rs_genre = RS_ANY;
+    rs_seed = 0;
+    rs_backing = 0;
+    for (uint32_t k = 0; k < NTRK; k++)                /* keys stay in key (as the page's tick, web_key): the player's tune */
+        if (!trk_is_kit(k))
+            trk[k].p[P_QUANT] = 1;
+    nw.after = autosave_sig();                         /* (UNDO: the preset is what's undone, project.c new_undo) */
+    lead_clear_all();
     ui.force = 1;
 }
 

@@ -35,12 +35,17 @@ The buttons at the top are menus: **SONG** (new, random), **AUDIO** (record live
 open one, the playlist), **FILE** (save and open a project) and **HELP** (the tour, this guide, the manual, the hover tips on or off). **UNDO**
 is a plain button.
 
-- **SONG ▸ NEW SONG** and **SONG ▸ 🎲 RANDOM SONG**: a blank song, or a whole random one to play with. Both ask
-  first. RANDOM asks for a **GENRE**: VAPORWAVE, CHILLWAVE, LO-FI, CITY POP, FUTURE FUNK, CHIPTUNE, ELECTRO, or ANY
-  (the dice pick; your last pick is remembered). Each genre has its own tempos, chords (the 7ths and 9ths, the
-  borrowed minor IV of city pop), drum grooves, bass lines and sounds. **VAPORWAVE** is what vaporwave is: another
-  genre's song (city pop most often, else lo-fi, chillwave or future funk) put through **VAPOR**, slowed, warbly and
-  usually dusty; the VAPOR panel shows how much, and **OFF** takes it off. The song comes in six patterns:
+- **SONG ▸ NEW SONG**, **SONG ▸ PRESETS** and **SONG ▸ 🎲 RANDOM SONG**: a blank song, a backing track, or a whole
+  random song to play with. All three ask first, and **UNDO** brings your song back.
+  **PRESETS** work like a Yamaha QY-70's styles: four for each genre (VAPORWAVE, CHILLWAVE, LO-FI, CITY POP, FUTURE
+  FUNK, CHIPTUNE, ELECTRO), each shown with its tempo and key, your last pick remembered. A preset is drums,
+  percussion, bass and chords in the six sections below (A intro, B main A, C main B, D break, E ending, F a fill into
+  main B) arranged into a song, with **SYNTH 3** and **LEAD** left empty for your own tune. Loading one picks SYNTH 3
+  and turns on *keys stay in key*, so whatever you play over it fits.
+  **RANDOM SONG** writes a whole song, tune and all, in a genre the dice pick. Each genre has its own tempos, chords
+  (the 7ths and 9ths, the borrowed minor IV of city pop), drum grooves, bass lines and sounds. **VAPORWAVE** is what
+  vaporwave is: another genre's song (city pop most often, else lo-fi, chillwave or future funk) put through **VAPOR**,
+  slowed, warbly and usually dusty; the VAPOR panel shows how much, and **OFF** takes it off. The song comes in six patterns:
   **A** the intro, **B** the A section (the verse), **C** the B section (the chorus), **D** a bridge (its own chords,
   lighter drums, a fill out), **E** the outro (thinning out and ending on the home chord) and **F** a build (the drums
   rising into the B section), arranged into a song from the intro to the outro: **PLAY** on the SONG screen plays it

@@ -180,6 +180,10 @@ enum { RS_INTRO, RS_VERSE, RS_CHORUS, RS_BRIDGE, RS_OUTRO, RS_BUILD, RS_N };
  * MIT, Copyright (c) 2026 Philip Bos: app/dsp/gen.h, styles.h; LICENSES/MIT-JAMTRACK.txt, CREDITS.md) */
 enum { ST_CHIP, ST_CHILL, ST_ELECTRO, ST_LOFI, ST_VAPOR, ST_CITY, ST_FUNK, ST_N };
 #define RS_ANY 0xFFu
+static uint8_t rs_backing;                                /* the web page's PRESETS (Ed, Nov 27 2026: "drum, bass, chord
+                                                           * accompaniments", the QY-70's styles): the lead's track left
+                                                           * empty for the player's own tune; rs_seed: the preset's roll */
+static uint32_t rs_seed;
 static uint8_t rs_genre = RS_ANY;                         /* the next roll's genre (ST_*), RS_ANY: any (felucca_web.c) */
 #ifndef ENGI_ANALOG
 #define ENGI_ANALOG 0u                                    /* (ANALOG: engine 0, engines.c ENG_TO_ANALOG) */
@@ -1320,6 +1324,12 @@ static void random_song_make(uint32_t seed)
         memset(seen, 0, sizeof seen);
         for (k = 0; k < NTRK; k++) {
             motion_clear(&trk[k]);
+            if (rs_backing && cls[k] == CLS_MAGE) {       /* (PRESETS: the tune's track empty, its sound kept) */
+                seen[cls[k]]++;
+                track_defaults_steps(&trk[k]);
+                trk[k].p[P_SLEN] = (int16_t)rsg.len;
+                continue;
+            }
             rs_part(&trk[k], cls[k], seen[cls[k]]++, sec);
         }
         motion_set_enabled(&trk[0], 1);
@@ -1434,7 +1444,7 @@ static void random_song(void)
     } else {
         new_song(1);
     }
-    random_song_make(((fm1_ms ^ (fm1_ticks() << 8)) * 2654435761u + ++rs_count * 40503u) ^ rs_salt);
+    random_song_make(rs_seed ? rs_seed : ((fm1_ms ^ (fm1_ticks() << 8)) * 2654435761u + ++rs_count * 40503u) ^ rs_salt);
     rs_salt = 0;
     morph_reset();
     nw.after = autosave_sig();                            /* (SAVE held: this roll back to what was) */
