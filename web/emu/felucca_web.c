@@ -522,6 +522,39 @@ EXPORT void web_vapor_opt(uint32_t nr, uint32_t boost)
     song.g[G_DRLVL] = (int16_t)a;
     song.g[G_DRREV] = (int16_t)b;
 }
+/* ANALOG VAPOR's TRIM (Ed, Nov 28 2026: "what we should have added was a trim pot that feeds from all the sounds in the
+ * front of the signal chain (up to and including the Exciter) then the output of that trim pot feeds into the slowed
+ * effect. That how my Fostex works"): 0..+18 dB over the test tape's level, into the tape after POLISH; played back as
+ * loud as it went in (the song's loudness steady, the tape's squeeze and harmonics growing). G_SYNC (on no page since
+ * 1.2), bits 0..4: 0 = not set (a song from before: BOOST's bit, +12 or 0), else dB + 1 */
+EXPORT void web_vapor_nr(uint32_t nr)                   /* BOULBY NR alone (BOOST's bit kept: TRIM's fallback) */
+{
+    uint16_t a = (uint16_t)song.g[G_DRLVL];
+    song.g[G_DRLVL] = (int16_t)(nr ? a & ~0x8000u : a | 0x8000u);
+}
+static uint32_t vap_trim_db(void)
+{
+    uint32_t t = (uint32_t)(uint16_t)song.g[G_SYNC] & 31u;
+    return t ? (t - 1u > 18u ? 18u : t - 1u) : (vap_boost() ? 12u : 0u);
+}
+EXPORT void web_vapor_trim(uint32_t db)
+{
+    song.g[G_SYNC] = (int16_t)(((uint32_t)(uint16_t)song.g[G_SYNC] & ~31u) | ((db > 18u ? 18u : db) + 1u));
+}
+/* MD-VE, SHELVED (Ed, Nov 28: "sound nothing like my actual minidisc ... until ... test tones off the real hardware"):
+ * not on the page; kind 3 only by web_vapor_kind(3). (Ed, Nov 28 2026: "replicate the Sony MZ-B100 ... a Polaroid held
+ * under fluorescent office lights"), from its
+ * specs (no unit measured): G_INFO (on no page since 1.2), bits 0..1 MODE (0 LP4, 1 LP2, 2 SP, 3 MONO: the REC MODE
+ * button's four), 2..4 SPEED (0..6: 80 85 90 95 100 105 110 %, the jog dial's seven steps, the pitch kept), 5..6 SOUND
+ * (0 off, 1 SOUND 1, 2 SOUND 2: MEGA BASS). All zero: LP4 at 80 %, SOUND off */
+static uint32_t vap_md(void) { return !((uint32_t)(uint16_t)song.g[G_DRLVL] & 0x80u) && ((uint32_t)(uint16_t)song.g[G_DRREV] & 0x80u); }
+static uint32_t vap_md_mode(void) { return (uint32_t)(uint16_t)song.g[G_INFO] & 3u; }
+static uint32_t vap_md_speed(void) { uint32_t v = ((uint32_t)(uint16_t)song.g[G_INFO] >> 2) & 7u; return v > 6u ? 6u : v; }
+static uint32_t vap_md_sound(void) { uint32_t v = ((uint32_t)(uint16_t)song.g[G_INFO] >> 5) & 3u; return v > 2u ? 2u : v; }
+EXPORT void web_vapor_md(uint32_t mode, uint32_t speed, uint32_t sound)
+{
+    song.g[G_INFO] = (int16_t)((mode & 3u) | ((speed > 6u ? 6u : speed) << 2) | ((sound > 2u ? 2u : sound) << 5));
+}
 static uint32_t vap_fostex(void) { return ((uint32_t)(uint16_t)song.g[G_DRLVL] & 0x80u) ? 1u + (((uint32_t)(uint16_t)song.g[G_DRREV] >> 7) & 1u) : 0u; }
 static double vap_speed(void)
 {
@@ -555,36 +588,281 @@ static void pol_master_on(float *out_l, float *out_r, uint32_t n);
  * +12: "plus 12 is easily the closest"; his song sat ~9 dB further over the hiss than the test tones did). Played back
  * as loud as it went in: the song as loud as before, the tape's squeeze and hiss where his were */
 #define FOS_DRIVE 3.981072
+static double fos_trim = 1.0;                             /* (TRIM's gain: web_render, a block at a time) */
 static void fos_record(uint32_t set, uint32_t frame, float *out)   /* one device frame onto the tape */
 {
     uint32_t c, i, j = (frame % RING) * 2u;
     float in[2] = {ring[j], ring[j + 1u]};
     pol_master_on(&in[0], &in[1], 1u);                  /* POLISH first: the finished mix goes onto the tape, as Ed's did */
     for (c = 0; c < 2u; c++) {
-        double dr = vap_boost() ? FOS_DRIVE : 1.0, v = fos_squeeze((float)(in[c] * dr));
+        double dr = fos_trim, v = fos_squeeze((float)(in[c] * dr));
         for (i = 0; i < 5u; i++)
             v = fos_bq(FOS_EQ[set][i], fos_eq[i][c], v);
         out[c] = (float)(v / dr);
     }
 }
-EXPORT uint32_t web_vapor_get(uint32_t k) { return k == 4u ? vap_fostex() : vap_get(k & 3u); }
+EXPORT uint32_t web_vapor_get(uint32_t k) { return k == 4u ? (vap_md() ? 3u : vap_fostex()) : vap_get(k & 3u); }
+
+/* ---- MD-VE: the MZ-B100's sound from its specs. The finished mix (after POLISH) through:
+ *   ATRAC, an approximation: 512-point frames (11.6 ms, half overlapped), ~25 critical-band-ish bands, a masking
+ *     estimate, the bits a frame has (SP 292 kbit/s, LP2 132, LP4 66 joint stereo, MONO 146) handed to the bands that
+ *     most need them; a band that gets none is silent that frame. That is the codec's sound: quiet overtones and
+ *     reverb tails come and go (the shimmer, the "birdies"), the top cut (LP2 16.5 kHz, LP4 13.5 kHz), LP4's side
+ *     (the stereo width) thin
+ *   SPEED (Digital Speed Control, 80..110 %): grains of 23 ms read at the song's pitch, laid at the slower (or faster)
+ *     pace, half overlapped: time stretched, the pitch kept, the grain's stutter heard. 100 %: straight through
+ *   SOUND 1 / 2 (MEGA BASS): a low shelf at 90 Hz, +8 / +14 dB (2 / 5 dB of it given back), into the headphone amp of
+ *     a 1.5 V cell: its rails (soft from 0.8 of full scale, flat at 0.98) where the bass pushes */
+#define MD_N 512u
+#define MD_H 256u
+#define MD_NB 25u
+#define MD_BUF 16384u
+#define MD_AMP 2.0
+static const uint16_t MD_EDGE[MD_NB + 1] = {0, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 17, 20, 23, 27, 31, 37, 43, 51, 62, 74, 89, 110,
+                                            139, 180, 257};
+static float md_cos[MD_N / 2], md_sin[MD_N / 2], md_win[MD_N];
+static float md_in[MD_N][2], md_ola[MD_H][2], md_buf[MD_BUF][2];
+static double md_bz[2][2], md_bass[5], md_rp;
+static uint32_t md_init, md_was, md_w, md_g0, md_g1, md_t, md_snd = 99u, md_fill;
+static void md_fft(float *re, float *im, int inv)        /* in place, MD_N points, radix 2 */
+{
+    uint32_t i, j = 0, len, k;
+    for (i = 1; i < MD_N; i++) {
+        uint32_t b = MD_N >> 1;
+        for (; j & b; b >>= 1)
+            j ^= b;
+        j |= b;
+        if (i < j) {
+            float t = re[i]; re[i] = re[j]; re[j] = t;
+            t = im[i]; im[i] = im[j]; im[j] = t;
+        }
+    }
+    for (len = 2; len <= MD_N; len <<= 1) {
+        uint32_t half = len >> 1, step = MD_N / len;
+        for (i = 0; i < MD_N; i += len)
+            for (k = 0; k < half; k++) {
+                float wr = md_cos[k * step], wi = inv ? md_sin[k * step] : -md_sin[k * step];
+                uint32_t a = i + k, b = a + half;
+                float xr = re[b] * wr - im[b] * wi, xi = re[b] * wi + im[b] * wr;
+                re[b] = re[a] - xr; im[b] = im[a] - xi;
+                re[a] += xr; im[a] += xi;
+            }
+    }
+}
+/* one channel's spectrum (bins 0..256, re and im) through the codec: bits a frame, cut above top */
+static void md_code(float *re, float *im, double bits, uint32_t top)
+{
+    double e[MD_NB], m[MD_NB], sc[MD_NB];
+    uint8_t q[MD_NB];
+    uint32_t b, j, k;
+    for (k = top; k <= MD_N / 2u; k++)
+        re[k] = im[k] = 0;
+    for (b = 0; b < MD_NB; b++) {
+        e[b] = 1e-12;
+        for (k = MD_EDGE[b]; k < MD_EDGE[b + 1] && k < top; k++)
+            e[b] += (double)re[k] * re[k] + (double)im[k] * im[k];
+        q[b] = 0;
+    }
+    for (b = 0; b < MD_NB; b++) {                        /* the masking: neighbours spread (-25 dB a band below, -10 above), less 12 dB,
+                                                         * over a floor ~90 dB under full scale */
+        double s = 0, f = 1e-6 * (MD_EDGE[b + 1] - MD_EDGE[b]);
+        for (j = 0; j < MD_NB; j++) {
+            int d = (int)b - (int)j;
+            s += e[j] * (d == 0 ? 0.16 : d > 0 ? pow(10.0, -1.0 * d) : pow(10.0, 2.5 * d));   /* (a band's own: -20 dB) */
+        }
+        m[b] = s * 0.063 + f;
+        sc[b] = 10.0 * log10(e[b] / m[b]);
+    }
+    for (;;) {                                           /* the bits: to the band the noise is most heard in, 6 dB a bit, till a
+                                                         * frame's are spent (a constant bit rate: a plain sound comes through clean,
+                                                         * a busy one is what's starved) */
+        uint32_t best = MD_NB, w;
+        double bs = -1e9;
+        for (b = 0; b < MD_NB; b++) {
+            double v = sc[b] - 6.02 * q[b];
+            if (q[b] < 15u && MD_EDGE[b] < top && v > -24.0 && v > bs) {   /* (not past 24 dB under the mask) */
+                bs = v;
+                best = b;
+            }
+        }
+        if (best == MD_NB)
+            break;
+        w = 2u * (uint32_t)(MD_EDGE[best + 1] - MD_EDGE[best]) * (q[best] ? 1u : 2u) + (q[best] ? 0u : 6u);
+        if ((double)w > bits)
+            break;
+        bits -= w;
+        q[best] = (uint8_t)(q[best] ? q[best] + 1u : 2u);
+    }
+    for (b = 0; b < MD_NB; b++) {                        /* each band's values on its own scale, (2^bits - 1) levels */
+        float pk = 0, d;
+        for (k = MD_EDGE[b]; k < MD_EDGE[b + 1]; k++) {
+            float a = re[k] < 0 ? -re[k] : re[k], c = im[k] < 0 ? -im[k] : im[k];
+            if (a > pk) pk = a;
+            if (c > pk) pk = c;
+        }
+        if (!q[b] || pk <= 0) {
+            for (k = MD_EDGE[b]; k < MD_EDGE[b + 1]; k++)
+                re[k] = im[k] = 0;
+            continue;
+        }
+        d = 2.0f * pk / (float)((1u << q[b]) - 2u);
+        for (k = MD_EDGE[b]; k < MD_EDGE[b + 1]; k++) {
+            re[k] = d * (float)(int32_t)(re[k] / d + (re[k] < 0 ? -0.5f : 0.5f));
+            im[k] = d * (float)(int32_t)(im[k] / d + (im[k] < 0 ? -0.5f : 0.5f));
+        }
+    }
+}
+/* 256 more of the device's frames, POLISHed, through the codec, into md_buf */
+static void md_frame(uint32_t mode)
+{
+    static float zr[MD_N], zi[MD_N], ar[MD_N / 2 + 1], ai[MD_N / 2 + 1], br[MD_N / 2 + 1], bi[MD_N / 2 + 1];
+    static const double KBPS[4] = {66.0, 132.0, 292.0, 146.0};
+    uint32_t i, k;
+    double fb = KBPS[mode] * 1000.0 * MD_H / FS * 2.0 * 0.85;   /* (a frame's bits: twice for the half-overlapped spectra, less the side info) */
+    uint32_t top = mode == 0u ? 157u : mode == 1u ? 192u : 233u;   /* (13.5, 16.5, 20 kHz) */
+    memmove(md_in[0], md_in[MD_H], sizeof md_in[0] * MD_H);
+    for (i = 0; i < MD_H; i++) {
+        while (ring_w - ring_r < 1u)
+            web_ms();
+        uint32_t j = (ring_r++ % RING) * 2u;
+        md_in[MD_H + i][0] = ring[j];
+        md_in[MD_H + i][1] = ring[j + 1u];
+    }
+    {
+        float l[MD_H], r[MD_H];
+        for (i = 0; i < MD_H; i++) { l[i] = md_in[MD_H + i][0]; r[i] = md_in[MD_H + i][1]; }
+        pol_master_on(l, r, MD_H);                     /* POLISH first: the finished mix is what's recorded */
+        for (i = 0; i < MD_H; i++) { md_in[MD_H + i][0] = l[i]; md_in[MD_H + i][1] = r[i]; }
+    }
+    for (i = 0; i < MD_N; i++) {
+        float a = md_in[i][0], b = md_in[i][1];
+        if (mode == 3u)
+            a = b = 0.5f * (a + b);
+        else if (mode == 0u) {                           /* (LP4: joint stereo, coded as mid and side) */
+            float mm = 0.5f * (a + b), ss = 0.5f * (a - b);
+            a = mm;
+            b = ss;
+        }
+        zr[i] = a * md_win[i];
+        zi[i] = b * md_win[i];
+    }
+    md_fft(zr, zi, 0);
+    for (k = 0; k <= MD_N / 2u; k++) {                   /* (two real channels out of one complex spectrum) */
+        uint32_t n = (MD_N - k) % MD_N;
+        ar[k] = 0.5f * (zr[k] + zr[n]); ai[k] = 0.5f * (zi[k] - zi[n]);
+        br[k] = 0.5f * (zi[k] + zi[n]); bi[k] = -0.5f * (zr[k] - zr[n]);
+    }
+    if (mode == 3u) {
+        md_code(ar, ai, fb, top);
+        memcpy(br, ar, sizeof br); memcpy(bi, ai, sizeof bi);
+    } else if (mode == 0u) {
+        md_code(ar, ai, fb * 0.8, top);
+        md_code(br, bi, fb * 0.2, 47u);                  /* (the side: a fifth of the bits, nothing over 4 kHz) */
+    } else {
+        md_code(ar, ai, fb * 0.5, top);
+        md_code(br, bi, fb * 0.5, top);
+    }
+    for (k = 0; k <= MD_N / 2u; k++) {
+        uint32_t n = (MD_N - k) % MD_N;
+        zr[k] = ar[k] - bi[k]; zi[k] = ai[k] + br[k];
+        if (k && k < MD_N / 2u) { zr[n] = ar[k] + bi[k]; zi[n] = br[k] - ai[k]; }
+    }
+    md_fft(zr, zi, 1);
+    for (i = 0; i < MD_N; i++) {
+        float a = zr[i] / MD_N * md_win[i], b = zi[i] / MD_N * md_win[i];
+        if (mode == 0u) { float l = a + b, r = a - b; a = l; b = r; }
+        if (i < MD_H) {
+            md_buf[(md_w + i) % MD_BUF][0] = md_ola[i][0] + a;
+            md_buf[(md_w + i) % MD_BUF][1] = md_ola[i][1] + b;
+        } else {
+            md_ola[i - MD_H][0] = a;
+            md_ola[i - MD_H][1] = b;
+        }
+    }
+    md_w += MD_H;
+}
+static void md_render(uint32_t n)
+{
+    static const double SPD[7] = {0.80, 0.85, 0.90, 0.95, 1.0, 1.05, 1.10};
+    uint32_t k, mode = vap_md_mode(), snd = vap_md_sound();
+    double sp = SPD[vap_md_speed()];
+    if (!md_init) {
+        for (k = 0; k < MD_N / 2u; k++) { md_cos[k] = (float)sin_d(0.25 + (double)k / MD_N); md_sin[k] = (float)sin_d((double)k / MD_N); }
+        for (k = 0; k < MD_N; k++) md_win[k] = (float)sin_d(0.5 * (double)k / MD_N);   /* (sqrt-Hann: in and out, Hann's sum) */
+        md_init = 1;
+    }
+    if (md_was != 1u) {                                  /* (a fresh disc) */
+        memset(md_in, 0, sizeof md_in); memset(md_ola, 0, sizeof md_ola); memset(md_bz, 0, sizeof md_bz);
+        md_w = md_g0 = md_g1 = md_t = 0;
+        md_rp = 0;
+        md_fill = 0;
+        md_was = 1u;
+    }
+    if (snd != md_snd) {                                 /* MEGA BASS: an RBJ low shelf, 90 Hz, S 1 */
+        double g = snd ? (snd == 1u ? 8.0 : 14.0) : 0.0, A = pow(10.0, g / 40.0), w = 90.0 / FS, cs = sin_d(0.25 + w), sn = sin_d(w),
+               al = sn / 2.0 * sqrt(2.0), sa = 2.0 * sqrt(A) * al, a0 = (A + 1) + (A - 1) * cs + sa;
+        md_bass[0] = A * ((A + 1) - (A - 1) * cs + sa) / a0;
+        md_bass[1] = 2 * A * ((A - 1) - (A + 1) * cs) / a0;
+        md_bass[2] = A * ((A + 1) - (A - 1) * cs - sa) / a0;
+        md_bass[3] = -2 * ((A - 1) + (A + 1) * cs) / a0;
+        md_bass[4] = ((A + 1) + (A - 1) * cs - sa) / a0;
+        md_snd = snd;
+    }
+    for (k = 0; k < n; k++) {
+        float v[2];
+        uint32_t c;
+        if (sp == 1.0) {                                 /* (100 %: straight through) */
+            uint32_t p = (uint32_t)md_rp;
+            while (md_w < p + 1u)
+                md_frame(mode);
+            v[0] = md_buf[p % MD_BUF][0];
+            v[1] = md_buf[p % MD_BUF][1];
+            md_rp += 1.0;
+            md_g0 = (uint32_t)md_rp;
+            md_g1 = md_g0;
+            md_t = 0;
+        } else {                                         /* (grains of 1024, a new one every 512 out, read at the pitch) */
+            uint32_t a = md_g0 + md_t, b = md_g1 + md_t + 512u;
+            float wa = (float)(0.5 - 0.5 * sin_d(0.25 + md_t / 1024.0)), wb = 1.0f - wa;
+            while (md_w < (a > b ? a : b) + 1u)
+                md_frame(mode);
+            v[0] = wa * md_buf[a % MD_BUF][0] + wb * md_buf[b % MD_BUF][0];
+            v[1] = wa * md_buf[a % MD_BUF][1] + wb * md_buf[b % MD_BUF][1];
+            if (++md_t == 512u) {
+                md_t = 0;
+                md_g1 = md_g0;
+                md_rp += sp * 512.0;
+                md_g0 = (uint32_t)md_rp;
+            }
+        }
+        for (c = 0; c < 2u; c++) {                       /* SOUND (a little of its boost given back: louder, not 14 dB louder), then the
+                                                         * 1.5 V amp's rails, 6 dB over the device's usual peaks (VOLUME at its start):
+                                                         * soft from 0.8 of them, flat at 0.98; heard at the level it came in */
+            double x = (snd ? fos_bq(md_bass, md_bz[c], v[c]) * (snd == 1u ? 0.79 : 0.56) : v[c]) * MD_AMP, ay = x < 0 ? -x : x;
+            if (ay > 0.8)
+                ay = 0.8 + 0.18 * tanh((ay - 0.8) / 0.18);
+            (c ? out_r : out_l)[k] = (float)((x < 0 ? -ay : ay) / MD_AMP);
+        }
+    }
+}
 /* (tests) frames of one's own into the ring, in place of the device's: VAPOR measured on a test signal */
 static float web_feed_b[2048];
 EXPORT float *web_feed_buf(void) { return web_feed_b; }
-EXPORT void web_feed(uint32_t n)
+EXPORT uint32_t web_feed(uint32_t n)                    /* (the frames taken: the ring holds RING) */
 {
     uint32_t i;
     for (i = 0; i < n && i < 1024u && ring_w - ring_r < RING - 1u; i++, ring_w++) {
         ring[(ring_w % RING) * 2u] = web_feed_b[2u * i];
         ring[(ring_w % RING) * 2u + 1u] = web_feed_b[2u * i + 1u];
     }
+    return i;
 }
 /* VAPOR's kind (the page's drop-down): 0 CLEAN, 1 BOURBY'S FOSTEX at SLOW, 2 at SLOWER */
-EXPORT void web_vapor_kind(uint32_t m)
+EXPORT void web_vapor_kind(uint32_t m)                  /* 0 CLEAN, 1 FOSTEX SLOW, 2 FOSTEX SLOWER, 3 MD-VE */
 {
     uint16_t a = (uint16_t)song.g[G_DRLVL], b = (uint16_t)song.g[G_DRREV];
-    a = (uint16_t)(m ? a | 0x80u : a & ~0x80u);
-    b = (uint16_t)(m == 2u ? b | 0x80u : b & ~0x80u);
+    a = (uint16_t)(m == 1u || m == 2u ? a | 0x80u : a & ~0x80u);
+    b = (uint16_t)(m == 2u || m == 3u ? b | 0x80u : b & ~0x80u);
     song.g[G_DRLVL] = (int16_t)a;
     song.g[G_DRREV] = (int16_t)b;
 }
@@ -1255,8 +1533,15 @@ EXPORT void web_render(uint32_t n)
     uint32_t k, slow = vap_get(0), wow = vap_get(1), vinyl = vap_get(2), crush = vap_get(3), fos = vap_fostex();
     if (n > 1024u)
         n = 1024u;
+    if (vap_md()) {                                    /* MD-VE: the MiniDisc */
+        fos_was = 0;
+        md_render(n);
+        return;
+    }
+    md_was = 0;
     if (fos) {                                         /* BOURBY'S FOSTEX: recorded, then played back slower */
         uint32_t set = fos - 1u;
+        fos_trim = pow(10.0, vap_trim_db() / 20.0);
         double sp = set ? FOS_SP_SLOWER : FOS_SP_SLOW, f1 = 4.65 * sp, a1 = set ? 0.00095 : 0.0019, a2 = set ? 0.0012 : 0.0008,
                js = (set ? 0.00139 : 0.00125) * FOS_JIT_NORM, nr = vap_nr() ? 1.0 : 2.0, wn = 3.77e-4 * nr, ln = 5.03e-3 * nr;   /* (the hiss: -111.9 dB/Hz white, -89.4 dB/Hz under
                                                      * 150 Hz: x sqrt(FS / 2)) */
@@ -1852,7 +2137,8 @@ EXPORT const char *web_guide(void)
     wj("],\"xy\":[%u,%u,%u,%u,%u,%u],\"xyk\":%d", xy_live[0].x, xy_live[0].y, xy_live[0].on, xy_live[1].x, xy_live[1].y, xy_live[1].on,
        web_pad ? (int)web_pad_k : -1);
     wj(",\"vapor\":[%u,%u,%u,%u]", vap_get(0), vap_get(1), vap_get(2), vap_get(3));
-    wj(",\"vkind\":%u,\"vnr\":%u,\"vboost\":%u", vap_fostex(), vap_nr(), vap_boost());                  /* (0 CLEAN, 1 BOURBY'S FOSTEX: SLOW, 2: SLOWER) */
+    wj(",\"vkind\":%u,\"vnr\":%u,\"vtrim\":%u,\"vmd\":[%u,%u,%u]", vap_md() ? 3u : vap_fostex(), vap_nr(), vap_trim_db(),
+       vap_md_mode(), vap_md_speed(), vap_md_sound());                  /* (0 CLEAN, 1 BOURBY'S FOSTEX: SLOW, 2: SLOWER) */
     {                                                  /* the selected track's chop banks: slot + 1, 0 none (the PADS page, SAMPLES) */
         uint32_t bk = web_spk_banks();
         smp_fx_t fa, fb;

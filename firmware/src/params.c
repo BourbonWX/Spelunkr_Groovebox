@@ -234,11 +234,11 @@ static const param_desc_t GP[G_COUNT] = {
      * showed the USB state), SYNC was a placeholder, CPU a reading; the USB state and the CPU load are MENU > SYSTEM >
      * INFO's now (ui_menu.c). Kept: the ids and G_COUNT are fixed by the formats and the protocol */
     [G_MIDI] = PE("MIDI", N_MIDI_INPUT, 0),
-    [G_SYNC] = PE("SYNC", N_DASH, 0),
+    [G_SYNC] = PD("-", F_INT, -32768, 32767, 0),       /* Spelunkr: ANALOG VAPOR's TRIM (felucca_web.c vap_trim_db) */
     /* MIDI IN's routing, edited on MENU > MIDI > MIDI IN (1.2: menu_items.c MI_MIDIIN; up to 1.1.5 GLO > SYSTEM ROUT),
      * stored with the project as before. (was "--": stored 0 = CH1-4, as MIDI IN always was) */
     [G_ROUTE] = PE("ROUT", N_ROUTE, 0),
-    [G_INFO] = PD("CPU", F_INT, 0, 0, 0),
+    [G_INFO] = PD("-", F_INT, -32768, 32767, 0),       /* Spelunkr: MD-VE's MODE, SPEED, SOUND (felucca_web.c vap_md*) */
     [G_SLOT] = PE("SLOT", N_PSLOT, 1),            /* 1.0.1: Q (QUICK: the autosave), then A-D */
     [G_NAME] = PE("NAME", N_DASH, 0),
     [G_LOAD] = PE("LOAD", N_GO, 0),

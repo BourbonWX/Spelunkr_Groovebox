@@ -320,7 +320,10 @@ if (typeof registerProcessor === "function") {
       } else if (m.type === "fxkeys") { if (ex.web_fx_mode) ex.web_fx_mode(m.on ? 1 : 0, m.open ? 1 : 0);   // (FX: the keys, or the effects)
       } else if (m.type === "plain") { if (ex.web_plain) ex.web_plain(m.on ? 1 : 0);
       } else if (m.type === "vaporopt") { if (ex.web_vapor_opt) ex.web_vapor_opt(m.nr ? 1 : 0, m.boost ? 1 : 0);   // (ANALOG VAPOR: BOULBY NR, BOOST)
-      } else if (m.type === "vaporkind") { if (ex.web_vapor_kind) ex.web_vapor_kind(m.m);   // (CLEAN, BOURBY'S FOSTEX SLOW / SLOWER)
+      } else if (m.type === "vapornr") { if (ex.web_vapor_nr) ex.web_vapor_nr(m.nr ? 1 : 0);   // (ANALOG VAPOR: BOULBY NR)
+      } else if (m.type === "vaportrim") { if (ex.web_vapor_trim) ex.web_vapor_trim(m.db >>> 0);   // (ANALOG VAPOR: TRIM, dB)
+      } else if (m.type === "vapormd") { if (ex.web_vapor_md) ex.web_vapor_md(m.mode >>> 0, m.speed >>> 0, m.sound >>> 0);   // (MD-VE)
+      } else if (m.type === "vaporkind") { if (ex.web_vapor_kind) ex.web_vapor_kind(m.m);   // (0 CLEAN, 1 / 2 FOSTEX SLOW / SLOWER, 3 MD-VE)
       } else if (m.type === "vapor") { ex.web_vapor(m.k, m.v);
       } else if (m.type === "polish") { if (ex.web_polish) ex.web_polish(m.id, m.v | 0);   // (POLISH: felucca_web.c)
       } else if (m.type === "xy") { ex.web_xy(m.j, m.x, m.y, m.on ? 1 : 0, m.k ?? 255);

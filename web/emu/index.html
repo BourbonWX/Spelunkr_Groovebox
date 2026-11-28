@@ -1267,6 +1267,7 @@ body.phone.land .fader { height: 120px; }
 .vfos .vdesc { padding: 4px 14px 0; }
 .vdesc a { color: var(--yellow); text-decoration: underline; text-underline-offset: 3px; }
 .vfosbtns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.vtrim { flex: 1 1 160px; display: flex; } .vtrim .stepper { flex: 1; }
 .vfosbtns .btn { min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: 26px/1 var(--head); }
 .vfosbtns .btn small { display: block; font: 16px/1.1 var(--mono); opacity: .85; text-transform: none; }
 .vfosbtns .btn[aria-pressed="true"] { background: linear-gradient(90deg, var(--orange), var(--rust)); color: #fff; border-color: var(--yellow); }
@@ -1603,8 +1604,9 @@ body.boxv .padsgo, body.boxpanel .padsgo { display: none; }
           </div>
           <div class="vfosopt" role="group" aria-label="ANALOG VAPOR's switches">
             <button class="btn" type="button" id="vfnr" aria-pressed="true"><span class="bb" aria-hidden="true"><i>B</i><i>B</i></span>BOULBY NR</button>
-            <button class="btn" type="button" id="vfboost" aria-pressed="true">BOOST</button>
+            <div class="vtrim" id="vftrim"></div>
           </div>
+        </div>
         </div>
       </div>
     </section>
@@ -2019,6 +2021,7 @@ function knobName(k, name) {                            // its arrows say what t
 }
 function turn(k, n) {
   if (!n) return;
+  if (k.onTurn) { k.onTurn(n); return; }
   if (k.role === "vapor") { vapSet(k.k, k.v + n * 4); return; }
   if (k.role === "polish") { polTurn(k, n); return; }
   if (k.role === "master") {
@@ -2073,20 +2076,27 @@ function vaporize() {
 // VAPOR's kind (Ed, Nov 27 2026: "a VAPOR drop down ... CLEAN and Bourby's Fostex and the fostex just has 2 settings
 // SLOW and SLOWER"): CLEAN, the knobs above; BOURBY'S FOSTEX, his cassette deck modelled from his test tape
 // (felucca_web.c), at SLOW or SLOWER. The CLEAN amounts stay as they were under it. OFF: all of VAPOR off
-let vapKind = 0, vapFosSlower = false, vapNr = true, vapBoost = true;
-function vapOptShow() {
-  $("vfnr").setAttribute("aria-pressed", String(vapNr));
-  $("vfboost").setAttribute("aria-pressed", String(vapBoost));
+let vapKind = 0, vapFosSlower = false, vapNr = true, vapTrim = 12;
+// ANALOG VAPOR's TRIM (Ed, Nov 28 2026: "a trim pot that feeds from all the sounds in the front of the signal chain (up to
+// and including the Exciter) then the output of that trim pot feeds into the slowed effect"): 0..+18 dB into the tape,
+// the loudness kept. (MD-VE, the Sony MZ-B100: shelved till it's measured on Ed's own; felucca_web.c md_*)
+const trimEl = Object.assign(makeKnob($("vftrim"), "trim", false), { onTurn: (n) => { vapTrim = Math.max(0, Math.min(18, vapTrim + n)); vapTouched = performance.now(); trimShow(); send({ type: "vaportrim", db: vapTrim }); } });
+function trimShow() {
+  trimEl.lab.textContent = "TRIM";
+  knobName(trimEl, "TRIM");
+  trimEl.val.textContent = `+${vapTrim} dB`;
+  trimEl.el.title = `TRIM: how hot the song goes onto the tape (+${vapTrim} dB)`;
+  setAngle(trimEl, -135 + 270 * vapTrim / 18);
 }
-function vapOptSet() { vapTouched = performance.now(); vapOptShow(); send({ type: "vaporopt", nr: vapNr, boost: vapBoost }); }
-$("vfnr").addEventListener("click", () => { vapNr = !vapNr; vapOptSet(); });
-$("vfboost").addEventListener("click", () => { vapBoost = !vapBoost; vapOptSet(); });
-function vapKindShow(k) {
-  vapKind = k ? 1 : 0;
-  if (k) vapFosSlower = k === 2;
+trimShow();
+function vapOptShow() { $("vfnr").setAttribute("aria-pressed", String(vapNr)); }
+$("vfnr").addEventListener("click", () => { vapNr = !vapNr; vapTouched = performance.now(); vapOptShow(); send({ type: "vapornr", nr: vapNr }); });
+function vapKindShow(k) {                                // (the engine's: 0 CLEAN, 1 / 2 FOSTEX SLOW / SLOWER, 3 MD-VE)
+  vapKind = k === 1 || k === 2 ? 1 : 0;
+  if (k === 1 || k === 2) vapFosSlower = k === 2;
   $("vapkind").value = String(vapKind);
   $("vknobs").style.display = vapKind ? "none" : "";     // (style, not [hidden]: .btn and the knobs' grid set display)
-  $("vfos").hidden = !vapKind;
+  $("vfos").hidden = vapKind !== 1;
   $("vapgo").style.display = vapKind ? "none" : "";
   $("vaphint").style.display = vapKind ? "none" : "";
   $("vfslow").setAttribute("aria-pressed", String(!vapFosSlower));
@@ -2694,8 +2704,9 @@ function showGuide(g) {
   if (g.vapor && performance.now() - vapTouched > 600) {   // VAPOR as the song has it (a load, a shared link)
     g.vapor.forEach((v, k) => { if (vapEls[k].v !== v) vapShow(vapEls[k], v); });
     const vk = g.vkind || 0;
-    if ((vk ? 1 : 0) !== vapKind || (vk === 2) !== vapFosSlower) vapKindShow(vk);
-    if (g.vnr !== undefined && (!!g.vnr !== vapNr || !!g.vboost !== vapBoost)) { vapNr = !!g.vnr; vapBoost = !!g.vboost; vapOptShow(); }
+    if ((vk === 1 || vk === 2 ? 1 : 0) !== vapKind || ((vk === 1 || vk === 2) && (vk === 2) !== vapFosSlower)) vapKindShow(vk);
+    if (g.vnr !== undefined && !!g.vnr !== vapNr) { vapNr = !!g.vnr; vapOptShow(); }
+    if (g.vtrim !== undefined && g.vtrim !== vapTrim) { vapTrim = g.vtrim; trimShow(); }
     $("vapclean").disabled = !vk && !g.vapor.some((v) => v);
   }
   $("foot").textContent = `${g.tracks.length} TRACKS · PATTERN ${letter(g.cur)} OF A–F · ${g.song.rows.length ? g.song.rows.length + " SECTIONS IN THE SONG" : "NO SONG YET"} · SAVED IN THIS BROWSER`;
@@ -5166,7 +5177,7 @@ const TIPS = {
   "[data-eq='4']": "4 equal chops, end to end.", "[data-eq='6']": "6 equal chops.", "[data-eq='8']": "8 equal chops.", "[data-eq='12']": "12 equal chops: every key of a bank.",
   "#smpnone": "NONE: no chops: the whole trimmed sample is one.",
   "#vfnr": "BOULBY NR: the deck's noise reduction. On, the tape's hiss is about half what it is off (on is how Bourby records).",
-  "#vfboost": "BOOST: the song recorded 12 dB hotter onto the tape: it squeezes, the vibes and drums grow harmonics, the hiss sits lower. Off: recorded at the test tape's level, cleaner.",
+  "#vftrim": "TRIM: how hot the finished mix (POLISH and its exciter included) goes onto the tape, 0 to +18 dB, as the X-28's TRIM. Higher: the tape squeezes, vibes and drums grow harmonics, the hiss sinks; the loudness stays. Bourby's pick: +12.",
   "#vapkind": "The kind of VAPOR: DIGITAL VAPOR, the four knobs; ANALOG VAPOR, Bourby's Fostex X-28 cassette 4-track, measured from his test tape, at SLOW or SLOWER.",
   "#vfslow": "SLOW: the Fostex's pitch knob at 12 o'clock: about 3 semitones down, the tape's tone and flutter.",
   "#vfslower": "SLOWER: the pitch knob all the way down: about 6.6 semitones down, darker, the flutter slower.",
@@ -5440,7 +5451,7 @@ const TOUR = [                                           // (Ed: "cover every pa
   { t: "17 · MAKE IT VAPOR", el: ".vapor", x: () => "<kbd>VAPOR</kbd> (" + (phOn ? "its card" : "in the side menu") + ") makes the whole song sound like old gear. The drop-down picks the kind. "
       + "<b>DIGITAL VAPOR</b> emulates analog equipment with four controls: slow the record down, warp the tape, add crackle and crunch; "
       + "tap <kbd>VAPORIZE</kbd> for new amounts every tap. <b>ANALOG VAPOR</b> has two settings modeled after Bourby's own Fostex X-28 cassette 4-track, "
-      + "measured from his test tape: <kbd>SLOW</kbd> and <kbd>SLOWER</kbd>, with <kbd>BOULBY NR</kbd> (less hiss) and <kbd>BOOST</kbd> (recorded hot, more tape squeeze). <kbd>OFF</kbd> takes either off. It's saved with the song." },
+      + "measured from his test tape: <kbd>SLOW</kbd> and <kbd>SLOWER</kbd>, with <kbd>BOULBY NR</kbd> (less hiss) and <kbd>TRIM</kbd> (how hot it goes on the tape: more squeeze and harmonics). <kbd>OFF</kbd> takes either off. It's saved with the song." },
   { t: "18 · POLISH IT", el: "#polish .pmods", x: () => "<kbd>POLISH</kbd> finishes the mix. The <b>COMPRESSOR</b> squeezes one track, "
       + "or just the kick or snare (it starts on PUNCH on the kick, a classic); the <b>SIDECHAIN</b> makes the tracks you pick dip at each kick "
       + "(the classic pump); the <b>EQ</b> shapes the whole song's tone (try the presets); the <b>EXCITER</b> adds "
